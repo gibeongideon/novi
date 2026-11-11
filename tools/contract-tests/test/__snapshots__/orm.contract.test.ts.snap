@@ -1,0 +1,56 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`P0.7.3 metadata contracts > get_views returns XML arch per view type plus field metadata 1`] = `
+{
+  "arch": "string",
+  "id": "number",
+  "model": "string",
+  "toolbar": "object",
+}
+`;
+
+exports[`P0.7.4 data contracts (both transports) > onchange with field_names=[] returns defaults for a new record 1`] = `
+{
+  "value": "object",
+}
+`;
+
+exports[`P0.7.4 data contracts (both transports) > web_read_group and formatted_read_group aggregate 1`] = `
+{
+  "groups": [
+    {
+      "__count": "number",
+      "__extra_domain": "array",
+      "amount_total:sum": "number",
+      "state": "string",
+    },
+  ],
+  "length": "number",
+}
+`;
+
+exports[`P0.7.4 data contracts (both transports) > web_search_read returns {length, records} with nested specs > web_search_read shape 1`] = `
+{
+  "length": "number",
+  "records": [
+    {
+      "country_id": "object",
+      "id": "number",
+      "name": "string",
+    },
+  ],
+}
+`;
+
+exports[`P0.7.4 data contracts (both transports) > web_search_read returns {length, records} with nested specs > web_search_read shape 2`] = `
+{
+  "length": "number",
+  "records": [
+    {
+      "country_id": "object",
+      "id": "number",
+      "name": "string",
+    },
+  ],
+}
+`;

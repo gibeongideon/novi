@@ -40,12 +40,12 @@ describe.runIf(odooUp)("P0.7.3 metadata contracts", () => {
     expect(fields.order_line).toMatchObject({ type: "one2many", relation: "sale.order.line" });
   });
 
-  it("/web/model/get_definitions describes models", async () => {
+  it("/web/model/get_definitions (CSRF-protected http route) describes models", async () => {
     const t = await session();
-    const defs = await t.route<Record<string, unknown>>("/web/model/get_definitions", {
-      model_names: ["res.partner"],
-    });
-    expect(JSON.stringify(defs)).toContain("res.partner");
+    const defs = await t.getModelDefinitions<Record<string, { fields?: Record<string, unknown> }>>([
+      "res.partner",
+    ]);
+    expect(defs["res.partner"]?.fields).toHaveProperty("name");
   });
 });
 
@@ -138,16 +138,18 @@ describe.runIf(odooUp)("P0.7.4 data contracts (both transports)", () => {
 
   it("error mapping: MissingError, ValidationError/UserError, AccessError", async () => {
     const admin = new Orm(await session());
-    await expect(admin.webRead("res.partner", [999_999_999], { name: {} })).rejects.toBeInstanceOf(
-      MissingError,
-    );
+    // web_read silently drops missing ids (returns []), so probe MissingError with write
+    expect(await admin.webRead("res.partner", [999_999_999], { name: {} })).toEqual([]);
+    await expect(
+      admin.call("res.partner", "write", [999_999_999], { vals: { name: "x" } }),
+    ).rejects.toBeInstanceOf(MissingError);
     await expect(admin.webSave("res.partner", [], {}, { name: {} })).rejects.toBeInstanceOf(UserError);
     const restricted = new Orm(await session("restricted"));
     await expect(restricted.webSave("res.groups", [], { name: "x" }, {})).rejects.toBeInstanceOf(AccessError);
     // json2 maps the same exception from the HTTP status + body
-    await expect(new Orm(json2()).webRead("res.partner", [999_999_999], { name: {} })).rejects.toBeInstanceOf(
-      MissingError,
-    );
+    await expect(
+      new Orm(json2()).call("res.partner", "write", [999_999_999], { vals: { name: "x" } }),
+    ).rejects.toBeInstanceOf(MissingError);
     expect(ValidationError.prototype).toBeInstanceOf(UserError);
   });
 });
