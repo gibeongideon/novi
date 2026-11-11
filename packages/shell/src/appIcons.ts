@@ -17,6 +17,7 @@ import {
   FileStack,
   FolderKanban,
   Handshake,
+  Landmark,
   LayoutDashboard,
   ListTodo,
   type LucideIcon,
@@ -58,6 +59,8 @@ const BY_MODULE: Record<string, AppIdentity> = {
   contacts: { icon: Contact, tone: 8, group: "sell", description: "app.contacts" },
   account: { icon: Receipt, tone: 6, group: "finance", description: "app.account" },
   account_accountant: { icon: Receipt, tone: 6, group: "finance", description: "app.account" },
+  // with Odoo Accounting installed, the finance root menu belongs to the `accountant` module
+  accountant: { icon: Landmark, tone: 6, group: "finance", description: "app.accountant" },
   purchase: { icon: ShoppingCart, tone: 4, group: "operations", description: "app.purchase" },
   stock: { icon: Boxes, tone: 7, group: "operations", description: "app.stock" },
   stock_barcode: { icon: ScanBarcode, tone: 2, group: "operations", description: "app.stock_barcode" },

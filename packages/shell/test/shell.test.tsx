@@ -1,6 +1,6 @@
 import { EngineProvider, type SessionTransport } from "@novi/engine";
 import { AccessDenied, SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
-import { I18nProvider, TooltipProvider } from "@novi/ui";
+import { I18nProvider, ThemeProvider, TooltipProvider } from "@novi/ui";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -109,13 +109,15 @@ function fakeOdoo(loggedIn = false) {
 function renderShell(transport: SessionTransport, path = "/") {
   return render(
     <EngineProvider transport={transport} db="novi_demo">
-      <I18nProvider>
-        <TooltipProvider>
-          <MemoryRouter initialEntries={[path]}>
-            <ShellRoutes />
-          </MemoryRouter>
-        </TooltipProvider>
-      </I18nProvider>
+      <ThemeProvider>
+        <I18nProvider>
+          <TooltipProvider>
+            <MemoryRouter initialEntries={[path]}>
+              <ShellRoutes />
+            </MemoryRouter>
+          </TooltipProvider>
+        </I18nProvider>
+      </ThemeProvider>
     </EngineProvider>,
   );
 }
@@ -186,6 +188,22 @@ describe("type-anywhere search (D-24)", () => {
     await userEvent.keyboard("{Escape}");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
     expect(await screen.findByPlaceholderText("Search apps and menus…")).toBeTruthy();
+  });
+});
+
+describe("light and dark mode", () => {
+  it("the user menu switches the theme and shows the current choice", async () => {
+    renderShell(fakeOdoo(true));
+    await screen.findByRole("link", { name: "Sales" });
+    await userEvent.click(screen.getByRole("button", { name: "Mitchell Admin" }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: "Dark" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await userEvent.click(screen.getByRole("button", { name: "Mitchell Admin" }));
+    expect((await screen.findByRole("menuitemradio", { name: "Dark" })).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    await userEvent.click(screen.getByRole("menuitemradio", { name: "Light" }));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 });
 

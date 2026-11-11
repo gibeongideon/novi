@@ -15,6 +15,7 @@ import {
   initials,
   Input,
   ThemeProvider,
+  useColorMode,
 } from "../src/index.js";
 
 describe("Button", () => {
@@ -97,7 +98,7 @@ describe("Dialog + i18n", () => {
 describe("ThemeProvider", () => {
   it("injects token variables and applies tenant colours that pass contrast", () => {
     const { container } = render(
-      <ThemeProvider theme={{ light: { primary: "#0a5c36" } }} mode="dark">
+      <ThemeProvider theme={{ light: { primary: "#0a5c36" } }} defaultMode="dark">
         <span>x</span>
       </ThemeProvider>,
     );
@@ -114,5 +115,41 @@ describe("ThemeProvider", () => {
     );
     expect(container.querySelector("style[data-novi-theme]")?.textContent).not.toContain("#fff3b0");
     expect(warn).toHaveBeenCalled();
+  });
+});
+
+describe("colour mode", () => {
+  function Switch() {
+    const { mode, setMode } = useColorMode();
+    return (
+      <>
+        <span data-testid="mode">{mode}</span>
+        <button onClick={() => setMode("dark")}>dark</button>
+        <button onClick={() => setMode("system")}>system</button>
+      </>
+    );
+  }
+
+  it("switches, applies data-theme and remembers the choice", async () => {
+    const { unmount } = render(
+      <ThemeProvider>
+        <Switch />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId("mode").textContent).toBe("system");
+    await userEvent.click(screen.getByText("dark"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(localStorage.getItem("novi.colorMode")).toBe("dark");
+    unmount();
+
+    // next visit: the saved choice wins over the default
+    render(
+      <ThemeProvider defaultMode="light">
+        <Switch />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId("mode").textContent).toBe("dark");
+    await userEvent.click(screen.getByText("system"));
+    expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
   });
 });

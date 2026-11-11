@@ -7,6 +7,13 @@
     <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>NOVI</title>
+    <!-- apply the saved colour mode before first paint (no light flash); key = COLOR_MODE_KEY in @novi/ui -->
+    <script>
+      try {
+        var m = localStorage.getItem("novi.colorMode");
+        if (m === "light" || m === "dark") document.documentElement.setAttribute("data-theme", m);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -14,7 +14,7 @@ const preview: Preview = {
   },
   decorators: [
     (Story) => (
-      <ThemeProvider mode="system">
+      <ThemeProvider>
         <TooltipProvider>
           <Story />
         </TooltipProvider>
