@@ -29,7 +29,7 @@ if [ "$cmd" = destroy ]; then
 fi
 [ "$cmd" = create ] || { echo "usage: $0 create|destroy <id> ..." >&2; exit 2; }
 COMPANY="${3:?company}"; COUNTRY="${4:?country code}"; EMAIL="${5:?admin email}"; PASS="${6:?admin password}"
-PORT="${7:-18069}"
+PORT="${7:-18169}"
 
 mkdir -p "$DIR"; chmod 700 "$DIR"
 declare -A T; t0=$(date +%s%3N); last=$t0

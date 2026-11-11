@@ -47,71 +47,71 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Goal:** a repo, a local Odoo 20, a proven client library, and answers to the two biggest unknowns (2FA and provisioning).
 
 ### P0.1 Monorepo setup
-- [ ] P0.1.1 Initialise git, set the default branch to `main`, protect the branch (PR required, CI required)
-- [ ] P0.1.2 Set up a pnpm workspace and Turborepo pipeline (`build`, `lint`, `typecheck`, `test`, `dev`)
-- [ ] P0.1.3 Add a shared `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, path aliases)
-- [ ] P0.1.4 Add ESLint (typescript-eslint, react, react-hooks, import order) and a Prettier config
-- [ ] P0.1.5 Add Vitest config (workspace mode) and coverage reporting
-- [ ] P0.1.6 Create empty package skeletons: `odoo-client`, `odoo-expr`, `odoo-meta`, `engine`, `ui`, `fields`, `views`, `chatter`, `realtime`, `shell`, `apps/*`
-- [ ] P0.1.7 Create service and app skeletons: `services/gateway`, `services/provisioner`, `apps/web` (Vite + React), `apps/admin`
-- [ ] P0.1.8 Create tool skeletons: `tools/contract-tests`, `tools/coverage-scanner`; add `infra/compose`, `infra/images`
-- [ ] P0.1.9 Write the root README: repo layout, prerequisites, `pnpm dev` quick start
-- [ ] P0.1.10 Add Husky + lint-staged pre-commit hook, and a commitlint rule requiring the task-ID prefix
+- [x] P0.1.1 Initialise git, set the default branch to `main`, protect the branch (PR required, CI required). *Branch protection is a GitHub setting the repo owner applies.*
+- [x] P0.1.2 Set up a pnpm workspace and Turborepo pipeline (`build`, `lint`, `typecheck`, `test`, `dev`)
+- [x] P0.1.3 Add a shared `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, path aliases)
+- [x] P0.1.4 Add ESLint (typescript-eslint, react, react-hooks, import order) and a Prettier config
+- [x] P0.1.5 Add Vitest config (workspace mode) and coverage reporting
+- [x] P0.1.6 Create empty package skeletons: `odoo-client`, `odoo-expr`, `odoo-meta`, `engine`, `ui`, `fields`, `views`, `chatter`, `realtime`, `shell`, `apps/*`
+- [x] P0.1.7 Create service and app skeletons: `services/gateway`, `services/provisioner`, `apps/web` (Vite + React), `apps/admin`
+- [x] P0.1.8 Create tool skeletons: `tools/contract-tests`, `tools/coverage-scanner`; add `infra/compose`, `infra/images`
+- [x] P0.1.9 Write the root README: repo layout, prerequisites, `pnpm dev` quick start
+- [x] P0.1.10 Add Husky + lint-staged pre-commit hook, and a commitlint rule requiring the task-ID prefix
 
 **Done when:** `pnpm install && pnpm build && pnpm test` passes on a clean clone.
 
 ### P0.2 CI/CD & versioning
-- [ ] P0.2.1 Add a CI workflow: install (with cache), lint, typecheck, test, build (affected packages only)
-- [ ] P0.2.2 Set up Changesets for package versioning and a private npm registry (GitHub Packages / Verdaccio)
-- [ ] P0.2.3 Add a Docker build job for `web`, `gateway` and `provisioner` (tagged by commit SHA)
-- [ ] P0.2.4 Add dependency scanning (Renovate/Dependabot) and a license checker (block GPL/AGPL deps in the frontend)
-- [ ] P0.2.5 Add PR template with a DoD checklist and a "Task ID" field
+- [x] P0.2.1 Add a CI workflow: install (with cache), lint, typecheck, test, build (affected packages only)
+- [x] P0.2.2 Set up Changesets for package versioning and a private npm registry (GitHub Packages / Verdaccio)
+- [x] P0.2.3 Add a Docker build job for `web`, `gateway` and `provisioner` (tagged by commit SHA)
+- [x] P0.2.4 Add dependency scanning (Renovate/Dependabot) and a license checker (block GPL/AGPL deps in the frontend)
+- [x] P0.2.5 Add PR template with a DoD checklist and a "Task ID" field
 
 **Done when:** a PR runs the full pipeline and a merge to `main` publishes snapshot images.
 
 ### P0.3 Local Odoo 20 environment
-- [ ] P0.3.1 Write `infra/images/odoo20/Dockerfile` that builds a stock image from the tarball (no code changes, layer checksum recorded)
-- [ ] P0.3.2 Write `docker-compose.dev.yml` with PostgreSQL 16, Odoo 20, Redis and Mailpit (to catch outgoing mail)
-- [ ] P0.3.3 Write the Odoo config for dev (`dbfilter`, `list_db=False`, `proxy_mode`, workers for websocket/gevent)
+- [x] P0.3.1 Write `infra/images/odoo20/Dockerfile` that builds a stock image from the tarball (no code changes, layer checksum recorded)
+- [x] P0.3.2 Write `docker-compose.dev.yml` with PostgreSQL 16, Odoo 20, Redis and Mailpit (to catch outgoing mail)
+- [x] P0.3.3 Write the Odoo config for dev (`dbfilter`, `list_db=False`, `proxy_mode`, workers for websocket/gevent)
 - [ ] P0.3.4 Write a seed script: create `novi_demo` with demo data and install `sale_management`, `crm`, `account_accountant`, `stock`, `hr`, `hr_holidays`, `hr_attendance`, `hr_expense`, `api_doc`
 - [ ] P0.3.5 Seed users: admin, a sales user, an accountant, a stock user, an HR officer, a portal user, and a 2FA-enabled user
-- [ ] P0.3.6 Add `make`/`pnpm` scripts: `odoo:up`, `odoo:reset`, `odoo:shell`, `odoo:logs`
+- [x] P0.3.6 Add `make`/`pnpm` scripts: `odoo:up`, `odoo:reset`, `odoo:shell`, `odoo:logs`
 - [ ] P0.3.7 Document the API key creation steps for JSON-2 testing
 
 **Done when:** one command brings up a seeded Odoo 20 at `localhost:8069` with every pilot app installed.
 
 ### P0.4 `odoo-client`: JSON-RPC (session) transport
-- [ ] P0.4.1 JSON-RPC 2.0 envelope builder and response/error parser
-- [ ] P0.4.2 `session.authenticate(db, login, password)`, `getSessionInfo()`, `destroy()`
-- [ ] P0.4.3 `callKw(model, method, args, kwargs)` via `/web/dataset/call_kw/<model>/<method>`
-- [ ] P0.4.4 `callButton(...)` via `/web/dataset/call_button`
-- [ ] P0.4.5 Helpers for route calls: `/web/action/load`, `/web/action/run`, `/web/webclient/load_menus`, `/web/webclient/translations`
-- [ ] P0.4.6 Cookie handling for Node (cookie jar) vs browser (credentials include)
-- [ ] P0.4.7 Context management (lang, tz, uid, allowed_company_ids) merged into every call
-- [ ] P0.4.8 Request batching / de-duplication of identical in-flight calls
+- [x] P0.4.1 JSON-RPC 2.0 envelope builder and response/error parser
+- [x] P0.4.2 `session.authenticate(db, login, password)`, `getSessionInfo()`, `destroy()`
+- [x] P0.4.3 `callKw(model, method, args, kwargs)` via `/web/dataset/call_kw/<model>/<method>`
+- [x] P0.4.4 `callButton(...)` via `/web/dataset/call_button`
+- [x] P0.4.5 Helpers for route calls: `/web/action/load`, `/web/action/run`, `/web/webclient/load_menus`, `/web/webclient/translations`
+- [x] P0.4.6 Cookie handling for Node (cookie jar) vs browser (credentials include)
+- [x] P0.4.7 Context management (lang, tz, uid, allowed_company_ids) merged into every call
+- [x] P0.4.8 Request batching / de-duplication of identical in-flight calls
 
 **Done when:** contract tests can log in and read `res.partner` through this transport.
 
 ### P0.5 `odoo-client`: JSON-2 (bearer) transport
-- [ ] P0.5.1 `POST /json/2/<model>/<method>` with an `Authorization: bearer` header and `X-Odoo-Database`
-- [ ] P0.5.2 Confirm the request body envelope against `Json2Dispatcher` (record the finding in DECISIONS)
-- [ ] P0.5.3 Map 404/422/401/403 to typed errors
-- [ ] P0.5.4 `/web/version` version detection and a capability flag set
-- [ ] P0.5.5 Common `Transport` interface so the engine doesn't care which transport is used
+- [x] P0.5.1 `POST /json/2/<model>/<method>` with an `Authorization: bearer` header and `X-Odoo-Database`
+- [x] P0.5.2 Confirm the request body envelope against `Json2Dispatcher` (record the finding in DECISIONS, D-14)
+- [x] P0.5.3 Map 404/422/401/403 to typed errors
+- [x] P0.5.4 `/web/version` version detection and a capability flag set
+- [x] P0.5.5 Common `Transport` interface so the engine doesn't care which transport is used
 
 **Done when:** the same test suite passes on both transports for ORM methods.
 
 ### P0.6 `odoo-client`: errors, retries, cancellation
-- [ ] P0.6.1 Typed errors: `UserError`, `ValidationError`, `AccessError`, `MissingError`, `RedirectWarning`, `SessionExpired`, `NetworkError`
-- [ ] P0.6.2 Parse Odoo error payloads (name, message, arguments, debug), keeping `data.context` for RedirectWarning actions
-- [ ] P0.6.3 Retry policy for safe calls only (reads), with exponential backoff
-- [ ] P0.6.4 `AbortSignal` support on every call
-- [ ] P0.6.5 Hooks: `onSessionExpired`, `onRequest`, `onResponse` (for logging and telemetry)
+- [x] P0.6.1 Typed errors: `UserError`, `ValidationError`, `AccessError`, `MissingError`, `RedirectWarning`, `SessionExpired`, `NetworkError`
+- [x] P0.6.2 Parse Odoo error payloads (name, message, arguments, debug), keeping `data.context` for RedirectWarning actions
+- [x] P0.6.3 Retry policy for safe calls only (reads), with exponential backoff
+- [x] P0.6.4 `AbortSignal` support on every call
+- [x] P0.6.5 Hooks: `onSessionExpired`, `onRequest`, `onResponse` (for logging and telemetry)
 
 **Done when:** every error type has a test reproducing it against real Odoo.
 
 ### P0.7 Contract test suite
-- [ ] P0.7.1 Test harness: start Odoo (compose), wait for health, reset the DB per suite
+- [x] P0.7.1 Test harness: start Odoo (compose), wait for health, reset the DB per suite
 - [ ] P0.7.2 Auth contracts: authenticate, session info, destroy, wrong password, 2FA user returns `uid: null`
 - [ ] P0.7.3 Metadata contracts: `get_views` (form/list/kanban/search), `fields_get`, `/web/model/get_definitions`
 - [ ] P0.7.4 Data contracts: `web_search_read`, `web_read`, `web_save` (create/update), `web_unlink`, `onchange`, `web_name_search`, `web_read_group`, `formatted_read_group`
@@ -125,28 +125,28 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 ### P0.8 Coverage scanner v1
 - [ ] P0.8.1 Enumerate every `ir.actions.*` and every view (`ir.ui.view`) per model
-- [ ] P0.8.2 Parse arch and collect view types, `widget=` names, field types and client action tags
-- [ ] P0.8.3 Compare with the engine's supported-registry manifest (JSON)
-- [ ] P0.8.4 Output a Markdown + JSON report: % supported and the top missing widgets, ranked by usage
-- [ ] P0.8.5 CLI: `pnpm scan --tenant <url> --db <db>`
+- [x] P0.8.2 Parse arch and collect view types, `widget=` names, field types and client action tags
+- [x] P0.8.3 Compare with the engine's supported-registry manifest (JSON)
+- [x] P0.8.4 Output a Markdown + JSON report: % supported and the top missing widgets, ranked by usage
+- [x] P0.8.5 CLI: `pnpm scan --tenant <url> --db <db>`
 
 **Done when:** a report is produced for `novi_demo` and committed under `docs/coverage/`.
 
 ### P0.9 Design system foundation
-- [ ] P0.9.1 Brand-neutral design tokens: color (light/dark), typography, spacing, radius, shadow, motion
-- [ ] P0.9.2 Layout grammar: page header, action bar, sheet → card grid, tabs, side drawer, dialog sizes
+- [x] P0.9.1 Brand-neutral design tokens: color (light/dark), typography, spacing, radius, shadow, motion
+- [x] P0.9.2 Layout grammar: page header, action bar, sheet → card grid, tabs, side drawer, dialog sizes
 - [ ] P0.9.3 Figma kit: shell, list, form, kanban, search bar, dialogs, toasts, empty states
-- [ ] P0.9.4 Theming contract: which tokens a tenant can override (logo, primary, accent, font)
-- [ ] P0.9.5 Accessibility baseline: contrast ratios, focus rings, keyboard map
+- [x] P0.9.4 Theming contract: which tokens a tenant can override (logo, primary, accent, font)
+- [x] P0.9.5 Accessibility baseline: contrast ratios, focus rings, keyboard map
 - [ ] P0.9.6 Design review and sign-off with stakeholders
 
 **Done when:** the Figma kit is approved and tokens are exported to `packages/ui/tokens`.
 
 ### P0.10 Spike: 2FA login without Odoo changes
-- [ ] P0.10.1 Server-side relay: GET `/web/login`, extract `csrf_token`, POST credentials
-- [ ] P0.10.2 Detect the redirect to `/web/login/totp`, then POST `totp_token` and capture `session_id`
+- [x] P0.10.1 Server-side relay: GET `/web/login`, extract `csrf_token`, POST credentials
+- [x] P0.10.2 Detect the redirect to `/web/login/totp`, then POST `totp_token` and capture `session_id` (simpler than planned: `authenticate` already leaves `pre_uid` in the session)
 - [ ] P0.10.3 Handle the trusted-device cookie
-- [ ] P0.10.4 Fallback flow: redirect to Odoo's login page and hand the session back to the gateway
+- [-] P0.10.4 Fallback flow: redirect to Odoo's login page and hand the session back to the gateway (not needed: the relay uses stock routes directly)
 - [ ] P0.10.5 Write up the result, risks and the chosen approach in DECISIONS.md
 
 **Done when:** a 2FA user can log in through the relay script, and the decision is recorded.

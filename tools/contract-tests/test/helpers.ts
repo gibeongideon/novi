@@ -1,6 +1,6 @@
 /**
  * Shared fixtures for the contract suite. Targets the local stack by default:
- *   ODOO_URL=http://localhost:8069  ODOO_DB=novi_demo  credentials from .cache/dev-credentials.json
+ *   ODOO_URL=http://localhost:18069  ODOO_DB=novi_demo  credentials from .cache/dev-credentials.json
  * When Odoo is not reachable, every suite is skipped (so `pnpm test` stays green offline);
  * set CONTRACT_REQUIRED=1 (CI) to turn that into a failure.
  */
@@ -10,8 +10,10 @@ import { fileURLToPath } from "node:url";
 
 import { getVersion, Json2Transport, JsonRpcTransport, Orm } from "@novi/odoo-client";
 
-export const ODOO_URL = process.env.ODOO_URL ?? "http://localhost:8069";
+export const ODOO_URL = process.env.ODOO_URL ?? "http://localhost:18069";
 export const ODOO_DB = process.env.ODOO_DB ?? "novi_demo";
+/** Odoo websocket (gevent) endpoint; local stack maps it to 18072. */
+export const ODOO_WS_URL = process.env.ODOO_WS_URL ?? "ws://localhost:18072";
 
 interface SeedUser {
   id: number;

@@ -29,7 +29,7 @@ pnpm scan                        # coverage report → docs/coverage/
 pnpm --filter @novi/web dev      # web app skeleton
 ```
 
-Local services: Odoo http://localhost:8069 (admin / admin) · Mailpit http://localhost:8025
+Local services: Odoo http://localhost:18069 (admin / admin) · Mailpit http://localhost:8025
 
 ## Layout
 

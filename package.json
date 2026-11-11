@@ -21,7 +21,7 @@
     "odoo:down": "docker compose -f infra/compose/docker-compose.dev.yml down",
     "odoo:reset": "bash infra/compose/reset-dev.sh",
     "odoo:seed": "bash infra/compose/seed-dev.sh",
-    "odoo:shell": "docker compose -f infra/compose/docker-compose.dev.yml exec odoo python3 /opt/odoo/setup/odoo shell --config=/etc/odoo/odoo.conf -d novi_demo",
+    "odoo:shell": "docker compose -f infra/compose/docker-compose.dev.yml exec odoo python3 /opt/odoo/setup/odoo shell --config=/etc/odoo/odoo.conf -d novi_demo --no-http",
     "odoo:logs": "docker compose -f infra/compose/docker-compose.dev.yml logs -f odoo",
     "test:contract": "pnpm --filter @novi/contract-tests test",
     "scan": "pnpm --filter @novi/coverage-scanner scan",

@@ -2,7 +2,7 @@ import { Orm } from "@novi/odoo-client";
 import { describe, expect, it } from "vitest";
 import WebSocket from "ws";
 
-import { ODOO_URL, odooUp, session, shape } from "./helpers.js";
+import { ODOO_URL, ODOO_WS_URL, odooUp, session, shape } from "./helpers.js";
 
 describe.runIf(odooUp)("P0.7.5 navigation contracts", () => {
   it("load_menus returns a root with children and app entries", async () => {
@@ -80,8 +80,7 @@ describe.runIf(odooUp)("P0.7.7 mail contracts", () => {
 describe.runIf(odooUp)("P0.7.8 bus contracts", () => {
   it("websocket accepts a subscription and pushes notifications for a new message", async () => {
     const t = await session();
-    const wsUrl =
-      ODOO_URL.replace(/^http/, "ws").replace(/:8069\b/, ":8072") + "/websocket?version=saas-19.5-1";
+    const wsUrl = `${ODOO_WS_URL}/websocket?version=saas-19.5-1`;
     const ws = new WebSocket(wsUrl, { headers: { Cookie: `session_id=${t.sessionId}`, Origin: ODOO_URL } });
     const received: unknown[] = [];
     await new Promise<void>((resolve, reject) => {

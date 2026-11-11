@@ -3,7 +3,7 @@
  * novi-scan: walks every window action of an Odoo database, loads its real (inherited) views
  * with get_views, and reports what the NOVI engine renders natively.
  *
- *   pnpm scan [--url http://localhost:8069] [--db novi_demo] [--login admin] [--password admin] [--out docs/coverage]
+ *   pnpm scan [--url http://localhost:18069] [--db novi_demo] [--login admin] [--password admin] [--out docs/coverage]
  *
  * Credentials default to .cache/dev-credentials.json (written by pnpm odoo:seed).
  */
@@ -37,7 +37,7 @@ interface Seed {
 const seedFile = join(repoRoot, ".cache/dev-credentials.json");
 const seed: Seed | null = existsSync(seedFile) ? (JSON.parse(readFileSync(seedFile, "utf8")) as Seed) : null;
 
-const url = arg("url", process.env.ODOO_URL ?? "http://localhost:8069")!;
+const url = arg("url", process.env.ODOO_URL ?? "http://localhost:18069")!;
 const db = arg("db", process.env.ODOO_DB ?? "novi_demo")!;
 const login = arg("login", seed?.users.admin?.login ?? "admin")!;
 const password = arg("password", seed?.users.admin?.password ?? "admin")!;

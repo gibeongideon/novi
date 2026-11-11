@@ -30,8 +30,8 @@ services:
       - ./odoo.dev.conf:/etc/odoo/odoo.conf:ro
       - filestore:/var/lib/odoo
     ports:
-      - "127.0.0.1:8069:8069" # HTTP
-      - "127.0.0.1:8072:8072" # websocket / longpolling (gevent)
+      - "127.0.0.1:${NOVI_ODOO_PORT:-18069}:8069" # HTTP (18069 avoids clashing with other local Odoos)
+      - "127.0.0.1:${NOVI_ODOO_WS_PORT:-18072}:8072" # websocket (gevent)
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8069/web/health || exit 1"]
       interval: 10s
