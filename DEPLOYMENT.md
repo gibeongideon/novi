@@ -20,18 +20,17 @@ GitHub push to main ──▶ Actions builds dashboard ──SSH as user "novi"�
 ### 1. Server (from your laptop, in the NOVI repo)
 ```bash
 cd ~/Desktop/CODE/NOVI
-HASH="$(docker run --rm caddy:2-alpine caddy hash-password --plaintext 'YOUR-PASSWORD')"
-{ printf "export NOVI_AUTH_HASH='%s'\nexport DEPLOY_PUBKEY='%s'\n" "$HASH" "$(cat ~/.ssh/novi_deploy.pub)"
-  cat deploy/staging/setup-server.sh; } | ssh -i ~/.ssh/vps_basket_ed25519 trader@68.183.91.240 'sudo bash -s'
+bash deploy/staging/run-setup.sh
 ```
-[`setup-server.sh`](deploy/staging/setup-server.sh):
+It asks for the dashboard password, hashes it locally, then runs [`setup-server.sh`](deploy/staging/setup-server.sh) on the server through your existing `trader` access. That script:
 - creates the `novi` user and `/opt/novi`
 - authorises the deploy key for that user only
 - backs up `/etc/caddy/Caddyfile`, then appends a `novi.dafeapp.com` block
 - validates the new config and reloads Caddy gracefully; if validation fails, nothing changes
-- prints the host key fingerprint
 
-It's safe to re-run.
+At the end, `run-setup.sh` checks that the deploy key can log in. It's safe to re-run.
+
+**Until this step is done, every deploy fails at "Upload and publish" with `Permission denied (publickey)`, and novi.dafeapp.com shows Braelaspin (Caddy's catch-all site).**
 
 ### 2. GitHub secrets
 In the NOVI repo, go to **Settings → Secrets and variables → Actions**:
