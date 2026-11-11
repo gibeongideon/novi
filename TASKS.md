@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 0 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 1 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -293,6 +293,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P1.10.3 Runtime tenant theming (CSS variables from the tenant config)
 - [ ] P1.10.4 Storybook with every component and its state variants
 - [ ] P1.10.5 Visual regression tests (Storybook snapshots)
+- [ ] P1.10.7 CI/lint check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx` (ex-P1.17.6)
 - [ ] P1.10.6 NOVI i18n catalogue for NOVI-owned strings (Save, Discard…), created with the first primitive that needs one
 
 **Done when:** Storybook is published and every primitive has stories and a11y checks.
@@ -303,8 +304,8 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P1.17.3 ESLint layer boundaries (`no-restricted-imports` per package) + ban on hard-coded colours / inline styles in UI packages
 - [x] P1.17.4 `FieldProps` contract + `registerField` / `registerOverride` registries with type fallbacks (types only, no widgets yet) (`@novi/fields` FieldRegistry, `@novi/views` OverrideRegistry with reason + owner)
 - [x] P1.17.5 Single formatter `createFormatter()` in `@novi/engine` from Odoo `lang_parameters` + session currencies + tz (numbers, monetary, percentage, float_time, date, datetime, parseNumber), unit tests + live contract test. *Musk step 2: the React hook and the i18n catalogue were cut here and moved to where they're first needed (P1.10.6, P1.11.6)*
-- [ ] P1.17.6 CI check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx`
-- [ ] P1.17.7 Registry writes `tools/coverage-scanner/supported.json` automatically (no hand-maintained list)
+- [-] P1.17.6 CI check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx` *(moved to P1.10.7, Musk step 5 \"automate last\": nothing to check until the first stories exist)*
+- [-] P1.17.7 Registry writes `tools/coverage-scanner/supported.json` automatically (no hand-maintained list) *(moved to P2.13.13: no widgets are registered yet; automate when the first one lands)*
 
 **Done when:** a new widget or pattern can only be added through the registry and stories, and lint fails on boundary or token violations.
 
@@ -499,6 +500,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
 - [ ] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner)
+- [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)
 
 **Done when:** every widget has stories, tests and works inside forms and lists.
