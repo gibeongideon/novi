@@ -1,0 +1,10 @@
+{
+  "name": "@novi/progress-dashboard",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Progress dashboard generated from TASKS.md/ROADMAP.md/CHANGELOG.md (static build + local live server)",
+  "type": "module",
+  "scripts": {
+    "dev": "node serve.mjs"
+  }
+}

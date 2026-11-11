@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P1.11] Local dev server: `pnpm dev` runs the web app (5173, Odoo proxied same-origin) and a live progress dashboard (4321) next to local Odoo (18069).
 - [P1.17.5] Single formatter `createFormatter()` driven by Odoo's own lang/currency/tz settings (en_US, de_DE, Indian grouping, tz conversion, parse); verified against live Odoo.
 - [P1.17.4] Field widget contract (`FieldProps`) + `FieldRegistry` (widget → type default → fallback, manifest) and `OverrideRegistry` (action > model specificity, slots, mandatory reason + owner); shared Odoo metadata types re-exported by `@novi/odoo-meta`.
 - [—] Musk's five-step design algorithm added to the rules (UI-RULES §0b, CLAUDE.md, PR template; D-22).

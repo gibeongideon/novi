@@ -14,6 +14,8 @@ const arg = (name, def) => {
 };
 const root = resolve(arg("--root", "."));
 const out = resolve(arg("--out", "dist/progress"));
+/** Seconds between auto-refreshes (the local dev server uses a short interval). */
+const refresh = Number(arg("--refresh", "120"));
 
 const read = (f) => (existsSync(join(root, f)) ? readFileSync(join(root, f), "utf8") : "");
 const esc = (s) =>
@@ -221,7 +223,7 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="120">
+<meta http-equiv="refresh" content="${refresh}">
 <title>NOVI Progress</title>
 <style>
 :root{--bg:#f7f7f5;--surface:#fff;--text:#1d1d1b;--muted:#6b6b66;--border:#e4e3df;--accent:#2f6fde;--done:#1f8a4c;--prog:#c98a12;--block:#c2412d;--track:#ecebe7;--code:#f0efeb}

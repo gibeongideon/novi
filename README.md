@@ -26,8 +26,18 @@ pnpm odoo:seed                   # create novi_demo with pilot apps, demo data a
 pnpm test:contract               # API contract suite against local Odoo
 pnpm scan                        # coverage report → docs/coverage/
 
-pnpm --filter @novi/web dev      # web app skeleton
+pnpm dev                         # local server with live reload (see below)
 ```
+
+**`pnpm dev`** starts local Odoo if needed, then serves with live reload:
+
+| URL | What |
+|---|---|
+| http://localhost:5173 | NOVI web app (Vite hot reload; Odoo proxied on the same origin, like production same-domain mode) |
+| http://localhost:4321 | Progress dashboard, rebuilt whenever TASKS.md / ROADMAP.md / CHANGELOG.md change |
+| http://localhost:18069 | Odoo 20 directly (admin / admin) |
+
+Stop with Ctrl+C. Odoo keeps running in Docker (`pnpm odoo:down` to stop it).
 
 Local services: Odoo http://localhost:18069 (admin / admin) · Mailpit http://localhost:8025
 

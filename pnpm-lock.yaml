@@ -274,6 +274,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/odoo-client
 
+  tools/progress-dashboard: {}
+
   tools/spikes:
     dependencies:
       '@novi/odoo-client':
