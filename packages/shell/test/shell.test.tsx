@@ -128,6 +128,15 @@ function fakeOdoo(loggedIn = false): FakeOdoo {
     setContext(patch) {
       Object.assign(context, patch);
     },
+    async call<T>(model: string, method: string, c?: { ids?: number[]; kwargs?: Record<string, unknown> }) {
+      if (model === "ir.model") return [{ model: "res.partner", name: "Contact" }] as T;
+      if (method === "web_name_search") {
+        const q = String(c?.kwargs?.name).toLowerCase();
+        return ("azure interior".includes(q) ? [{ id: 14, display_name: "Azure Interior" }] : []) as T;
+      }
+      if (method === "web_read") return [{ id: c?.ids?.[0], display_name: "Azure Interior" }] as T;
+      return [] as T;
+    },
   };
 }
 
@@ -196,7 +205,7 @@ describe("type-anywhere search (D-24)", () => {
     renderShell(fakeOdoo(true));
     await screen.findByRole("link", { name: "Sales" });
     await userEvent.keyboard("c");
-    const input = await screen.findByPlaceholderText("Search apps and menus…");
+    const input = await screen.findByPlaceholderText("Search apps, menus and records…");
     expect((input as HTMLInputElement).value).toBe("c");
     await userEvent.type(input, "ustom");
     await userEvent.click(await screen.findByText("Customers"));
@@ -207,12 +216,12 @@ describe("type-anywhere search (D-24)", () => {
     renderShell(fakeOdoo(true));
     await screen.findByRole("link", { name: "Sales" });
     await userEvent.keyboard("{Control>}k{/Control}");
-    expect(((await screen.findByPlaceholderText("Search apps and menus…")) as HTMLInputElement).value).toBe(
-      "",
-    );
+    expect(
+      ((await screen.findByPlaceholderText("Search apps, menus and records…")) as HTMLInputElement).value,
+    ).toBe("");
     await userEvent.keyboard("{Escape}");
     await userEvent.click(screen.getByRole("button", { name: "Search" }));
-    expect(await screen.findByPlaceholderText("Search apps and menus…")).toBeTruthy();
+    expect(await screen.findByPlaceholderText("Search apps, menus and records…")).toBeTruthy();
   });
 });
 
@@ -263,6 +272,21 @@ describe("errors (P1.12.5)", () => {
     expect(screen.getByRole("alert").textContent).toContain("Something went wrong");
     expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy();
     err.mockRestore();
+  });
+});
+
+describe("record search (P1.13.2)", () => {
+  it("finds a customer by name through Odoo and opens the record", async () => {
+    renderShell(fakeOdoo(true));
+    await screen.findByRole("link", { name: "Sales" });
+    await userEvent.keyboard("azu");
+    const group = await screen.findByText("Contact", {}, { timeout: 2000 }); // Odoo's model label
+    expect(group).toBeTruthy();
+    await userEvent.click(await screen.findByText("Azure Interior"));
+    expect(await screen.findByRole("heading", { name: "Azure Interior" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open in Odoo" }).getAttribute("href")).toBe(
+      "/odoo/res.partner/14",
+    );
   });
 });
 

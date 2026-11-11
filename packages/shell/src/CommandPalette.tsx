@@ -1,4 +1,4 @@
-import { type MenuNode, menuPath, useMenus } from "@novi/engine";
+import { type MenuNode, menuPath, useMenus, useRecordSearch } from "@novi/engine";
 import {
   CommandDialog,
   CommandEmpty,
@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 import { AppIcon } from "./AppIcon";
 import { menuUrl } from "./urls";
+import { useDebounced } from "./useDebounced";
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function CommandPalette({ open, onOpenChange, query, onQueryChange }: Com
   const t = useT();
   const navigate = useNavigate();
   const menus = useMenus();
+  const records = useRecordSearch(useDebounced(query));
 
   const entries = useMemo(() => {
     if (!menus.data) return { apps: [], items: [] as { node: MenuNode; path: string[] }[] };
@@ -51,7 +53,8 @@ export function CommandPalette({ open, onOpenChange, query, onQueryChange }: Com
     <CommandDialog open={open} onOpenChange={onOpenChange} filter={wordFilter}>
       <CommandInput placeholder={t("searchEverything")} value={query} onValueChange={onQueryChange} />
       <CommandList>
-        <CommandEmpty />
+        {/* local "no results" only counts locally-filtered items, so hide it when Odoo found records */}
+        {records.data?.length || records.isFetching ? null : <CommandEmpty />}
         <CommandGroup heading={t("apps")}>
           {entries.apps.map((app) => (
             <CommandItem
@@ -78,6 +81,25 @@ export function CommandPalette({ open, onOpenChange, query, onQueryChange }: Com
             </CommandItem>
           ))}
         </CommandGroup>
+        {records.data?.map((g) => (
+          <CommandGroup key={g.model} heading={g.label} forceMount>
+            {g.hits.map((h) => (
+              // Odoo already matched these (name, email, reference…): don't re-filter them locally
+              <CommandItem
+                key={`${h.model}-${h.id}`}
+                forceMount
+                value={`${h.name}${ID_SEP}rec-${h.model}-${h.id}`}
+                onSelect={() => {
+                  navigate(`/record/${h.model}/${h.id}`);
+                  onOpenChange(false);
+                }}
+              >
+                {h.name}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ))}
+        {records.isFetching ? <p className="px-3 py-2 text-sm text-text-muted">{t("searching")}</p> : null}
       </CommandList>
     </CommandDialog>
   );

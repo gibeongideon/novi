@@ -330,7 +330,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 ### P1.13 Command palette (⌘K)
 - [x] P1.13.1 Search menus and actions (type anywhere, ⌘K/Ctrl+K or the top-bar search button; apps + every menu by full path; word matching instead of fuzzy; D-24)
-- [ ] P1.13.2 Search records (global `web_name_search` across key models)
+- [x] P1.13.2 Search records (global `web_name_search` across key models) (Odoo `web_name_search` over contacts, sales/purchase orders, invoices, leads, products, employees; Odoo's model names as headings; skips models not installed or not readable; 250 ms debounce; opens `/record/:model/:id`; verified live)
 - [ ] P1.13.3 Recent items and quick commands (new invoice, new lead…)
 
 **Done when:** ⌘K opens any menu or record in ≤ 3 keystrokes after typing.

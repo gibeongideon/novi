@@ -17,6 +17,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
+import { modelLabels, type RecordGroup, SEARCHABLE_MODELS, searchRecords } from "./recordSearch.js";
 
 /** What the hooks need from a transport (JsonRpcTransport satisfies it). */
 export interface SessionTransport {
@@ -26,6 +27,11 @@ export interface SessionTransport {
   loadMenus(lang?: string): Promise<Record<string, unknown>>;
   loadAction<T = Record<string, unknown>>(actionId: number | string): Promise<T>;
   setContext(patch: Record<string, unknown>): void;
+  call<T = unknown>(
+    model: string,
+    method: string,
+    call?: { ids?: number[]; kwargs?: Record<string, unknown> },
+  ): Promise<T>;
 }
 
 interface EngineContextValue {
@@ -189,4 +195,40 @@ export function useCompanies() {
   );
 
   return { companies: allowedCompanies(info), active, setActive };
+}
+
+/** Records matching `query` across the searchable models (P1.13.2). Debounce the query in the UI. */
+export function useRecordSearch(query: string) {
+  const { transport } = useEngine();
+  const { info } = useSession();
+  const labels = useQuery({
+    queryKey: ["model-labels", info?.uid, info?.user_context?.lang],
+    enabled: !!info?.uid,
+    queryFn: () => modelLabels(transport, SEARCHABLE_MODELS),
+    staleTime: Infinity,
+  });
+  const q = query.trim();
+  return useQuery({
+    queryKey: ["record-search", q],
+    enabled: q.length >= 2 && !!labels.data,
+    queryFn: (): Promise<RecordGroup[]> => searchRecords(transport, q, labels.data!),
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+  });
+}
+
+/** Display name of one record (record page title until the form view lands in P2). */
+export function useRecordName(model: string | undefined, id: number | undefined) {
+  const { transport } = useEngine();
+  return useQuery({
+    queryKey: ["record-name", model, id],
+    enabled: !!model && !!id,
+    queryFn: async () => {
+      const [rec] = await transport.call<{ display_name: string }[]>(model!, "web_read", {
+        ids: [id!],
+        kwargs: { specification: { display_name: {} } },
+      });
+      return rec?.display_name ?? null;
+    },
+  });
 }

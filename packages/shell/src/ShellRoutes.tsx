@@ -9,12 +9,14 @@ import { LoginPage } from "./LoginPage";
 import { menuUrl } from "./urls";
 
 const ActionPage = lazy(() => import("./ActionPage").then((m) => ({ default: m.ActionPage })));
+const RecordPage = lazy(() => import("./RecordPage").then((m) => ({ default: m.RecordPage })));
 
 /**
  * URL scheme (deep-linkable, survives reload):
  *   /                          app launcher
  *   /apps/:appId               opens the app's first action
  *   /action/:actionId?menu=ID  an action, with the menu that opened it (sidebar + breadcrumbs)
+ *   /record/:model/:id         one record (from search; native form view in P2)
  */
 export function ShellRoutes({ productName }: { productName?: string }) {
   const { status } = useSession();
@@ -30,6 +32,14 @@ export function ShellRoutes({ productName }: { productName?: string }) {
           element={
             <Suspense fallback={<Skeleton className="m-6 h-8 w-48" />}>
               <ActionPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/record/:model/:id"
+          element={
+            <Suspense fallback={<Skeleton className="m-6 h-8 w-48" />}>
+              <RecordPage />
             </Suspense>
           }
         />

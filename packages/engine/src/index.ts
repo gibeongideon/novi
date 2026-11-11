@@ -2,4 +2,5 @@
 export * from "./companies.js";
 export * from "./format.js";
 export * from "./menus.js";
+export * from "./recordSearch.js";
 export * from "./session.js";
