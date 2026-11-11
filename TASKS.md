@@ -157,7 +157,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P0.11.3 Bootstrap the admin user, company name, country and currency via RPC
 - [x] P0.11.4 Start a tenant Odoo container with its own filestore volume and config
 - [x] P0.11.5 Time each step; record total time and resource usage (RAM/CPU idle and under load): 160 s, 158 MB idle, 70 MB DB (D-16)
-- [x] P0.11.6 Write the result to DECISIONS.md (target is < 5 min)
+- [x] P0.11.6 Write the result to DECISIONS.md (target is < 5 min): 160 s install path, **8–13 s** template path (D-16, D-18)
 
 **Done when:** one script creates a fresh, isolated, log-in-able tenant and the timings are recorded.
 
@@ -237,6 +237,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P1.4.8 Idempotency: every step is safe to re-run
 - [ ] P1.4.9 Compensation / rollback for each step on failure; status `failed` + alert
 - [ ] P1.4.10 Admin action: retry a failed provisioning from its last step
+- [ ] P1.4.11 Template DB per (plan, country) + clone fast path from `tools/spikes/provision-tenant.sh` (D-18); rebuild templates on image/plan change
 
 **Done when:** sign-up results in an active tenant in < 5 min, and a forced failure rolls back cleanly.
 
