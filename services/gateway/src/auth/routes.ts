@@ -50,8 +50,9 @@ export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig):
     return reply.header("Set-Cookie", cookies).send({ status: "ok" });
   };
 
-  const denied = (reply: FastifyReply, message: string) =>
-    reply.code(401).send({ status: "denied", message });
+  /** `reason` lets the UI show its own translated message; `message` is Odoo's/diagnostic text. */
+  const denied = (reply: FastifyReply, reason: "credentials" | "code" | "expired", message: string) =>
+    reply.code(401).send({ status: "denied", reason, message });
 
   app.post<{ Body: { login?: string; password?: string } }>("/api/auth/login", async (req, reply) => {
     const { login, password } = req.body ?? {};
