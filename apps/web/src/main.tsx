@@ -1,6 +1,6 @@
 import "@novi/ui/styles.css";
 
-import { EngineProvider } from "@novi/engine";
+import { EngineProvider, gatewayAuth } from "@novi/engine";
 import { JsonRpcTransport } from "@novi/odoo-client";
 import { ShellRoutes } from "@novi/shell";
 import { ThemeProvider, Toaster, TooltipProvider } from "@novi/ui";
@@ -21,7 +21,7 @@ createRoot(el).render(
   <StrictMode>
     <ThemeProvider>
       <TooltipProvider>
-        <EngineProvider transport={transport} db={db}>
+        <EngineProvider transport={transport} db={db} auth={gatewayAuth()}>
           <BrowserRouter>
             <ShellRoutes />
           </BrowserRouter>

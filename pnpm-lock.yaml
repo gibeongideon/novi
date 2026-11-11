@@ -418,6 +418,9 @@ importers:
 
   services/gateway:
     dependencies:
+      '@novi/odoo-client':
+        specifier: workspace:*
+        version: link:../../packages/odoo-client
       fastify:
         specifier: ^5.2.0
         version: 5.12.8
@@ -429,6 +432,9 @@ importers:
       '@novi/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@novi/gateway':
+        specifier: workspace:*
+        version: link:../../services/gateway
       '@novi/odoo-client':
         specifier: workspace:*
         version: link:../../packages/odoo-client

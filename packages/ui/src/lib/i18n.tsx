@@ -62,8 +62,16 @@ export const en = {
   menu: "Menu",
   openInOdoo: "Open in Odoo",
   nativeViewSoon: "NOVI will render this screen natively in Phase 2. Until then you can open it in Odoo.",
-  twoFactorNotYet:
-    "Two-factor sign-in arrives with the gateway (P1.6). Use Odoo's own login for this account for now.",
+  wrongCredentials: "Wrong email or password.",
+  twoFactorCode: "Authentication code",
+  twoFactorHelp: "Open your authenticator app and enter the 6-digit code.",
+  rememberDevice: "Don't ask again on this device",
+  verify: "Verify",
+  wrongCode: "That code didn't work. Use the latest code from your app.",
+  signInExpired: "Your sign-in timed out. Please enter your password again.",
+  twoFactorUnsupported: "This account uses two-factor sign-in, which needs the NOVI gateway.",
+  signInFailed: "Sign-in failed. Please try again.",
+  back: "Back",
   noAction: "This menu has no screen of its own.",
 } as const;
 

@@ -119,7 +119,11 @@ export class Http {
     req.signal?.addEventListener("abort", onAbort, { once: true });
     const timer = setTimeout(() => ctrl.abort(new Error("timeout")), this.timeoutMs);
 
-    const headers: Record<string, string> = { Accept: "application/json", ...req.headers };
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...this.opts.headers,
+      ...req.headers,
+    };
     let payload: string | undefined;
     if (req.form) {
       headers["Content-Type"] = "application/x-www-form-urlencoded";

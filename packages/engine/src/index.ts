@@ -1,4 +1,5 @@
 /** @novi/engine: headless runtime (formatter, session, menus, actions). Only layer that talks to Odoo. */
+export * from "./auth.js";
 export * from "./companies.js";
 export * from "./format.js";
 export * from "./menus.js";

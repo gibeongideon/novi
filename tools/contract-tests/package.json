@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@novi/odoo-client": "workspace:*",
-    "@novi/engine": "workspace:*"
+    "@novi/engine": "workspace:*",
+    "@novi/gateway": "workspace:*"
   },
   "devDependencies": {
     "@types/ws": "^8.5.13",

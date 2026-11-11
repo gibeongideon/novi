@@ -10,7 +10,9 @@ import { defineConfig } from "vite";
 const ODOO = process.env.ODOO_URL ?? "http://127.0.0.1:18069";
 const ODOO_WS = process.env.ODOO_WS_URL ?? "ws://127.0.0.1:18072";
 const toOdoo = { target: ODOO, changeOrigin: true };
+const GATEWAY = process.env.GATEWAY_URL ?? "http://127.0.0.1:4000";
 const proxy = {
+  "/api": { target: GATEWAY, changeOrigin: false },
   "/web": toOdoo,
   "/json": toOdoo,
   "/mail": toOdoo,

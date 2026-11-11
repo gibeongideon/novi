@@ -15,10 +15,10 @@ fi
 cat <<'MSG'
 
   NOVI dev servers (keep this terminal open; Ctrl+C stops them)
-    web app    http://localhost:5173
+    web app    http://localhost:5173   (sign-in via the gateway on :4000, incl. 2FA)
     storybook  http://localhost:6006   (ready ~15 s after start)
     progress   http://localhost:4321
     odoo       http://localhost:18069  (admin / admin)
 
 MSG
-exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/ui --filter=@novi/progress-dashboard "$@"
+exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/ui --filter=@novi/gateway --filter=@novi/progress-dashboard "$@"

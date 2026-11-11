@@ -3,7 +3,7 @@
  * Same-domain mode (D-03): the browser talks to Odoo through the app's own origin, so the
  * session cookie is Odoo's own. Gateway mode later swaps the transport, not these hooks.
  */
-import { SessionExpiredError, type SessionInfo, TwoFactorRequiredError } from "@novi/odoo-client";
+import { SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
 import {
   MutationCache,
   QueryCache,
@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
+import { type AuthClient, directAuth, LoginError, type LoginResult } from "./auth.js";
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
 import { modelLabels, type RecordGroup, SEARCHABLE_MODELS, searchRecords } from "./recordSearch.js";
@@ -37,6 +38,8 @@ export interface SessionTransport {
 interface EngineContextValue {
   transport: SessionTransport;
   db: string;
+  /** How users sign in; defaults to straight-to-Odoo (no 2FA). Apps pass gatewayAuth(). */
+  auth?: AuthClient;
 }
 
 const EngineContext = createContext<EngineContextValue | null>(null);
@@ -44,6 +47,7 @@ const EngineContext = createContext<EngineContextValue | null>(null);
 export function EngineProvider({
   transport,
   db,
+  auth,
   children,
   queryClient,
 }: EngineContextValue & { children: ReactNode; queryClient?: QueryClient }) {
@@ -61,7 +65,7 @@ export function EngineProvider({
     return c;
   });
   return (
-    <EngineContext.Provider value={{ transport, db }}>
+    <EngineContext.Provider value={{ transport, db, auth: auth ?? directAuth(transport, db) }}>
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     </EngineContext.Provider>
   );
@@ -75,13 +79,8 @@ function useEngine(): EngineContextValue {
 
 export type SessionStatus = "loading" | "anonymous" | "authenticated";
 
-export interface LoginError {
-  kind: "credentials" | "two-factor" | "other";
-  message: string;
-}
-
 export function useSession() {
-  const { transport, db } = useEngine();
+  const { transport, auth } = useEngine();
   const qc = useQueryClient();
   const query = useQuery({
     queryKey: ["session"],
@@ -95,13 +94,34 @@ export function useSession() {
       }
     },
   });
+
+  /** After a successful sign-in the browser holds Odoo's session cookie: load it. */
+  const signedIn = async () => {
+    const info = await transport.getSessionInfo({ retry: false });
+    // drop the previous user's cached data, keep (and update) the session entry screens observe
+    qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "session" });
+    qc.setQueryData(["session"], info);
+  };
+
   const login = useMutation({
-    mutationFn: ({ login, password }: { login: string; password: string }) =>
-      transport.authenticate(login, password, db),
-    onSuccess: (info) => {
-      // drop the previous user's cached data, keep (and update) the session entry screens observe
-      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "session" });
-      qc.setQueryData(["session"], info);
+    mutationFn: async ({ login, password }: { login: string; password: string }): Promise<LoginResult> => {
+      const res = await auth!.login(login, password);
+      if (res.status === "ok") await signedIn();
+      return res;
+    },
+  });
+  const verifyCode = useMutation({
+    mutationFn: async ({
+      challenge,
+      code,
+      remember,
+    }: {
+      challenge: string;
+      code: string;
+      remember: boolean;
+    }) => {
+      await auth!.verifyCode(challenge, code, remember);
+      await signedIn();
     },
   });
   const logout = useMutation({
@@ -113,24 +133,25 @@ export function useSession() {
   });
 
   const status: SessionStatus = query.isPending ? "loading" : query.data ? "authenticated" : "anonymous";
+  const failure = (err: unknown) =>
+    err instanceof LoginError
+      ? { reason: err.reason, message: err.message }
+      : err
+        ? { reason: "other" as const, message: String((err as Error).message ?? err) }
+        : null;
   return {
     status,
     info: query.data ?? null,
     login: login.mutateAsync,
-    loggingIn: login.isPending,
-    loginError: login.error ? describeLoginError(login.error) : null,
+    verifyCode: verifyCode.mutateAsync,
+    pending: login.isPending || verifyCode.isPending,
+    loginError: failure(login.error ?? verifyCode.error),
+    resetLogin: () => {
+      login.reset();
+      verifyCode.reset();
+    },
     logout: logout.mutate,
   };
-}
-
-/** Maps transport errors to what a login screen shows (messages come from Odoo when it has one). */
-export function describeLoginError(err: unknown): LoginError {
-  if (err instanceof TwoFactorRequiredError) {
-    return { kind: "two-factor", message: "This account uses two-factor authentication." };
-  }
-  const name = (err as { odooName?: string })?.odooName ?? "";
-  if (name.endsWith("AccessDenied")) return { kind: "credentials", message: (err as Error).message };
-  return { kind: "other", message: (err as Error)?.message ?? String(err) };
 }
 
 /** Menu tree of the logged-in user (cached per user + language). */

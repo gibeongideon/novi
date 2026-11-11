@@ -200,8 +200,8 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Goal:** a customer signs up, gets their own Odoo and database, logs in, and browses real menus in the new UI.
 
 ### P1.1 Gateway service foundation
-- [ ] P1.1.1 Fastify app with structured logging (pino), request IDs, health/readiness endpoints
-- [ ] P1.1.2 Config loading (env + schema validation), secrets from a vault or KMS
+- [~] P1.1.1 Fastify app with structured logging (pino), request IDs, health/readiness endpoints *(partly: Fastify app, health/readiness, config, trusted proxy; structured logging defaults; request-id/OpenAPI when there are more endpoints)*
+- [~] P1.1.2 Config loading (env + schema validation), secrets from a vault or KMS *(partly: config from env; secrets vault when there are secrets to keep, i.e. the session vault P1.7)*
 - [ ] P1.1.3 Gateway Postgres schema and migrations (tenants, users, sessions, prefs, audit)
 - [ ] P1.1.4 Redis connection (cache, rate limits, job queue)
 - [ ] P1.1.5 OpenAPI spec for the gateway's own endpoints
@@ -253,12 +253,12 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** two tenants run side by side in staging with no network path between them.
 
 ### P1.6 Auth bridge
-- [ ] P1.6.1 Password login → Odoo `authenticate` → issue our own session (httpOnly JWT cookie + refresh)
-- [ ] P1.6.2 2FA login using the approach chosen in P0.10
+- [x] P1.6.1 Password login → Odoo `authenticate` → issue our own session (httpOnly JWT cookie + refresh) (same-domain mode: gateway checks the password with Odoo and hands the browser Odoo's own `session_id` cookie; NOVI's own JWT session arrives with the vault mode P1.7)
+- [x] P1.6.2 2FA login using the approach chosen in P0.10 (gateway relays Odoo's TOTP step; trusted devices via `td_id`; real browser User-Agent forwarded; verified in a browser and by live tests)
 - [ ] P1.6.3 Logout everywhere (our session + Odoo `destroy`)
 - [ ] P1.6.4 Session expiry and silent refresh; 401 → redirect to login
 - [ ] P1.6.5 Password reset (relay to Odoo's `auth_signup` reset flow)
-- [ ] P1.6.6 Brute-force protection and lockout
+- [~] P1.6.6 Brute-force protection and lockout *(partly: the gateway forwards each user's real IP (`X-Forwarded-For`, Odoo `proxy_mode`) so Odoo's own per-IP login cooldown works; a gateway-side limit comes with P1.8.3)*
 
 **Done when:** normal and 2FA users can log in and out, and expired sessions recover.
 
@@ -338,6 +338,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P1.14 SSO
 - [ ] P1.14.1 OAuth providers via Odoo `auth_oauth` redirect flow, then session capture
 - [ ] P1.14.2 Google and Microsoft tested
+- [ ] P1.14.3 Option for enterprise customers: Keycloak (or similar) as the identity provider through Odoo's stock `auth_oauth`; only if a customer needs corporate SSO (extra server, Musk step 2)
 
 **Done when:** a user can log in with Google into a tenant.
 

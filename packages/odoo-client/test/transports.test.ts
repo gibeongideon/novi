@@ -197,6 +197,19 @@ describe("JsonRpcTransport", () => {
   });
 });
 
+describe("default headers", () => {
+  it("are sent with every request; per-request headers win", async () => {
+    const { fetch, calls } = mockFetch(() => rpcResult(1));
+    const t = new JsonRpcTransport({
+      baseUrl: "http://o",
+      fetch,
+      headers: { "X-Forwarded-For": "41.90.1.2" },
+    });
+    await t.call("x", "search_count", { kwargs: { domain: [] } });
+    expect((calls[0]!.init.headers as Record<string, string>)["X-Forwarded-For"]).toBe("41.90.1.2");
+  });
+});
+
 describe("Json2Transport", () => {
   it("posts named args with bearer auth and database header", async () => {
     const { fetch, calls } = mockFetch(() => json([{ id: 7, name: "Azure" }]));

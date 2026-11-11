@@ -53,6 +53,11 @@ export interface TransportOptions extends TransportHooks {
   context?: OdooContext;
   /** Custom fetch (tests, Node polyfills). Defaults to globalThis.fetch. */
   fetch?: typeof fetch;
+  /**
+   * Headers sent with every request. The gateway uses it to pass the end user's IP
+   * (`X-Forwarded-For`, so Odoo's per-IP login cooldown never locks everyone out) and User-Agent.
+   */
+  headers?: Record<string, string>;
   retry?: Partial<RetryPolicy>;
   /** Request timeout in ms (default 60 000). */
   timeoutMs?: number;

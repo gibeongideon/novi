@@ -6,6 +6,9 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 
 ## Unreleased
 
+### 2026-11-12
+- [P1.6.2] Gateway first slice (D-26): two-factor sign-in in the browser (password → authenticator code, "don't ask again on this device"), Odoo session handed to the browser, real user IP/User-Agent forwarded to Odoo; login screen with friendly translated messages; `pnpm dev` now also starts the gateway; live tests for login, wrong password, 2FA, trusted device and single-use challenges.
+
 ### 2026-11-11
 - [P1.13.2] Record search in the palette: Odoo's own name search across key business models, grouped under Odoo's model names, access-aware; record page with Open in Odoo until the form view lands.
 - [P1.12.2] Company switcher (Odoo's `allowed_company_ids` + `cids` cookie), verified live; [P1.12.5] per-screen error boundary and automatic return to login when the Odoo session expires. Deferred with reasons: language switcher, notification centre, preferences screen, error dialog (→ P2.8.9), useFormat (→ P2.13.15).

@@ -1,4 +1,4 @@
-import { EngineProvider, type SessionTransport } from "@novi/engine";
+import { type AuthClient, EngineProvider, LoginError, type SessionTransport } from "@novi/engine";
 import { AccessDenied, SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
 import { I18nProvider, ThemeProvider, TooltipProvider } from "@novi/ui";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -140,9 +140,9 @@ function fakeOdoo(loggedIn = false): FakeOdoo {
   };
 }
 
-function renderShell(transport: SessionTransport, path = "/") {
+function renderShell(transport: SessionTransport, path = "/", auth?: AuthClient) {
   return render(
-    <EngineProvider transport={transport} db="novi_demo">
+    <EngineProvider transport={transport} db="novi_demo" auth={auth}>
       <ThemeProvider>
         <I18nProvider>
           <TooltipProvider>
@@ -188,7 +188,7 @@ describe("shell", () => {
     await userEvent.type(await screen.findByLabelText("Email or login"), "admin");
     await userEvent.type(screen.getByLabelText("Password"), "nope");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Wrong login/password");
+    expect((await screen.findByRole("alert")).textContent).toBe("Wrong email or password.");
   });
 
   it("deep links survive a reload (menu from the URL)", async () => {
@@ -197,6 +197,41 @@ describe("shell", () => {
     await waitFor(() =>
       expect(screen.getByRole("navigation", { name: "Breadcrumb" }).textContent).toBe("SalesOrdersCustomers"),
     );
+  });
+});
+
+describe("two-factor sign-in via the gateway (P1.6.2)", () => {
+  it("asks for the code after the password, then signs in; a wrong code shows a clear message", async () => {
+    const odoo = fakeOdoo();
+    const calls: string[] = [];
+    const auth: AuthClient = {
+      async login(login, password) {
+        calls.push(`login:${login}:${password}`);
+        return { status: "twoFactor", challenge: "c1" };
+      },
+      async verifyCode(challenge, code, remember) {
+        calls.push(`code:${challenge}:${code}:${remember}`);
+        if (code !== "123456") throw new LoginError("code", "Verification failed");
+        await odoo.authenticate("twofa", "admin"); // the gateway handed the browser Odoo's session
+      },
+    };
+    renderShell(odoo, "/", auth);
+    await userEvent.type(await screen.findByLabelText("Email or login"), "twofa");
+    await userEvent.type(screen.getByLabelText("Password"), "pw");
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    const code = await screen.findByLabelText("Authentication code");
+    await userEvent.type(code, "000000");
+    await userEvent.click(screen.getByRole("button", { name: "Verify" }));
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "That code didn't work. Use the latest code from your app.",
+    );
+
+    await userEvent.clear(code);
+    await userEvent.type(code, "123456");
+    await userEvent.click(screen.getByRole("button", { name: "Verify" }));
+    expect(await screen.findByRole("link", { name: "Sales" })).toBeTruthy();
+    expect(calls).toEqual(["login:twofa:pw", "code:c1:000000:true", "code:c1:123456:true"]);
   });
 });
 
