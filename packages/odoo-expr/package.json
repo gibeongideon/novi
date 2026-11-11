@@ -1,0 +1,24 @@
+{
+  "name": "@novi/odoo-expr",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Evaluator for Odoo Python expressions and domains used in view arch",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  }
+}

@@ -1,0 +1,8 @@
+dist
+coverage
+.turbo
+.cache
+pnpm-lock.yaml
+docs/coverage
+deploy/staging/progress
+*.md

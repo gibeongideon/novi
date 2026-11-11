@@ -1,0 +1,27 @@
+{
+  "name": "@novi/odoo-meta",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Odoo view arch XML → normalized ViewSchema, plus field specification builder",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@novi/odoo-expr": "workspace:*"
+  }
+}

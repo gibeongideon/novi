@@ -12,3 +12,6 @@ coverage/
 
 # Generated in CI
 deploy/staging/progress/
+
+# Local caches (Odoo build context, etc.)
+.cache/

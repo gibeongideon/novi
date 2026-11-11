@@ -1,0 +1,28 @@
+{
+  "name": "@novi/app-hr",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Bespoke HR screens (overrides)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@novi/engine": "workspace:*",
+    "@novi/views": "workspace:*"
+  }
+}

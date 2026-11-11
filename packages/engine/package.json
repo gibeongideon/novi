@@ -1,0 +1,29 @@
+{
+  "name": "@novi/engine",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Headless runtime: records, onchange, save, actions, routing, access",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@novi/odoo-client": "workspace:*",
+    "@novi/odoo-meta": "workspace:*",
+    "@novi/odoo-expr": "workspace:*"
+  }
+}
