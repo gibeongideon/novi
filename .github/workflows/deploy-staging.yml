@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 50   # recent commits shown on the dashboard
+          fetch-depth: 50 # recent commits shown on the dashboard
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -57,7 +57,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          fingerprint: ${{ secrets.VPS_FINGERPRINT }}   # refuse to deploy to an unverified host
+          fingerprint: ${{ secrets.VPS_FINGERPRINT }} # refuse to deploy to an unverified host
           source: "deploy/staging/progress"
           target: "/opt/novi/incoming"
           strip_components: 3

@@ -1,0 +1,10 @@
+# Keep build contexts small: never send the Odoo tarball or local caches to Docker.
+*.tar.gz
+.cache
+.git
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+deploy/staging/progress
+docs/coverage

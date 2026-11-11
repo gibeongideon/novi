@@ -3,9 +3,9 @@
 // Usage: node tools/progress-dashboard/build.mjs [--root .] [--out dist/progress]
 // Zero dependencies on purpose: it runs in CI before the monorepo exists.
 
-import { readFileSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
 import { execSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
 const arg = (name, def) => {
@@ -17,7 +17,10 @@ const out = resolve(arg("--out", "dist/progress"));
 
 const read = (f) => (existsSync(join(root, f)) ? readFileSync(join(root, f), "utf8") : "");
 const esc = (s) =>
-  String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  String(s).replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+  );
 // Minimal inline markdown: `code`, **bold**, [text](link) → text
 const inline = (s) =>
   esc(s)
@@ -53,7 +56,7 @@ function parseTasks(md) {
       task = { id: m[1], title: m[2].trim(), items: [], doneWhen: "" };
       phase.tasks.push(task);
       inGate = false;
-    } else if ((m = line.match(/^- \[([ x~!\-])\]\s+(.+)$/))) {
+    } else if ((m = line.match(/^- \[([ x~!-])\]\s+(.+)$/))) {
       const item = { mark: m[1], text: m[2] };
       if (inGate) phase.gate.push(item);
       else if (task) task.items.push(item);
@@ -66,11 +69,13 @@ function parseTasks(md) {
       const live = t.items.filter((i) => i.mark !== "-");
       t.total = live.length;
       t.done = live.filter((i) => i.mark === "x").length;
-      t.status =
-        t.items.some((i) => i.mark === "!") ? "blocked"
-        : t.total > 0 && t.done === t.total ? "done"
-        : t.done > 0 || t.items.some((i) => i.mark === "~") ? "progress"
-        : "todo";
+      t.status = t.items.some((i) => i.mark === "!")
+        ? "blocked"
+        : t.total > 0 && t.done === t.total
+          ? "done"
+          : t.done > 0 || t.items.some((i) => i.mark === "~")
+            ? "progress"
+            : "todo";
     }
     p.subTotal = p.tasks.reduce((a, t) => a + t.total, 0);
     p.subDone = p.tasks.reduce((a, t) => a + t.done, 0);
@@ -78,9 +83,11 @@ function parseTasks(md) {
     p.gateDone = p.gate.filter((g) => g.mark === "x").length;
     p.pct = p.subTotal ? Math.round((p.subDone / p.subTotal) * 100) : 0;
     p.status =
-      p.gate.length && p.gateDone === p.gate.length ? "done"
-      : p.subDone > 0 || p.tasks.some((t) => t.status !== "todo") ? "progress"
-      : "todo";
+      p.gate.length && p.gateDone === p.gate.length
+        ? "done"
+        : p.subDone > 0 || p.tasks.some((t) => t.status !== "todo")
+          ? "progress"
+          : "todo";
   }
   return phases;
 }
@@ -112,10 +119,13 @@ function parseChangelog(md, limit = 15) {
 
 function gitLog(limit = 15) {
   try {
-    const raw = execSync(`git -C "${root}" log -n ${limit} --pretty=format:%h%x09%ad%x09%an%x09%s --date=short`, {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
+    const raw = execSync(
+      `git -C "${root}" log -n ${limit} --pretty=format:%h%x09%ad%x09%an%x09%s --date=short`,
+      {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    );
     return raw
       .split("\n")
       .filter(Boolean)
@@ -174,7 +184,10 @@ const phaseCards = phases
       )
       .join("");
     const gate = p.gate
-      .map((g) => `<li class="${g.mark === "x" ? "mx" : "mo"}"><span class="box">${g.mark === "x" ? "✓" : ""}</span><span>${inline(g.text)}</span></li>`)
+      .map(
+        (g) =>
+          `<li class="${g.mark === "x" ? "mx" : "mo"}"><span class="box">${g.mark === "x" ? "✓" : ""}</span><span>${inline(g.text)}</span></li>`,
+      )
       .join("");
     return `
     <section class="phase ${p.status}${p === current ? " current" : ""}" id="phase-${p.num}">
@@ -325,15 +338,22 @@ writeFileSync(
       tasks: { done: allTasksDone, total: allTasks },
       steps: { done: allDone, total: allSub },
       currentPhase: current?.num ?? null,
-      phases: phases.map(({ num, title, pct, status, tasksDone, subDone, subTotal, gateDone, gate, tasks }) => ({
-        num, title, pct, status,
-        tasks: { done: tasksDone, total: tasks.length },
-        steps: { done: subDone, total: subTotal },
-        gate: { done: gateDone, total: gate.length },
-      })),
+      phases: phases.map(
+        ({ num, title, pct, status, tasksDone, subDone, subTotal, gateDone, gate, tasks }) => ({
+          num,
+          title,
+          pct,
+          status,
+          tasks: { done: tasksDone, total: tasks.length },
+          steps: { done: subDone, total: subTotal },
+          gate: { done: gateDone, total: gate.length },
+        }),
+      ),
     },
     null,
     2,
   ),
 );
-console.log(`Progress dashboard → ${join(out, "index.html")} (overall ${overall}%, ${allTasksDone}/${allTasks} tasks, ${phases.length} phases)`);
+console.log(
+  `Progress dashboard → ${join(out, "index.html")} (overall ${overall}%, ${allTasksDone}/${allTasks} tasks, ${phases.length} phases)`,
+);
