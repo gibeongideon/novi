@@ -2,22 +2,9 @@ name: Contract tests (live Odoo 20)
 
 # Runs the API contract suite against the stock Odoo 20 image (private GHCR package, built
 # from the tarball with infra/images/odoo20). Catches Odoo API drift and client regressions.
+# Disabled until the MVP (D-21): the live suite runs locally with `pnpm verify`.
+# To re-enable: push the image (infra/images/odoo20/push.sh) and restore push/pull_request triggers.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "packages/odoo-client/**"
-      - "tools/contract-tests/**"
-      - "infra/compose/**"
-      - "infra/images/odoo20/**"
-      - ".github/workflows/contract.yml"
-  pull_request:
-    paths:
-      - "packages/odoo-client/**"
-      - "tools/contract-tests/**"
-      - "infra/compose/**"
-  schedule:
-    - cron: "0 4 * * 1" # weekly, to catch image/infra drift
   workflow_dispatch:
 
 concurrency:

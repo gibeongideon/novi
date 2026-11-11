@@ -10,10 +10,10 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 — Foundations (in progress) |
-| **In progress** | Phase 0 close-out: live contract tests in CI (slim Odoo image → private GHCR) |
-| **Next task** | Push the Odoo image to GHCR → `contract.yml` green → Phase 0 ✅ → Phase 1 starts with `P1.1` gateway and `P1.17.4` field contract |
-| **Blockers** | `docker login ghcr.io` needed on the dev machine (token with `write:packages`) |
+| **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
+| **In progress** | — |
+| **Next task** | Phase 1: `P1.17.4` field contract + registries, `P1.10` UI kit, `P1.1` gateway (local-first, D-21) |
+| **Blockers** | — |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-11 |
 
@@ -23,8 +23,8 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 
 | # | Phase | Weeks (sequential) | Est. | Goal | Status | Started | Completed |
 |---|---|---|---|---|---|---|---|
-| 0 | Foundations | 1–3 | 3 w | Repo, local Odoo 20, client library, 2FA and provisioning spikes, live staging | 🟦 In progress | 2026-11-11 | |
-| 1 | Gateway, tenant provisioning & shell | 4–9 | 6 w | Sign-up → own Odoo + own DB; login; browse menus | 🔒 Locked | | |
+| 0 | Foundations | 1–3 | 3 w | Repo, local Odoo 20, client library, 2FA and provisioning spikes, live staging | ✅ Done | 2026-11-11 | 2026-11-11 |
+| 1 | Gateway, tenant provisioning & shell | 4–9 | 6 w | Sign-up → own Odoo + own DB; login; browse menus | 🟦 In progress | 2026-11-11 | |
 | 2 | Engine core | 10–17 | 8 w | Any list/form/kanban opens, edits and saves | 🔒 Locked | | |
 | 3 | Breadth | 18–23 | 6 w | ≥ 90% views native; chatter, reports, realtime | 🔒 Locked | | |
 | 4 | Sales + CRM | 24–28 | 5 w | Bespoke pipeline, quotation editor, dashboards | 🔒 Locked | | |

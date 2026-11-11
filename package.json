@@ -26,7 +26,8 @@
     "test:contract": "pnpm --filter @novi/contract-tests test",
     "scan": "pnpm --filter @novi/coverage-scanner scan",
     "changeset": "changeset",
-    "prepare": "husky"
+    "prepare": "husky",
+    "verify": "bash scripts/verify-local.sh"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",

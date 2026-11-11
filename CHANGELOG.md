@@ -7,6 +7,8 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [—] **Phase 0 closed** (gate ticked or deferred by D-20/D-21). Phase 1 started.
+- [P0.7] Local-first verification: `pnpm verify` starts/seeds local Odoo and runs lint, typecheck, unit and live contract tests and build; contract CI made manual-only until the MVP (D-21).
 - [P0.10.3] 2FA trusted devices verified live (gateway must forward the user's browser User-Agent).
 - [P0.7] CI workflow for live contract tests against the private Odoo image; slimmer two-stage Odoo image; GHCR push script.
 - [—] D-20: Figma kit/design sign-off deferred to the Phase 2 gate, licensing/cost to the Phase 4 gate.

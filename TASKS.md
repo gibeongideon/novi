@@ -29,8 +29,8 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
-| 0 Foundations | 13 | 9 | 🟦 |
-| 1 Gateway, provisioning & shell | 17 | 0 | ⬜ |
+| 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
+| 1 Gateway, provisioning & shell | 17 | 0 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -180,13 +180,13 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P0.13.7 GitHub secrets: `VPS_HOST=68.183.91.240`, `VPS_USER=novi`, `VPS_SSH_KEY` (host keys are pinned in `deploy/staging/known_hosts`; `VPS_FINGERPRINT` no longer used)
 - [x] P0.13.8 DNS: `novi.dafeapp.com` A record → 68.183.91.240 (Cloudflare)
 - [x] P0.13.9 First deploy green; https://novi.dafeapp.com/progress/ loads behind the login
-- [ ] P0.13.10 Get a separate staging server (≥ 8 GB) before P0.3/P1 for Odoo, gateway and web. The MT5 server has no headroom.
+- [-] P0.13.10 Get a separate staging server (≥ 8 GB) for Odoo, gateway and web *(deferred until the MVP, D-21: everything runs locally; the MT5 server only hosts the static dashboard)*
 - [ ] P0.13.11 Fix stale server info in dafeapp (`SERVER_SETUP.md`, `DO_HOST` secret still point to 192.34.61.66)
 
 **Done when:** every push to `main` updates https://novi.dafeapp.com within ~2 min, with no effect on the MT5 bots.
 
 ### Phase 0 Gate
-- [~] Contract suite green in CI against Odoo 20 (27/27 green locally; CI job needs an Odoo service, see P0.7 note)
+- [x] Contract suite green against Odoo 20, run locally with `pnpm verify` (29/29). Running it in CI is deferred until the MVP (D-21)
 - [x] Coverage report for the demo DB committed
 - [x] 2FA approach decided (DECISIONS)
 - [x] Provisioning spike < 5 min, recorded (DECISIONS)
