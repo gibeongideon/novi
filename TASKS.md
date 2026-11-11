@@ -170,21 +170,20 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 **Done when:** a licensing decision and a cost model per tenant are recorded.
 
-### P0.13 Live staging & CI/CD (temporary home on the dafeapp server)
+### P0.13 Live staging & CI/CD (temporary home on the MT5 server)
 - [x] P0.13.1 Progress dashboard generator (`tools/progress-dashboard/build.mjs`) from TASKS/ROADMAP/CHANGELOG + git log
-- [x] P0.13.2 Staging stack `deploy/staging` (Caddy, basic auth, no host ports, memory limits, `edge` network)
-- [x] P0.13.3 GitHub Actions workflow `deploy-staging.yml` (push to `main` → build dashboard → deploy over SSH)
-- [x] P0.13.4 dafeapp side: `novi.dafeapp.com` block in its Caddyfile, caddy joins `edge`, deploy script creates `edge` (uncommitted in the dafeapp repo, waiting for review)
-- [ ] P0.13.5 Create the private GitHub repo, add the remote and push `main`
-- [ ] P0.13.6 Add GitHub secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`
-- [ ] P0.13.7 DNS: `novi.dafeapp.com` A record → dafeapp server IP (Cloudflare)
-- [ ] P0.13.8 Server: create `/opt/novi/.env` (basic-auth user + hash) and the `edge` network
-- [ ] P0.13.9 Commit and deploy the dafeapp change, then confirm dafeapp.com is unaffected
-- [ ] P0.13.10 First NOVI deploy green; https://novi.dafeapp.com/progress/ loads behind the login
-- [ ] P0.13.11 Add staging Odoo 20 (`odoo.novi.dafeapp.com`, `mem_limit`) once P0.3 is done
-- [ ] P0.13.12 Add web + gateway services to staging once they exist (P1)
+- [x] P0.13.2 Server setup script `deploy/staging/setup-server.sh` (unprivileged `novi` user, Caddy site block with backup + validate + graceful reload); tested in a container
+- [x] P0.13.3 GitHub Actions workflow `deploy-staging.yml` (push to `main` → build dashboard → upload as `novi`, host key pinned)
+- [x] P0.13.4 Private GitHub repo created and `main` pushed
+- [-] P0.13.5 dafeapp server: dropped. `192.34.61.66` is a DigitalOcean IP no longer ours (host key changed), so the dafeapp edits were reverted
+- [ ] P0.13.6 Run `setup-server.sh` on the MT5 server (68.183.91.240)
+- [ ] P0.13.7 GitHub secrets: `VPS_HOST`, `VPS_USER=novi`, `VPS_SSH_KEY`, `VPS_FINGERPRINT`
+- [ ] P0.13.8 DNS: `novi.dafeapp.com` A record → 68.183.91.240 (Cloudflare)
+- [ ] P0.13.9 First deploy green; https://novi.dafeapp.com/progress/ loads behind the login
+- [ ] P0.13.10 Get a separate staging server (≥ 8 GB) before P0.3/P1 for Odoo, gateway and web. The MT5 server has no headroom.
+- [ ] P0.13.11 Fix stale server info in dafeapp (`SERVER_SETUP.md`, `DO_HOST` secret still point to 192.34.61.66)
 
-**Done when:** every push to `main` updates https://novi.dafeapp.com within ~2 min, and dafeapp is unaffected.
+**Done when:** every push to `main` updates https://novi.dafeapp.com within ~2 min, with no effect on the MT5 bots.
 
 ### Phase 0 Gate
 - [ ] Contract suite green in CI against Odoo 20

@@ -1,99 +1,69 @@
 # NOVI staging deployment (novi.dafeapp.com)
 
-**Temporary setup until the MVP** (DECISIONS D-12): NOVI runs on the dafeapp server as a separate Docker Compose project. It has no Kubernetes (D-13) and doesn't touch dafeapp's containers, ports, volumes or database.
+**Temporary setup until the MVP** (DECISIONS D-12). NOVI staging lives on the **MT5 server** (`68.183.91.240`, DigitalOcean Bangalore, 2 vCPU / 4 GB). That server is busy with live trading, so NOVI adds **static files only**: no Docker, no new processes, no measurable load. The server's existing native Caddy serves them, next to `braelaspin.dafeapp.com`.
 
-```
-Browser ──HTTPS──▶ dafeapp Caddy (80/443, owns TLS)
-                     ├─ dafeapp.com        → dafeapp web   (unchanged)
-                     └─ novi.dafeapp.com   → novi-proxy:80 over docker network "edge"
-                                               └─ /opt/novi  (compose project "novi")
-                                                    ├─ /progress  live progress dashboard
-                                                    └─ later: web app, gateway, Odoo 20
+```text
+Browser ──HTTPS──▶ Caddy on MT5 server (native, 80/443, automatic TLS)
+                     ├─ braelaspin.dafeapp.com → existing app (unchanged)
+                     └─ novi.dafeapp.com      → /opt/novi/progress  (static, basic auth)
+GitHub push to main ──▶ Actions builds dashboard ──SSH as user "novi"──▶ /opt/novi/progress
 ```
 
-**What happens on every push to `main`:** GitHub Actions builds the progress dashboard from TASKS.md, copies `deploy/staging/*` to `/opt/novi` and runs `docker compose -p novi up -d`. It takes about 1–2 minutes.
+- The deploy key logs in as **`novi`**, an unprivileged user with no sudo who owns only `/opt/novi`. It can't touch the trading bots or other apps.
+- The workflow pins the server's host key (`VPS_FINGERPRINT`), so it will never deploy to an impostor.
+- The **staging Odoo, gateway and web app (P0.3 / P1) will NOT go on this server**, which is already at its memory limit. They need another server (≥ 8 GB) before then.
 
 ---
 
 ## One-time setup
 
-### 1. GitHub repo
-1. Create a **private** repo, e.g. `gibeongideon/novi`, with **no** README, license or .gitignore (the repo already has them).
-2. Locally:
-   ```bash
-   cd ~/Desktop/CODE/NOVI
-   git remote add origin git@github.com:<owner>/novi.git
-   git add -A && git commit -m "P0.13: project plan, tracking and staging CI/CD"
-   git push -u origin main
-   ```
-   The Odoo tarball is excluded by `.gitignore`. Never push it.
+### 1. Server (from your laptop, in the NOVI repo)
+```bash
+cd ~/Desktop/CODE/NOVI
+HASH="$(docker run --rm caddy:2-alpine caddy hash-password --plaintext 'YOUR-PASSWORD')"
+{ printf "export NOVI_AUTH_HASH='%s'\nexport DEPLOY_PUBKEY='%s'\n" "$HASH" "$(cat ~/.ssh/novi_deploy.pub)"
+  cat deploy/staging/setup-server.sh; } | ssh -i ~/.ssh/vps_basket_ed25519 trader@68.183.91.240 'sudo bash -s'
+```
+[`setup-server.sh`](deploy/staging/setup-server.sh):
+- creates the `novi` user and `/opt/novi`
+- authorises the deploy key for that user only
+- backs up `/etc/caddy/Caddyfile`, then appends a `novi.dafeapp.com` block
+- validates the new config and reloads Caddy gracefully; if validation fails, nothing changes
+- prints the host key fingerprint
 
-### 2. GitHub Actions secrets
-In the repo, go to **Settings → Secrets and variables → Actions → New repository secret**:
+It's safe to re-run.
+
+### 2. GitHub secrets
+In the NOVI repo, go to **Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |---|---|
-| `VPS_HOST` | dafeapp server IP (`192.34.61.66`) |
-| `VPS_USER` | SSH user (same as dafeapp's `DO_USER`, e.g. `root`) |
-| `VPS_SSH_KEY` | Private SSH key that can log in as that user. The same key as dafeapp's `DO_SSH_KEY` works, but a dedicated deploy key is better (see below). |
-| `VPS_FINGERPRINT` | The server's **verified** host-key fingerprint (`SHA256:…`). Get it from the DigitalOcean web console: `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` (the middle field). The workflow refuses to deploy without it. |
+| `VPS_HOST` | `68.183.91.240` |
+| `VPS_USER` | `novi` |
+| `VPS_SSH_KEY` | Full output of `cat ~/.ssh/novi_deploy` (including the BEGIN/END lines) |
+| `VPS_FINGERPRINT` | `SHA256:u/Yrr9SHTmXdcbXFCvCBr7DObkdr8D8+Z3Wox+bA258` |
 
-**Recommended dedicated key:**
-```bash
-ssh-keygen -t ed25519 -f ~/.ssh/novi_deploy -C "novi-github-actions" -N ""
-ssh-copy-id -i ~/.ssh/novi_deploy.pub root@192.34.61.66
-cat ~/.ssh/novi_deploy        # paste this into VPS_SSH_KEY
-```
+### 3. DNS (Cloudflare, `dafeapp.com` zone)
+Add `A` record `novi` → `68.183.91.240`, using the **same proxy setting as `braelaspin`**.
 
-### 3. Server
-```bash
-ssh root@192.34.61.66
-mkdir -p /opt/novi && cd /opt/novi
-docker network inspect edge >/dev/null 2>&1 || docker network create edge
-docker run --rm caddy:2-alpine caddy hash-password --plaintext 'CHOOSE-A-PASSWORD'
-nano .env
-```
-Put this in `/opt/novi/.env`, keeping the hash in **single quotes**:
-```env
-NOVI_AUTH_USER=novi
-NOVI_AUTH_HASH='$2a$14$...paste-hash...'
-```
-Also check there's enough free memory: `free -h`. NOVI needs very little now (the Caddy container is capped at 128 MB). Staging Odoo will need about 2 GB later.
-
-### 4. DNS (Cloudflare, where dafeapp.com is managed)
-Add an `A` record: `novi` → `192.34.61.66`, with the same proxy setting as the existing `dafeapp.com` record.
-
-### 5. dafeapp side (one-time, already prepared, uncommitted in the dafeapp repo)
-The changes add 19 lines and remove none:
-- `Caddyfile`: a new `novi.dafeapp.com { reverse_proxy novi-proxy:80 }` block
-- `docker-compose.prod.yml`: `caddy` also joins the external `edge` network
-- `.github/workflows/deploy.yml`: creates the `edge` network before `up`
-
-Review them with `git diff`, commit, and run dafeapp's deploy workflow as usual. When it's done, check that https://dafeapp.com still works.
-
-### 6. First NOVI deploy
-Push to `main`, or run **Actions → Deploy staging → Run workflow**. Then open **https://novi.dafeapp.com** and log in with the basic-auth user. It redirects to `/progress/`.
+### 4. Deploy
+Push to `main`, or go to **Actions → Deploy staging → Run workflow**. Then open **https://novi.dafeapp.com** and log in as `novi`.
 
 ---
 
-## Why dafeapp is safe
-- NOVI publishes **no host ports**, so it can't conflict with 80/443 or anything else.
-- Only `novi-proxy` joins `edge`. NOVI can't reach dafeapp's `web`, `db` or `redis`, which stay on dafeapp's private network.
-- Separate project name (`novi`), folder (`/opt/novi`) and volumes (`novi_*`). `--remove-orphans` only affects the `novi` project.
-- Every NOVI service has a memory/CPU limit.
-- If NOVI is down, only novi.dafeapp.com returns 502. dafeapp.com is unaffected.
-
-## Remove NOVI from this server (when moving after the MVP)
+## Undo / move elsewhere later
 ```bash
-cd /opt/novi && docker compose -p novi down -v && rm -rf /opt/novi
+ssh -i ~/.ssh/vps_basket_ed25519 trader@68.183.91.240
+sudo cp /etc/caddy/Caddyfile.bak-before-novi-* /etc/caddy/Caddyfile && sudo systemctl reload caddy
+sudo userdel -r novi && sudo rm -rf /opt/novi
 ```
-Then remove the `novi.dafeapp.com` block (and optionally the `edge` network lines) from dafeapp's repo, and delete the DNS record.
+Then delete the DNS record and update the GitHub secrets for the new server.
 
 ## Troubleshooting
 | Symptom | Check |
 |---|---|
-| Workflow fails "Missing GitHub secret" | Step 2 |
-| Workflow fails "/opt/novi/.env missing or placeholders" | Step 3 |
-| 502 on novi.dafeapp.com | `docker compose -p novi ps` on the server; is `edge` attached to dafeapp's caddy? `docker network inspect edge` |
-| Certificate error | DNS record (step 4); `docker logs <dafeapp caddy container>` |
-| 401 loop | Hash not in single quotes in `.env`; regenerate it |
+| `Missing GitHub secret …` / key or fingerprint format error | Step 2 |
+| `ssh: handshake failed` | `VPS_USER` must be `novi`; re-run step 1 (it re-installs the key) |
+| Host key mismatch | Server was rebuilt: get the new fingerprint from the provider console, then update `VPS_FINGERPRINT` |
+| Certificate / site not reachable | DNS record (step 3); on the server: `sudo journalctl -u caddy -n 50` |
+| Login keeps asking | Re-run step 1 with a new password (it won't duplicate the block; to change the password, edit the hash in `/etc/caddy/Caddyfile` and `sudo systemctl reload caddy`) |

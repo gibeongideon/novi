@@ -11,7 +11,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 | | |
 |---|---|
 | **Current phase** | Phase 0 — Foundations (in progress) |
-| **In progress** | `P0.13` Live staging & CI/CD (waiting on GitHub repo, secrets, DNS) |
+| **In progress** | `P0.13` Live staging: run setup-server.sh, set GitHub secrets, add DNS |
 | **Next task** | `P0.1` Monorepo setup → first subtask `P0.1.1` |
 | **Blockers** | — |
 | **Open business items** | `P0.12` Odoo Enterprise hosting licence |

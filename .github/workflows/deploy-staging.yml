@@ -1,6 +1,8 @@
 name: Deploy staging (novi.dafeapp.com)
 
-# Every push to main updates the live staging site.
+# Every push to main rebuilds the progress dashboard and publishes it to the staging server.
+# Server: MT5 server (68.183.91.240); its existing native Caddy serves /opt/novi/progress.
+# Static files only (no Docker, no processes) so the trading bots are never affected. See DEPLOYMENT.md.
 on:
   push:
     branches: [main]
@@ -47,36 +49,32 @@ jobs:
             SHA256:*) ;;
             *) echo "::error::VPS_FINGERPRINT must look like SHA256:xxxx (server host key fingerprint)"; exit 1 ;;
           esac
+          [ "$VPS_USER" != "root" ] || { echo "::error::Deploy as the unprivileged 'novi' user, not root"; exit 1; }
 
-      - name: Copy staging bundle to server
+      - name: Upload dashboard
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           fingerprint: ${{ secrets.VPS_FINGERPRINT }}   # refuse to deploy to an unverified host
-          source: "deploy/staging/docker-compose.yml,deploy/staging/Caddyfile,deploy/staging/progress"
-          target: "/opt/novi"
-          strip_components: 2
-          rm: false
+          source: "deploy/staging/progress"
+          target: "/opt/novi/incoming"
+          strip_components: 3
+          rm: true
 
-      - name: Start / update NOVI stack
+      - name: Publish (swap in new version)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          fingerprint: ${{ secrets.VPS_FINGERPRINT }}   # refuse to deploy to an unverified host
+          fingerprint: ${{ secrets.VPS_FINGERPRINT }}
           script: |
             set -euo pipefail
             cd /opt/novi
-            if [ ! -f .env ] || grep -q CHANGE_ME .env; then
-              echo "::error::/opt/novi/.env missing or still has placeholders (see DEPLOYMENT.md step 3)"
-              exit 1
-            fi
-            docker network inspect edge >/dev/null 2>&1 || docker network create edge
-            docker compose -p novi -f docker-compose.yml up -d --remove-orphans
-            # Caddy serves the new dashboard files immediately; reload picks up Caddyfile changes.
-            docker compose -p novi -f docker-compose.yml exec -T novi-proxy caddy reload --config /etc/caddy/Caddyfile || true
-            docker compose -p novi -f docker-compose.yml ps
-            echo "Deployed: https://novi.dafeapp.com/progress/"
+            test -f incoming/index.html
+            rm -rf progress.old
+            if [ -d progress ]; then mv progress progress.old; fi
+            mv incoming progress
+            echo "Published: https://novi.dafeapp.com/progress/"
