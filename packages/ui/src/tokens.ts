@@ -90,8 +90,8 @@ export const motion = {
 } as const;
 
 /**
- * App tile palette (D-23, NOVI's own look): gradient pairs for app icon tiles, white glyph on top.
- * Every `from` keeps ≥ 3:1 contrast with white (tested). Dark scheme uses slightly lifted hues.
+ * App tile palette (D-23, NOVI's own look): one colour per app for its line icon on a white tile.
+ * Every `from` keeps ≥ 3:1 contrast against white (tested). Dark scheme uses lifted hues for dark tiles.
  */
 export const appPalette = {
   light: [

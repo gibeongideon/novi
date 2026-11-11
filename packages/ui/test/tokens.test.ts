@@ -48,7 +48,7 @@ describe("contrast (WCAG 2.1)", () => {
 });
 
 describe("app tile palette", () => {
-  it("light tiles keep the white glyph readable (≥ 3:1 for icons)", () => {
+  it("app colours stay readable as icons on a white tile (≥ 3:1)", () => {
     for (const p of appPalette.light)
       expect(contrastRatio("#ffffff", p.from), p.from).toBeGreaterThanOrEqual(3);
   });

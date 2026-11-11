@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P1.11.1] Simplified modern app icons: white tile, soft shadow, app colour on the line icon only (hover tints the border); icons for To-do, Project and Databases.
 - [P1.11.1] Launcher v3: icon-first gradient tiles in grouped islands that fit on one screen; descriptions moved to tooltips (and screen readers); subtle brand backdrop.
 - [P7.7.2] Performance pass (D-25): Lighthouse on the production build = Performance 96–100, Accessibility 100, Best Practices 100; lazy-loaded search palette and action screen; `sideEffects` for tree-shaking; favicon, meta description, robots noindex; shared dev/preview Odoo proxy.
 - [P1.13.1] Type-anywhere global search (D-24): palette opens on typing, ⌘K/Ctrl+K or the search icon; apps + all menus by path with word matching; launcher hero and search box removed for a cleaner home.

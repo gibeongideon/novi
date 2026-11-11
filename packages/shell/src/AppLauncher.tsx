@@ -58,7 +58,7 @@ export function AppLauncher() {
                         <AppIcon
                           app={app}
                           size="xl"
-                          className="transition duration-fast group-hover:-translate-y-0.5 group-hover:brightness-110 group-active:scale-95 motion-reduce:transform-none"
+                          className="transition duration-fast group-hover:-translate-y-0.5 group-active:scale-95 motion-reduce:transform-none"
                         />
                         <span className="line-clamp-2 text-sm font-medium leading-tight">{app.name}</span>
                       </Link>

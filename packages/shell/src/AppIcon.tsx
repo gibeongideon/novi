@@ -10,7 +10,7 @@ const sizes = {
   xl: "size-16 rounded-[22px] [&_svg]:size-8",
 } as const;
 
-/** NOVI app tile: white glyph on a palette gradient (D-23: not Odoo's artwork). */
+/** NOVI app tile: the app's colour on a simple line icon over a white tile (D-23: not Odoo's artwork). */
 export function AppIcon({
   app,
   size = "md",
@@ -27,7 +27,7 @@ export function AppIcon({
       data-tone={tone}
       className={cn("novi-tile grid shrink-0 place-items-center", sizes[size], className)}
     >
-      <Icon strokeWidth={2} />
+      <Icon strokeWidth={1.75} />
     </span>
   );
 }
