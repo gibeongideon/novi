@@ -36,6 +36,7 @@ In the repo, go to **Settings → Secrets and variables → Actions → New repo
 | `VPS_HOST` | dafeapp server IP (`192.34.61.66`) |
 | `VPS_USER` | SSH user (same as dafeapp's `DO_USER`, e.g. `root`) |
 | `VPS_SSH_KEY` | Private SSH key that can log in as that user. The same key as dafeapp's `DO_SSH_KEY` works, but a dedicated deploy key is better (see below). |
+| `VPS_FINGERPRINT` | The server's **verified** host-key fingerprint (`SHA256:…`). Get it from the DigitalOcean web console: `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` (the middle field). The workflow refuses to deploy without it. |
 
 **Recommended dedicated key:**
 ```bash

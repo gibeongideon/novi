@@ -34,10 +34,19 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_FINGERPRINT: ${{ secrets.VPS_FINGERPRINT }}
         run: |
-          for v in VPS_HOST VPS_USER VPS_SSH_KEY; do
+          for v in VPS_HOST VPS_USER VPS_SSH_KEY VPS_FINGERPRINT; do
             [ -n "${!v}" ] || { echo "::error::Missing GitHub secret $v"; exit 1; }
           done
+          case "$VPS_SSH_KEY" in
+            *"BEGIN OPENSSH PRIVATE KEY"*) ;;
+            *) echo "::error::VPS_SSH_KEY does not look like a private key (paste the full output of: cat ~/.ssh/novi_deploy)"; exit 1 ;;
+          esac
+          case "$VPS_FINGERPRINT" in
+            SHA256:*) ;;
+            *) echo "::error::VPS_FINGERPRINT must look like SHA256:xxxx (server host key fingerprint)"; exit 1 ;;
+          esac
 
       - name: Copy staging bundle to server
         uses: appleboy/scp-action@v0.1.7
@@ -45,6 +54,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          fingerprint: ${{ secrets.VPS_FINGERPRINT }}   # refuse to deploy to an unverified host
           source: "deploy/staging/docker-compose.yml,deploy/staging/Caddyfile,deploy/staging/progress"
           target: "/opt/novi"
           strip_components: 2
@@ -56,6 +66,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          fingerprint: ${{ secrets.VPS_FINGERPRINT }}   # refuse to deploy to an unverified host
           script: |
             set -euo pipefail
             cd /opt/novi
