@@ -4,6 +4,7 @@
  * Needed for everything that is cookie-only: chatter, menus, actions, reports, websocket.
  */
 import {
+  AccessDenied,
   errorFromOdoo,
   isOdooErrorData,
   NetworkError,
@@ -166,6 +167,42 @@ export class JsonRpcTransport implements OrmTransport {
     if (!info || info.uid === null || info.uid === undefined) {
       throw new TwoFactorRequiredError("Two-factor authentication required");
     }
+    if (info.user_context) this.setContext(info.user_context);
+    return info;
+  }
+
+  /**
+   * Second login step for 2FA users (server-side only, P0.10 relay).
+   * After `authenticate()` threw TwoFactorRequiredError, Odoo keeps `pre_uid` in this session.
+   * We fetch the CSRF token from the stock `/web/login/totp` page and post the 6-digit code to it,
+   * exactly like a browser would; Odoo then finalises the session. No Odoo changes needed.
+   */
+  async completeTwoFactor(code: string, opts: { remember?: boolean } = {}): Promise<SessionInfo> {
+    if (!this.http.jar) throw new Error("completeTwoFactor is server-side only (gateway)");
+    const page = await this.http.send({
+      url: "/web/login/totp",
+      method: "GET",
+      headers: { Accept: "text/html" },
+      retry: false,
+    });
+    const html = await page.text();
+    const csrf = html.match(/name="csrf_token"[^>]*value="([^"]+)"/)?.[1];
+    if (!csrf) {
+      throw new AccessDenied("No pending 2FA login in this session (call authenticate() first)", {
+        status: page.status,
+      });
+    }
+    const form: Record<string, string> = { totp_token: code.replace(/\s/g, ""), csrf_token: csrf };
+    if (opts.remember) form.remember = "1";
+    await this.http.send({
+      url: "/web/login/totp",
+      method: "POST",
+      headers: { Accept: "text/html" },
+      form,
+      retry: false,
+    });
+    const info = await this.getSessionInfo();
+    if (!info.uid) throw new AccessDenied("Two-factor verification failed");
     if (info.user_context) this.setContext(info.user_context);
     return info;
   }

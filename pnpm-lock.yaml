@@ -248,6 +248,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/odoo-client
 
+  tools/spikes:
+    dependencies:
+      '@novi/odoo-client':
+        specifier: workspace:*
+        version: link:../../packages/odoo-client
+
 packages:
 
   '@ampproject/remapping@2.3.0':

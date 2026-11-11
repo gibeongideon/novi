@@ -59,6 +59,8 @@ export interface HttpRequest {
   method: "GET" | "POST";
   headers?: Record<string, string>;
   body?: unknown;
+  /** Form fields, sent as application/x-www-form-urlencoded (Odoo `type="http"` POST routes). */
+  form?: Record<string, string>;
   signal?: AbortSignal | undefined;
   /** Retry on network errors / 502-504. Only for idempotent calls. */
   retry: boolean;
@@ -118,7 +120,14 @@ export class Http {
     const timer = setTimeout(() => ctrl.abort(new Error("timeout")), this.timeoutMs);
 
     const headers: Record<string, string> = { Accept: "application/json", ...req.headers };
-    if (req.body !== undefined) headers["Content-Type"] = "application/json";
+    let payload: string | undefined;
+    if (req.form) {
+      headers["Content-Type"] = "application/x-www-form-urlencoded";
+      payload = new URLSearchParams(req.form).toString();
+    } else if (req.body !== undefined) {
+      headers["Content-Type"] = "application/json";
+      payload = JSON.stringify(req.body);
+    }
     const cookie = this.jar?.header();
     if (cookie) headers.Cookie = cookie;
 
@@ -128,7 +137,7 @@ export class Http {
       const res = await this.fetchImpl(url, {
         method: req.method,
         headers,
-        body: req.body === undefined ? undefined : JSON.stringify(req.body),
+        body: payload,
         signal: ctrl.signal,
         credentials: "include",
         redirect: "manual",

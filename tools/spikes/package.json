@@ -1,0 +1,15 @@
+{
+  "name": "@novi/spikes",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Phase 0 spikes: tenant provisioning (P0.11). The 2FA relay (P0.10) lives in odoo-client + contract tests.",
+  "type": "module",
+  "scripts": {
+    "provision": "bash provision-tenant.sh",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@novi/odoo-client": "workspace:*"
+  }
+}
