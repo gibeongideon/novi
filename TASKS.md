@@ -300,7 +300,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P1.17.1 Component architecture plan: layers L0–L5 + headless engine, field contract, override registry (`docs/design/COMPONENT-ARCHITECTURE.md`)
 - [x] P1.17.2 UI rules with the pre-flight checklist and DRY single-source table (`docs/design/UI-RULES.md`), linked from CLAUDE.md and the PR template
 - [x] P1.17.3 ESLint layer boundaries (`no-restricted-imports` per package) + ban on hard-coded colours / inline styles in UI packages
-- [ ] P1.17.4 `FieldProps` contract + `registerField` / `registerOverride` registries with type fallbacks (types only, no widgets yet)
+- [x] P1.17.4 `FieldProps` contract + `registerField` / `registerOverride` registries with type fallbacks (types only, no widgets yet) (`@novi/fields` FieldRegistry, `@novi/views` OverrideRegistry with reason + owner)
 - [ ] P1.17.5 `useFormat()` single formatter (lang/tz/currency from Odoo session) + one NOVI i18n catalogue
 - [ ] P1.17.6 CI check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx`
 - [ ] P1.17.7 Registry writes `tools/coverage-scanner/supported.json` automatically (no hand-maintained list)

@@ -5,22 +5,18 @@ import { OverrideRegistry } from "../src/index.js";
 const Pipeline = () => null;
 const SalesPipeline = () => null;
 const QuoteLines = () => null;
+const owner = "sales lead";
 
 function registry() {
   return new OverrideRegistry()
-    .register({
-      model: "crm.lead",
-      view: "kanban",
-      component: Pipeline,
-      reason: "forecast header + won/lost UX",
-    })
+    .register({ model: "crm.lead", view: "kanban", component: Pipeline, reason: "forecast header", owner })
     .register({
       model: "crm.lead",
       view: "kanban",
       action: "crm.crm_lead_action_pipeline",
       component: SalesPipeline,
       reason: "sales team pipeline",
-      owner: "sales lead",
+      owner,
     })
     .register({
       model: "sale.order",
@@ -28,6 +24,7 @@ function registry() {
       slot: "order_line",
       component: QuoteLines,
       reason: "keyboard-first lines",
+      owner,
     });
 }
 
@@ -48,13 +45,13 @@ describe("OverrideRegistry", () => {
     expect(r.slot({ model: "sale.order", view: "form" }, "partner_id")).toBeUndefined();
   });
 
-  it("requires a reason and rejects duplicates", () => {
+  it("requires a reason and a named owner (UI-RULES §0b), and rejects duplicates", () => {
     const r = registry();
-    expect(() => r.register({ model: "x", view: "form", component: Pipeline, reason: " " })).toThrow(
-      /reason/,
-    );
+    const base = { model: "x", view: "form" as const, component: Pipeline };
+    expect(() => r.register({ ...base, reason: " ", owner })).toThrow(/reason and an owner/);
+    expect(() => r.register({ ...base, reason: "r", owner: "" })).toThrow(/reason and an owner/);
     expect(() =>
-      r.register({ model: "crm.lead", view: "kanban", component: Pipeline, reason: "again", owner: "x" }),
+      r.register({ model: "crm.lead", view: "kanban", component: Pipeline, reason: "again", owner }),
     ).toThrow(/already registered/);
   });
 });
