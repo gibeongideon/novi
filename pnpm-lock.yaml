@@ -254,6 +254,9 @@ importers:
 
   tools/contract-tests:
     dependencies:
+      '@novi/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@novi/odoo-client':
         specifier: workspace:*
         version: link:../../packages/odoo-client

@@ -1,2 +1,2 @@
-/** @novi/engine: Headless runtime: records, onchange, save, actions, routing, access. */
-export const PACKAGE_NAME = "@novi/engine";
+/** @novi/engine: headless runtime. Today: the single formatter (P1.17.5). */
+export * from "./format.js";

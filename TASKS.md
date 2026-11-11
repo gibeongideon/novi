@@ -293,6 +293,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P1.10.3 Runtime tenant theming (CSS variables from the tenant config)
 - [ ] P1.10.4 Storybook with every component and its state variants
 - [ ] P1.10.5 Visual regression tests (Storybook snapshots)
+- [ ] P1.10.6 NOVI i18n catalogue for NOVI-owned strings (Save, Discard…), created with the first primitive that needs one
 
 **Done when:** Storybook is published and every primitive has stories and a11y checks.
 
@@ -301,7 +302,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P1.17.2 UI rules with the pre-flight checklist and DRY single-source table (`docs/design/UI-RULES.md`), linked from CLAUDE.md and the PR template
 - [x] P1.17.3 ESLint layer boundaries (`no-restricted-imports` per package) + ban on hard-coded colours / inline styles in UI packages
 - [x] P1.17.4 `FieldProps` contract + `registerField` / `registerOverride` registries with type fallbacks (types only, no widgets yet) (`@novi/fields` FieldRegistry, `@novi/views` OverrideRegistry with reason + owner)
-- [ ] P1.17.5 `useFormat()` single formatter (lang/tz/currency from Odoo session) + one NOVI i18n catalogue
+- [x] P1.17.5 Single formatter `createFormatter()` in `@novi/engine` from Odoo `lang_parameters` + session currencies + tz (numbers, monetary, percentage, float_time, date, datetime, parseNumber), unit tests + live contract test. *Musk step 2: the React hook and the i18n catalogue were cut here and moved to where they're first needed (P1.10.6, P1.11.6)*
 - [ ] P1.17.6 CI check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx`
 - [ ] P1.17.7 Registry writes `tools/coverage-scanner/supported.json` automatically (no hand-maintained list)
 
@@ -313,6 +314,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P1.11.3 Router: `/:app/action/:id`, `/:app/:model/:id`, deep links, browser back/forward
 - [ ] P1.11.4 Breadcrumbs (restored from URL via `load_breadcrumbs`)
 - [ ] P1.11.5 Responsive layout: desktop, tablet, mobile (bottom nav)
+- [ ] P1.11.6 `useFormat()` React hook over `createFormatter()` (settings from session + translations, cached per user/lang)
 
 **Done when:** every menu of every installed app is reachable and deep links survive a reload.
 
