@@ -329,7 +329,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** switching language or company updates every subsequent call's context.
 
 ### P1.13 Command palette (⌘K)
-- [ ] P1.13.1 Search menus and actions
+- [x] P1.13.1 Search menus and actions (type anywhere, ⌘K/Ctrl+K or the top-bar search button; apps + every menu by full path; word matching instead of fuzzy; D-24)
 - [ ] P1.13.2 Search records (global `web_name_search` across key models)
 - [ ] P1.13.3 Recent items and quick commands (new invoice, new lead…)
 

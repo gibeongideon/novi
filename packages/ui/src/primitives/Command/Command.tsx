@@ -88,18 +88,34 @@ CommandItem.displayName = "CommandItem";
 export function CommandDialog({
   open,
   onOpenChange,
+  filter,
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Custom ranking (cmdk `filter`); default is cmdk's fuzzy match. */
+  filter?: ComponentPropsWithoutRef<typeof Cmdk>["filter"];
   children: React.ReactNode;
 }) {
   const t = useT();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="md" className="gap-0 p-0">
+      <DialogContent
+        size="md"
+        className="gap-0 p-0"
+        // Radix selects the input's text on open, so the next keystroke would replace text the user
+        // already typed (type-to-search). Focus with the caret at the end instead.
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          const input = (e.currentTarget as HTMLElement | null)?.querySelector<HTMLInputElement>(
+            "[cmdk-input]",
+          );
+          input?.focus();
+          input?.setSelectionRange(input.value.length, input.value.length);
+        }}
+      >
         <DialogTitle className="sr-only">{t("search")}</DialogTitle>
-        <Command>{children}</Command>
+        <Command filter={filter}>{children}</Command>
       </DialogContent>
     </Dialog>
   );

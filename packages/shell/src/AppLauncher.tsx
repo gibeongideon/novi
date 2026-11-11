@@ -1,65 +1,32 @@
-import { type MenuNode, useMenus, useSession } from "@novi/engine";
-import { Input, Skeleton, useT } from "@novi/ui";
-import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { type MenuNode, useMenus } from "@novi/engine";
+import { Skeleton, useT } from "@novi/ui";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
 import { AppIcon } from "./AppIcon";
 import { type AppGroup, appIdentity, GROUP_ORDER } from "./appIcons";
 
 /**
- * Home (P1.11.1, D-23): greeting over a brand wash, app search, and apps grouped by purpose as
- * cards with gradient tiles and a one-line description. Names come from Odoo; the look is NOVI's.
+ * Home (P1.11.1, D-23): apps grouped by purpose as cards with gradient tiles and a one-line
+ * description. Deliberately clean: no hero or search box; search is type-anywhere (D-24).
  */
 export function AppLauncher() {
   const t = useT();
   const menus = useMenus();
-  const { info } = useSession();
-  const [query, setQuery] = useState("");
-  const firstName = String(info?.name ?? "").split(" ")[0];
-  const hour = new Date().getHours();
-  const greeting = t(hour < 12 ? "goodMorning" : hour < 18 ? "goodAfternoon" : "goodEvening");
 
   const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const apps = (menus.data?.apps ?? []).filter((a) => !q || a.name.toLowerCase().includes(q));
+    const apps = menus.data?.apps ?? [];
     const byGroup = new Map<AppGroup, MenuNode[]>();
     for (const app of apps) {
       const g = appIdentity(app).group;
       byGroup.set(g, [...(byGroup.get(g) ?? []), app]);
     }
     return GROUP_ORDER.filter((g) => byGroup.has(g)).map((g) => ({ group: g, apps: byGroup.get(g)! }));
-  }, [menus.data, query]);
+  }, [menus.data]);
 
   return (
     <div className="min-h-full">
-      <section className="novi-hero border-b border-border">
-        <div className="mx-auto grid max-w-content gap-5 px-6 pb-8 pt-10">
-          <div className="grid gap-1">
-            <h1 className="text-3xl font-semibold tracking-tight">
-              {greeting}
-              {firstName ? `, ${firstName}` : ""}
-            </h1>
-            <p className="text-lg text-text-muted">{t("pickApp")}</p>
-          </div>
-          <label className="relative block max-w-md">
-            <span className="sr-only">{t("searchApps")}</span>
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"
-              aria-hidden
-            />
-            <Input
-              type="search"
-              placeholder={t("searchApps")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-11 rounded-xl bg-surface pl-9 shadow-sm"
-            />
-          </label>
-        </div>
-      </section>
-
-      <div className="mx-auto grid max-w-content gap-8 px-6 py-8">
+      <div className="mx-auto grid max-w-content gap-8 px-6 py-10">
         {menus.isPending ? (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: 8 }, (_, i) => (
@@ -68,7 +35,7 @@ export function AppLauncher() {
               </li>
             ))}
           </ul>
-        ) : groups.length ? (
+        ) : (
           groups.map(({ group, apps }) => (
             <section key={group} aria-labelledby={`apps-${group}`} className="grid gap-3">
               <h2
@@ -110,8 +77,6 @@ export function AppLauncher() {
               </ul>
             </section>
           ))
-        ) : (
-          <p className="text-text-muted">{t("noAppsFound")}</p>
         )}
       </div>
     </div>

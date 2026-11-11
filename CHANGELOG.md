@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P1.13.1] Type-anywhere global search (D-24): palette opens on typing, ⌘K/Ctrl+K or the search icon; apps + all menus by path with word matching; launcher hero and search box removed for a cleaner home.
 - [P1.11.1] Launcher redesign: gradient app tiles from a new tokenised 8-colour app palette (contrast-tested), apps grouped by purpose (Sell, Finance, Operations, People, Workspace, Admin) with descriptions, time-of-day greeting over a brand wash, app search, NOVI brand mark, accessible card names; light and dark.
 - [P1.11.1] NOVI's own look (D-23): own app icons (Lucide set mapped per Odoo module, token colours), redesigned launcher (greeting + app cards), Odoo icon data removed from the engine; rule added to UI-RULES §4 and CLAUDE.md.
 - [P1.11] App shell: login (same-domain, Odoo's own session), app launcher with real Odoo icons, app sidebar menus, routing with deep links, breadcrumbs from the menu tree; engine session/menu/action hooks (TanStack Query); verified end to end in a browser against local Odoo 20.

@@ -7,6 +7,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { appIdentity } from "../src/appIcons";
+import { wordFilter } from "../src/CommandPalette";
 import { ShellRoutes } from "../src/index";
 
 const MENUS = {
@@ -160,6 +161,49 @@ describe("shell", () => {
     await waitFor(() =>
       expect(screen.getByRole("navigation", { name: "Breadcrumb" }).textContent).toBe("SalesOrdersCustomers"),
     );
+  });
+});
+
+describe("type-anywhere search (D-24)", () => {
+  it("typing on the page opens the palette with that letter, finds a menu by its path and opens it", async () => {
+    renderShell(fakeOdoo(true));
+    await screen.findByRole("link", { name: "Sales" });
+    await userEvent.keyboard("c");
+    const input = await screen.findByPlaceholderText("Search apps and menus…");
+    expect((input as HTMLInputElement).value).toBe("c");
+    await userEvent.type(input, "ustom");
+    await userEvent.click(await screen.findByText("Customers"));
+    expect(await screen.findByRole("heading", { name: "Customers" })).toBeTruthy();
+  });
+
+  it("Ctrl+K and the search button open it empty", async () => {
+    renderShell(fakeOdoo(true));
+    await screen.findByRole("link", { name: "Sales" });
+    await userEvent.keyboard("{Control>}k{/Control}");
+    expect(((await screen.findByPlaceholderText("Search apps and menus…")) as HTMLInputElement).value).toBe(
+      "",
+    );
+    await userEvent.keyboard("{Escape}");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(await screen.findByPlaceholderText("Search apps and menus…")).toBeTruthy();
+  });
+});
+
+describe("search ranking", () => {
+  const v = (t: string) => `${t}\u0000menu-1`;
+  it("matches whole typed words, not scattered letters", () => {
+    expect(wordFilter(v("Contacts Configuration Contact Tags"), "contact")).toBeGreaterThan(0);
+    expect(wordFilter(v("CRM Configuration Activities Activity Types"), "contact")).toBe(0);
+    expect(wordFilter(v("Sales Orders Customers"), "sal cust")).toBeGreaterThan(0);
+  });
+  it("prefers word starts and shorter paths", () => {
+    expect(wordFilter(v("Contacts"), "con")).toBeGreaterThan(wordFilter(v("Invoicing Reconcile"), "con"));
+    expect(wordFilter(v("Contacts"), "contacts")).toBeGreaterThan(
+      wordFilter(v("Contacts Configuration Industries"), "contacts"),
+    );
+  });
+  it("ignores the id suffix", () => {
+    expect(wordFilter("Sales\u0000menu-12", "12")).toBe(0);
   });
 });
 

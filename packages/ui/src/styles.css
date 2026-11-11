@@ -68,19 +68,4 @@
     --tile-from: var(--novi-app-8-from);
     --tile-to: var(--novi-app-8-to);
   }
-
-  /* Soft brand wash behind page heroes, built from the (tenant-overridable) primary/accent tokens */
-  .novi-hero {
-    background:
-      radial-gradient(
-        60% 120% at 0% 0%,
-        color-mix(in srgb, var(--novi-color-primary) 16%, transparent),
-        transparent 70%
-      ),
-      radial-gradient(
-        50% 100% at 100% 0%,
-        color-mix(in srgb, var(--novi-color-accent) 14%, transparent),
-        transparent 70%
-      );
-  }
 }

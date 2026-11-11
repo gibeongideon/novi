@@ -10,11 +10,12 @@ import {
   DropdownMenuTrigger,
   useT,
 } from "@novi/ui";
-import { LayoutGrid, LogOut, Menu as MenuIcon } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { LayoutGrid, LogOut, Menu as MenuIcon, Search } from "lucide-react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { AppIcon } from "./AppIcon";
+import { CommandPalette, isTypingTarget } from "./CommandPalette";
 import { Sidebar } from "./Sidebar";
 import { menuUrl } from "./urls";
 
@@ -26,6 +27,29 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
   const menus = useMenus();
   const [params] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState({ open: false, query: "" });
+
+  // Type anywhere to search; ⌘K / Ctrl+K also opens it (D-24)
+  const openRef = useRef(false);
+  openRef.current = search.open;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearch({ open: true, query: "" });
+        return;
+      }
+      const printable = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
+      if (!printable || isTypingTarget(e.target)) return;
+      if (!openRef.current && e.key === " ") return;
+      // Keys typed before the palette input has focus are appended, so nothing is lost
+      e.preventDefault();
+      openRef.current = true;
+      setSearch((s) => ({ open: true, query: s.open ? s.query + e.key : e.key }));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const activeId = Number(params.get("menu")) || undefined;
   const path = menus.data && activeId ? menuPath(menus.data, activeId) : [];
@@ -72,6 +96,15 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
             return { label: n.name, onSelect: url ? () => navigate(url) : undefined };
           })}
         />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("search")}
+          aria-keyshortcuts="Control+K Meta+K"
+          onClick={() => setSearch({ open: true, query: "" })}
+        >
+          <Search aria-hidden />
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label={userName}>
@@ -101,6 +134,12 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
         ) : null}
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+      <CommandPalette
+        open={search.open}
+        onOpenChange={(open) => setSearch((s) => ({ ...s, open }))}
+        query={search.query}
+        onQueryChange={(query) => setSearch((s) => ({ ...s, query }))}
+      />
     </div>
   );
 }
