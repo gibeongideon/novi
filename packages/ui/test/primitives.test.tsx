@@ -120,12 +120,14 @@ describe("ThemeProvider", () => {
 
 describe("colour mode", () => {
   function Switch() {
-    const { mode, setMode } = useColorMode();
+    const { mode, resolved, setMode, toggle } = useColorMode();
     return (
       <>
         <span data-testid="mode">{mode}</span>
         <button onClick={() => setMode("dark")}>dark</button>
         <button onClick={() => setMode("system")}>system</button>
+        <button onClick={toggle}>toggle</button>
+        <span data-testid="resolved">{resolved}</span>
       </>
     );
   }
@@ -151,5 +153,18 @@ describe("colour mode", () => {
     expect(screen.getByTestId("mode").textContent).toBe("dark");
     await userEvent.click(screen.getByText("system"));
     expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
+  });
+
+  it("toggle flips what is shown, starting from the resolved system scheme", async () => {
+    render(
+      <ThemeProvider>
+        <Switch />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId("resolved").textContent).toBe("light"); // jsdom: no dark preference
+    await userEvent.click(screen.getByText("toggle"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    await userEvent.click(screen.getByText("toggle"));
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 });

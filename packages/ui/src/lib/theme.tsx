@@ -26,10 +26,22 @@ function readStoredMode(): ColorMode | undefined {
 
 interface ColorModeValue {
   mode: ColorMode;
+  /** What the user actually sees right now ("system" resolved through the OS setting). */
+  resolved: "light" | "dark";
   setMode(mode: ColorMode): void;
+  /** Flip what the user sees: light ↔ dark (stored as an explicit choice). */
+  toggle(): void;
 }
 
-const ColorModeContext = createContext<ColorModeValue>({ mode: "system", setMode: () => undefined });
+const ColorModeContext = createContext<ColorModeValue>({
+  mode: "system",
+  resolved: "light",
+  setMode: () => undefined,
+  toggle: () => undefined,
+});
+
+const systemPrefersDark = () =>
+  typeof window !== "undefined" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches;
 
 export function useColorMode(): ColorModeValue {
   return useContext(ColorModeContext);
@@ -63,13 +75,24 @@ export function ThemeProvider({ theme = {}, defaultMode = "system", children }: 
     }
   }, []);
 
+  const [systemDark, setSystemDark] = useState(systemPrefersDark);
+  useEffect(() => {
+    const mq = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!mq) return;
+    const onChange = () => setSystemDark(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   useEffect(() => {
     const root = document.documentElement;
     if (mode === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", mode);
   }, [mode]);
 
-  const value = useMemo(() => ({ mode, setMode }), [mode, setMode]);
+  const resolved: "light" | "dark" = mode === "system" ? (systemDark ? "dark" : "light") : mode;
+  const toggle = useCallback(() => setMode(resolved === "dark" ? "light" : "dark"), [resolved, setMode]);
+  const value = useMemo(() => ({ mode, resolved, setMode, toggle }), [mode, resolved, setMode, toggle]);
   return (
     <ColorModeContext.Provider value={value}>
       <style data-novi-theme dangerouslySetInnerHTML={{ __html: css }} />

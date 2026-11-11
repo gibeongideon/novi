@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P1.12.1] Theme is now a single always-visible sun/moon toggle in the top bar (flips what you see, remembered); the Theme menu section and the unused radio-item primitive were deleted.
 - [P1.12.1] Light / Dark / System theme in the user menu (`useColorMode`, remembered per browser, applied before first paint); Accounting app mapped to Finance.
 - [P1.11.1] Simplified modern app icons: white tile, soft shadow, app colour on the line icon only (hover tints the border); icons for To-do, Project and Databases.
 - [P1.11.1] Launcher v3: icon-first gradient tiles in grouped islands that fit on one screen; descriptions moved to tooltips (and screen readers); subtle brand backdrop.

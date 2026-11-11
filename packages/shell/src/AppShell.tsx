@@ -3,19 +3,15 @@ import {
   Avatar,
   Breadcrumb,
   Button,
-  type ColorMode,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   useColorMode,
   useT,
 } from "@novi/ui";
-import { LayoutGrid, LogOut, Menu as MenuIcon, Monitor, Moon, Search, Sun } from "lucide-react";
+import { LayoutGrid, LogOut, Menu as MenuIcon, Moon, Search, Sun } from "lucide-react";
 import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -32,7 +28,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
   const t = useT();
   const navigate = useNavigate();
   const { info, logout } = useSession();
-  const { mode, setMode } = useColorMode();
+  const { resolved, toggle } = useColorMode();
   const menus = useMenus();
   const [params] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -114,6 +110,14 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
         >
           <Search aria-hidden />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t(resolved === "dark" ? "switchToLight" : "switchToDark")}
+          onClick={toggle}
+        >
+          {resolved === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label={userName}>
@@ -122,23 +126,6 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{userName}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>{t("theme")}</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={mode} onValueChange={(v) => setMode(v as ColorMode)}>
-              <DropdownMenuRadioItem value="light">
-                <Sun aria-hidden />
-                {t("themeLight")}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="dark">
-                <Moon aria-hidden />
-                {t("themeDark")}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="system">
-                <Monitor aria-hidden />
-                {t("themeSystem")}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => logout()}>
               <LogOut aria-hidden />
               {t("signOut")}

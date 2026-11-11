@@ -192,17 +192,12 @@ describe("type-anywhere search (D-24)", () => {
 });
 
 describe("light and dark mode", () => {
-  it("the user menu switches the theme and shows the current choice", async () => {
+  it("a single top-bar button toggles light and dark", async () => {
     renderShell(fakeOdoo(true));
     await screen.findByRole("link", { name: "Sales" });
-    await userEvent.click(screen.getByRole("button", { name: "Mitchell Admin" }));
-    await userEvent.click(await screen.findByRole("menuitemradio", { name: "Dark" }));
+    await userEvent.click(screen.getByRole("button", { name: "Switch to dark mode" }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    await userEvent.click(screen.getByRole("button", { name: "Mitchell Admin" }));
-    expect((await screen.findByRole("menuitemradio", { name: "Dark" })).getAttribute("aria-checked")).toBe(
-      "true",
-    );
-    await userEvent.click(screen.getByRole("menuitemradio", { name: "Light" }));
+    await userEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 });
