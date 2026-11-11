@@ -1,0 +1,50 @@
+# Local development stack: stock Odoo 20 + PostgreSQL + Mailpit.
+#   pnpm odoo:build   (once)   →   pnpm odoo:up   →   pnpm odoo:seed
+name: novi-dev
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:55432:5432" # for the provisioning spike / debugging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  odoo:
+    image: ${ODOO_IMAGE:-novi/odoo20:stock}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./odoo.dev.conf:/etc/odoo/odoo.conf:ro
+      - filestore:/var/lib/odoo
+    ports:
+      - "127.0.0.1:8069:8069" # HTTP
+      - "127.0.0.1:8072:8072" # websocket / longpolling (gevent)
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8069/web/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025" # web UI
+      - "127.0.0.1:1025:1025" # SMTP
+
+volumes:
+  pgdata:
+  filestore:

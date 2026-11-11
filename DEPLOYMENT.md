@@ -41,7 +41,7 @@ In the NOVI repo, go to **Settings → Secrets and variables → Actions**:
 | `VPS_HOST` | `68.183.91.240` |
 | `VPS_USER` | `novi` |
 | `VPS_SSH_KEY` | Full output of `cat ~/.ssh/novi_deploy` (including the BEGIN/END lines) |
-| `VPS_FINGERPRINT` | `SHA256:u/Yrr9SHTmXdcbXFCvCBr7DObkdr8D8+Z3Wox+bA258` |
+| `VPS_FINGERPRINT` | `SHA256:1VFVb1wOC0ktRdcCmMu62D49VWd4aiwJ+8SqqmmfC/8` (the **ECDSA** host key: the Go SSH client used by the deploy actions negotiates ECDSA before ED25519) |
 
 ### 3. DNS (Cloudflare, `dafeapp.com` zone)
 Add `A` record `novi` → `68.183.91.240`, using the **same proxy setting as `braelaspin`**.
