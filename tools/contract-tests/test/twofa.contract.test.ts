@@ -11,7 +11,7 @@ describe.runIf(odooUp)("P0.10 2FA relay", () => {
     return { u, t, pre: t.authenticate(u.login, u.password) };
   };
 
-  it("logs a TOTP user in without any Odoo changes", async () => {
+  it("logs a TOTP user in without any Odoo changes", { timeout: 90_000 }, async () => {
     const { u, t, pre } = login();
     await expect(pre).rejects.toBeInstanceOf(TwoFactorRequiredError);
     const info = await t.completeTwoFactor(await freshTotp(u.totp_secret!));

@@ -110,17 +110,28 @@ export async function totp(base32Secret: string, at = Date.now()): Promise<strin
   return code.toString().padStart(6, "0");
 }
 
-const usedTotpWindows = new Set<number>();
 /**
- * A TOTP code from a window not used yet in this run: Odoo rejects re-used codes
- * (totp_last_counter), so consecutive 2FA tests wait for the next 30 s window.
+ * A TOTP code from a 30 s window not used yet by any test file in this run: Odoo rejects re-used
+ * codes (totp_last_counter), and several files sign in the same 2FA user. The used windows are
+ * shared through a small file because each test file has its own module state.
  */
+const usedWindowsFile = join(root, ".cache/totp-used-windows.json");
+
 export async function freshTotp(secret: string): Promise<string> {
+  const { mkdirSync, writeFileSync } = await import("node:fs");
+  const read = (): number[] => {
+    try {
+      return JSON.parse(readFileSync(usedWindowsFile, "utf8")) as number[];
+    } catch {
+      return [];
+    }
+  };
   let win = Math.floor(Date.now() / 30_000);
-  while (usedTotpWindows.has(win)) {
+  while (read().includes(win)) {
     await new Promise((r) => setTimeout(r, 1000));
     win = Math.floor(Date.now() / 30_000);
   }
-  usedTotpWindows.add(win);
+  mkdirSync(dirname(usedWindowsFile), { recursive: true });
+  writeFileSync(usedWindowsFile, JSON.stringify([...read().filter((w) => w > win - 4), win]));
   return totp(secret);
 }
