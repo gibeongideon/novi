@@ -14,6 +14,17 @@ export const en = {
   noResults: "No results found.",
   breadcrumb: "Breadcrumb",
   moreActions: "More actions",
+  signIn: "Sign in",
+  signOut: "Sign out",
+  login: "Email or login",
+  password: "Password",
+  apps: "Apps",
+  menu: "Menu",
+  openInOdoo: "Open in Odoo",
+  nativeViewSoon: "NOVI will render this screen natively in Phase 2. Until then you can open it in Odoo.",
+  twoFactorNotYet:
+    "Two-factor sign-in arrives with the gateway (P1.6). Use Odoo's own login for this account for now.",
+  noAction: "This menu has no screen of its own.",
 } as const;
 
 export type MessageKey = keyof typeof en;

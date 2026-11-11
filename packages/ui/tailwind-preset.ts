@@ -6,7 +6,7 @@
  */
 import type { Config } from "tailwindcss";
 
-import { color, radius, shadow, space, typography } from "./src/tokens";
+import { color, layout, radius, shadow, space, typography } from "./src/tokens";
 
 const kebab = (s: string) => s.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase());
 const vars = <T extends object>(obj: T, prefix: string, name: (k: string) => string = (k) => k) =>
@@ -25,7 +25,20 @@ const noviPreset: Partial<Config> = {
       borderColor: { DEFAULT: "var(--novi-color-border)" },
       fontFamily: { sans: "var(--novi-font-sans)", mono: "var(--novi-font-mono)" },
       fontSize: vars(typography.size, "text"),
-      spacing: vars(space, "space"),
+      spacing: {
+        ...vars(space, "space"),
+        // layout tokens (single source: tokens.layout) → w-sidebar, h-header, inset-y-header…
+        sidebar: layout.sidebarWidth,
+        header: layout.headerHeight,
+        drawer: layout.drawer,
+      },
+      maxWidth: {
+        content: layout.contentMaxWidth,
+        "dialog-sm": layout.dialog.sm,
+        "dialog-md": layout.dialog.md,
+        "dialog-lg": layout.dialog.lg,
+        "dialog-xl": layout.dialog.xl,
+      },
       borderRadius: vars(radius, "radius"),
       boxShadow: vars(shadow, "shadow"),
       transitionDuration: { fast: "var(--novi-motion-fast)", DEFAULT: "var(--novi-motion-normal)" },

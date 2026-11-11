@@ -11,10 +11,10 @@ export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
 const sizes = {
-  sm: "max-w-[420px]",
-  md: "max-w-[640px]",
-  lg: "max-w-[880px]",
-  xl: "max-w-[1120px]",
+  sm: "max-w-dialog-sm",
+  md: "max-w-dialog-md",
+  lg: "max-w-dialog-lg",
+  xl: "max-w-dialog-xl",
 } as const;
 
 export interface DialogContentProps extends ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {

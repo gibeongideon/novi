@@ -310,11 +310,11 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** a new widget or pattern can only be added through the registry and stories, and lint fails on boundary or token violations.
 
 ### P1.11 Shell: navigation
-- [ ] P1.11.1 App launcher (home grid) from `load_menus` root items with icons
-- [ ] P1.11.2 Sidebar / top menu of the current app, with nested menus
-- [ ] P1.11.3 Router: `/:app/action/:id`, `/:app/:model/:id`, deep links, browser back/forward
-- [ ] P1.11.4 Breadcrumbs (restored from URL via `load_breadcrumbs`)
-- [ ] P1.11.5 Responsive layout: desktop, tablet, mobile (bottom nav)
+- [x] P1.11.1 App launcher (home grid) from `load_menus` root items with icons (real Odoo app icons from `load_menus`; verified in browser against local Odoo)
+- [x] P1.11.2 Sidebar / top menu of the current app, with nested menus (sections as headings, active entry highlighted; an app root's action resolves to its sidebar entry like Odoo)
+- [x] P1.11.3 Router: `/:app/action/:id`, `/:app/:model/:id`, deep links, browser back/forward (`/`, `/apps/:id`, `/action/:id?menu=`; deep links survive reload; `pnpm dev` serves it with Odoo same-origin)
+- [x] P1.11.4 Breadcrumbs (restored from URL via `load_breadcrumbs`) (derived from the already-loaded menu tree; *Musk step 2: `load_breadcrumbs` call deleted*; one `menuUrl()` helper for launcher/breadcrumbs/redirect)
+- [x] P1.11.5 Responsive layout: desktop, tablet, mobile (bottom nav) *(sidebar collapses behind a menu button on small screens; Musk step 2: mobile bottom nav deleted until users ask for it)*
 - [ ] P1.11.6 `useFormat()` React hook over `createFormatter()` (settings from session + translations, cached per user/lang)
 
 **Done when:** every menu of every installed app is reachable and deep links survive a reload.

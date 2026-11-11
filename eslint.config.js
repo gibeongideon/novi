@@ -100,6 +100,8 @@ export default tseslint.config(
 function layer(glob, message, forbidden) {
   return {
     files: [`${glob}/*.{ts,tsx}`],
+    // tests may fake Odoo with transport types/errors; the boundary is for production code
+    ignores: ["**/test/**", "**/*.test.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", { patterns: [{ group: forbidden, message }] }],
     },

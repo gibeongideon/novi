@@ -18,6 +18,9 @@ export default defineConfig({
     alias: {
       "@novi/ui/styles.css": fileURLToPath(new URL("../../packages/ui/src/styles.css", import.meta.url)),
       "@novi/ui": fileURLToPath(new URL("../../packages/ui/src/index.ts", import.meta.url)),
+      "@novi/engine": fileURLToPath(new URL("../../packages/engine/src/index.ts", import.meta.url)),
+      "@novi/shell": fileURLToPath(new URL("../../packages/shell/src/index.ts", import.meta.url)),
+      "@novi/odoo-client": fileURLToPath(new URL("../../packages/odoo-client/src/index.ts", import.meta.url)),
     },
   },
   server: {
