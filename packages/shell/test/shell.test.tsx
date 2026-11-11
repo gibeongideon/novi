@@ -4,10 +4,11 @@ import { I18nProvider, ThemeProvider, TooltipProvider } from "@novi/ui";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { appIdentity } from "../src/appIcons";
 import { wordFilter } from "../src/CommandPalette";
+import { ErrorBoundary } from "../src/ErrorBoundary";
 import { ShellRoutes } from "../src/index";
 
 const MENUS = {
@@ -74,17 +75,34 @@ const MENUS = {
   },
 };
 
-function fakeOdoo(loggedIn = false) {
-  let session: SessionInfo | null = loggedIn
-    ? { uid: 2, name: "Mitchell Admin", user_context: { lang: "en_US" } }
-    : null;
-  const t: SessionTransport = {
+const COMPANIES = {
+  current_company: 1,
+  allowed_companies: {
+    1: { id: 1, name: "Nairobi HQ", sequence: 1 },
+    3: { id: 3, name: "Mombasa Branch", sequence: 2 },
+  },
+};
+
+type FakeOdoo = SessionTransport & { context: Record<string, unknown> };
+
+function fakeOdoo(loggedIn = false): FakeOdoo {
+  const user = (login = "admin"): SessionInfo => ({
+    uid: 2,
+    name: "Mitchell Admin",
+    username: login,
+    user_context: { lang: "en_US" },
+    user_companies: COMPANIES,
+  });
+  let session: SessionInfo | null = loggedIn ? user() : null;
+  const context: Record<string, unknown> = {};
+  return {
+    context,
     async authenticate(login, password) {
       if (password !== "admin")
         throw new AccessDenied("Wrong login/password", {
           data: { name: "odoo.exceptions.AccessDenied", message: "Wrong login/password" },
         });
-      session = { uid: 2, name: "Mitchell Admin", user_context: { lang: "en_US" }, username: login };
+      session = user(login);
       return session;
     },
     async getSessionInfo() {
@@ -95,15 +113,22 @@ function fakeOdoo(loggedIn = false) {
       session = null;
     },
     loadMenus: async () => MENUS,
-    loadAction: async <T,>(id: number | string) =>
-      ({
+    loadAction: async <T,>(id: number | string) => {
+      if (id === 999) {
+        session = null; // the Odoo session ended while browsing
+        throw new SessionExpiredError("Session expired");
+      }
+      return {
         id,
         name: id === 300 ? "Quotations" : "Customers",
         type: "ir.actions.act_window",
         res_model: "sale.order",
-      }) as T,
+      } as T;
+    },
+    setContext(patch) {
+      Object.assign(context, patch);
+    },
   };
-  return t;
 }
 
 function renderShell(transport: SessionTransport, path = "/") {
@@ -199,6 +224,45 @@ describe("light and dark mode", () => {
     expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
     await userEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  });
+});
+
+describe("companies (P1.12.2)", () => {
+  it("switching company updates the context of every call and Odoo's cids cookie", async () => {
+    document.cookie = "cids=; max-age=0; path=/";
+    const odoo = fakeOdoo(true);
+    renderShell(odoo);
+    await screen.findByRole("link", { name: "Sales" });
+    await waitFor(() => expect(odoo.context.allowed_company_ids).toEqual([1]));
+    await userEvent.click(screen.getByRole("button", { name: "Switch company: Nairobi HQ" }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: "Mombasa Branch" }));
+    expect(odoo.context.allowed_company_ids).toEqual([3]);
+    expect(document.cookie).toContain("cids=3");
+    expect(screen.getByRole("button", { name: "Switch company: Mombasa Branch" })).toBeTruthy();
+  });
+});
+
+describe("errors (P1.12.5)", () => {
+  it("an expired Odoo session sends the user back to the login screen", async () => {
+    renderShell(fakeOdoo(true), "/action/999?menu=12");
+    expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
+  });
+
+  it("a crashing screen shows a recovery panel instead of a blank page", () => {
+    const Bomb = () => {
+      throw new Error("boom");
+    };
+    const err = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(
+      <I18nProvider>
+        <ErrorBoundary>
+          <Bomb />
+        </ErrorBoundary>
+      </I18nProvider>,
+    );
+    expect(screen.getByRole("alert").textContent).toContain("Something went wrong");
+    expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy();
+    err.mockRestore();
   });
 });
 

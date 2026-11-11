@@ -1,4 +1,5 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
+import { Check } from "lucide-react";
 import { type ComponentPropsWithoutRef, forwardRef } from "react";
 
 import { cn } from "../../lib/cn";
@@ -7,6 +8,8 @@ import { cn } from "../../lib/cn";
 export const DropdownMenu = Menu.Root;
 export const DropdownMenuTrigger = Menu.Trigger;
 export const DropdownMenuGroup = Menu.Group;
+/** Single choice inside a menu (e.g. the active company); items announce their checked state. */
+export const DropdownMenuRadioGroup = Menu.RadioGroup;
 
 export const DropdownMenuContent = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof Menu.Content>>(
   ({ className, sideOffset = 6, ...props }, ref) => (
@@ -57,3 +60,24 @@ export const DropdownMenuSeparator = forwardRef<
   <Menu.Separator ref={ref} className={cn("my-1 h-px bg-border", className)} {...props} />
 ));
 DropdownMenuSeparator.displayName = "DropdownMenuSeparator";
+
+export const DropdownMenuRadioItem = forwardRef<
+  HTMLDivElement,
+  ComponentPropsWithoutRef<typeof Menu.RadioItem>
+>(({ className, children, ...props }, ref) => (
+  <Menu.RadioItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none",
+      "data-[highlighted]:bg-surface-sunken data-[disabled]:opacity-50 [&_svg]:size-4",
+      className,
+    )}
+    {...props}
+  >
+    {children}
+    <Menu.ItemIndicator className="absolute right-2 inline-flex text-primary">
+      <Check aria-hidden />
+    </Menu.ItemIndicator>
+  </Menu.RadioItem>
+));
+DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";

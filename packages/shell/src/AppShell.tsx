@@ -13,9 +13,11 @@ import {
 } from "@novi/ui";
 import { LayoutGrid, LogOut, Menu as MenuIcon, Moon, Search, Sun } from "lucide-react";
 import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { AppIcon } from "./AppIcon";
+import { CompanySwitcher } from "./CompanySwitcher";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { Sidebar } from "./Sidebar";
 import { isTypingTarget } from "./typing";
 
@@ -27,6 +29,7 @@ import { menuUrl } from "./urls";
 export function AppShell({ children, productName = "NOVI" }: { children: ReactNode; productName?: string }) {
   const t = useT();
   const navigate = useNavigate();
+  const location = useLocation();
   const { info, logout } = useSession();
   const { resolved, toggle } = useColorMode();
   const menus = useMenus();
@@ -101,6 +104,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
             return { label: n.name, onSelect: url ? () => navigate(url) : undefined };
           })}
         />
+        <CompanySwitcher />
         <Button
           variant="ghost"
           size="icon"
@@ -145,7 +149,9 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
             <Sidebar app={app} activeId={activeId} />
           </aside>
         ) : null}
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="min-w-0 flex-1">
+          <ErrorBoundary resetKey={location.pathname + location.search}>{children}</ErrorBoundary>
+        </main>
       </div>
       {search.used ? (
         <Suspense fallback={null}>

@@ -12,7 +12,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
 | **In progress** | — |
-| **Next task** | `P1.11.6` useFormat hook → `P1.12` user context (company switcher, preferences, translations, error dialog) → `P1.13` ⌘K palette |
+| **Next task** | `P1.13.2` record search in the palette → `P1.1` gateway foundation (tenant registry, auth bridge) |
 | **Blockers** | — |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-11 |

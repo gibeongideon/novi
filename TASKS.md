@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 2 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 3 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -315,16 +315,16 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P1.11.3 Router: `/:app/action/:id`, `/:app/:model/:id`, deep links, browser back/forward (`/`, `/apps/:id`, `/action/:id?menu=`; deep links survive reload; `pnpm dev` serves it with Odoo same-origin)
 - [x] P1.11.4 Breadcrumbs (restored from URL via `load_breadcrumbs`) (derived from the already-loaded menu tree; *Musk step 2: `load_breadcrumbs` call deleted*; one `menuUrl()` helper for launcher/breadcrumbs/redirect)
 - [x] P1.11.5 Responsive layout: desktop, tablet, mobile (bottom nav) *(sidebar collapses behind a menu button on small screens; Musk step 2: mobile bottom nav deleted until users ask for it)*
-- [ ] P1.11.6 `useFormat()` React hook over `createFormatter()` (settings from session + translations, cached per user/lang)
+- [-] P1.11.6 `useFormat()` React hook over `createFormatter()` (settings from session + translations, cached per user/lang) *(moved to P2.13.15: first consumer is the first field widget)*
 
 **Done when:** every menu of every installed app is reachable and deep links survive a reload.
 
 ### P1.12 Shell: user context
-- [ ] P1.12.1 User menu: profile, preferences (lang, tz), API key management link, logout
-- [ ] P1.12.2 Multi-company switcher (`allowed_company_ids` in context)
-- [ ] P1.12.3 Translations loaded and applied, with a language switcher
-- [ ] P1.12.4 Notifications/toast centre
-- [ ] P1.12.5 Global error boundary and an error dialog for Odoo errors
+- [~] P1.12.1 User menu: profile, preferences (lang, tz), API key management link, logout *(partly: sign-out + theme toggle exist; profile/preferences/API-key screen deferred until a user needs it)*
+- [x] P1.12.2 Multi-company switcher (`allowed_company_ids` in context) (top-bar switcher, shown only with >1 company; `allowed_company_ids` on every call + Odoo's `cids` cookie; verified live: Odoo returns only the active company's records)
+- [-] P1.12.3 Translations loaded and applied, with a language switcher *(deferred: only English is installed; build the switcher when a second language exists)*
+- [-] P1.12.4 Notifications/toast centre *(deferred to P3.8/P3.9: nothing sends notifications until the live-update bus exists)*
+- [x] P1.12.5 Global error boundary and an error dialog for Odoo errors (error boundary per screen with Reload; expired Odoo session → login screen; *Musk step 2: the Odoo error dialog moves to P2.8.9, where Save/buttons first need it*)
 
 **Done when:** switching language or company updates every subsequent call's context.
 
@@ -440,6 +440,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.8.6 `ir.actions.act_window_close` (close dialog, reload parent)
 - [ ] P2.8.7 Button execution: `type="object"` (call_button) and `type="action"`; handle `confirm=` attr
 - [ ] P2.8.8 Action stack / breadcrumbs, restored from the URL
+- [ ] P2.8.9 Odoo error dialog for user actions (UserError/ValidationError/AccessError text as sent by Odoo; RedirectWarning button opens its action) (ex-P1.12.5)
 
 **Done when:** every button in the demo sales/accounting flows works.
 
@@ -500,6 +501,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
 - [ ] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner)
+- [ ] P2.13.15 `useFormat()` React hook over `createFormatter()` (ex-P1.11.6)
 - [ ] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2)
 - [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)

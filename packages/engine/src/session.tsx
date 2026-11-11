@@ -5,14 +5,17 @@
  */
 import { SessionExpiredError, type SessionInfo, TwoFactorRequiredError } from "@novi/odoo-client";
 import {
+  MutationCache,
+  QueryCache,
   QueryClient,
   QueryClientProvider,
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { createContext, type ReactNode, useContext, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
+import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
 
 /** What the hooks need from a transport (JsonRpcTransport satisfies it). */
@@ -22,6 +25,7 @@ export interface SessionTransport {
   destroy(): Promise<void>;
   loadMenus(lang?: string): Promise<Record<string, unknown>>;
   loadAction<T = Record<string, unknown>>(actionId: number | string): Promise<T>;
+  setContext(patch: Record<string, unknown>): void;
 }
 
 interface EngineContextValue {
@@ -37,10 +41,19 @@ export function EngineProvider({
   children,
   queryClient,
 }: EngineContextValue & { children: ReactNode; queryClient?: QueryClient }) {
-  const [client] = useState(
-    () =>
-      queryClient ?? new QueryClient({ defaultOptions: { queries: { staleTime: 60_000, retry: false } } }),
-  );
+  const [client] = useState(() => {
+    if (queryClient) return queryClient;
+    // An expired Odoo session anywhere sends the user back to the login screen (P1.12.5)
+    const onError = (err: unknown) => {
+      if (err instanceof SessionExpiredError) c.setQueryData(["session"], null);
+    };
+    const c = new QueryClient({
+      queryCache: new QueryCache({ onError }),
+      mutationCache: new MutationCache({ onError }),
+      defaultOptions: { queries: { staleTime: 60_000, retry: false } },
+    });
+    return c;
+  });
   return (
     <EngineContext.Provider value={{ transport, db }}>
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -148,4 +161,32 @@ export function useAction(actionId: number | undefined) {
     queryFn: () => transport.loadAction<ActionInfo>(actionId!),
     staleTime: Infinity,
   });
+}
+
+/** The user's companies and the active ones (P1.12.2). Applies them to every Odoo call. */
+export function useCompanies() {
+  const { transport } = useEngine();
+  const { info } = useSession();
+  const qc = useQueryClient();
+  const [active, setActiveState] = useState<number[]>(() => activeCompanyIds(info, readCidsCookie()));
+
+  // recompute when the session changes (login as another user)
+  useEffect(() => setActiveState(activeCompanyIds(info, readCidsCookie())), [info]);
+  useEffect(() => {
+    if (active.length) transport.setContext({ allowed_company_ids: active });
+  }, [active, transport]);
+
+  const setActive = useCallback(
+    (ids: number[]) => {
+      if (!ids.length) return;
+      writeCidsCookie(ids);
+      transport.setContext({ allowed_company_ids: ids });
+      setActiveState(ids);
+      // everything except the session depends on the company context
+      void qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "session" });
+    },
+    [qc, transport],
+  );
+
+  return { companies: allowedCompanies(info), active, setActive };
 }

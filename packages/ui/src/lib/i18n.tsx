@@ -17,6 +17,13 @@ export const en = {
   signIn: "Sign in",
   signOut: "Sign out",
   switchToDark: "Switch to dark mode",
+  company: "Company",
+  switchCompany: "Switch company",
+  errorTitle: "Something went wrong",
+  errorBody:
+    "This screen hit an unexpected problem. Reload to continue. If it keeps happening, contact support.",
+  reload: "Reload",
+  technicalDetails: "Technical details",
   switchToLight: "Switch to light mode",
   login: "Email or login",
   password: "Password",
