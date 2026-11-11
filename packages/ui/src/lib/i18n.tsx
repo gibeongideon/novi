@@ -19,6 +19,8 @@ export const en = {
   login: "Email or login",
   password: "Password",
   apps: "Apps",
+  welcome: "Welcome back",
+  pickApp: "Pick up where you left off.",
   menu: "Menu",
   openInOdoo: "Open in Odoo",
   nativeViewSoon: "NOVI will render this screen natively in Phase 2. Until then you can open it in Odoo.",

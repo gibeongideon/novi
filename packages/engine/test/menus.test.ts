@@ -82,10 +82,9 @@ const raw = {
 describe("menu tree", () => {
   const tree = buildMenuTree(raw);
 
-  it("builds apps from root children with icons and nested sections", () => {
+  it("builds apps from root children with nested sections, ignoring Odoo icon images (D-23)", () => {
     expect(tree.apps.map((a) => a.name)).toEqual(["Sales", "Discuss"]);
-    expect(tree.apps[0]!.icon).toBe("data:image/png;base64,AAA");
-    expect(tree.apps[1]!.icon).toBeUndefined();
+    expect(tree.apps[0]).not.toHaveProperty("icon");
     expect(tree.apps[0]!.children[0]!.children.map((c) => c.name)).toEqual(["Quotations", "Orders"]);
     expect(tree.byId.get(85)?.action).toEqual({
       id: 300,

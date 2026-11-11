@@ -1,19 +1,30 @@
 import type { MenuNode } from "@novi/engine";
 import { cn } from "@novi/ui";
 
-/** Odoo app icon (embedded data URL from load_menus) with an initial-letter fallback. */
-export function AppIcon({ app, className }: { app: MenuNode; className?: string }) {
-  return app.icon ? (
-    <img src={app.icon} alt="" className={cn("rounded-md object-contain", className)} />
-  ) : (
+import { appIcon, appTone } from "./appIcons";
+
+/** NOVI app icon: a token-coloured glyph on a neutral chip (D-23: not Odoo's icon artwork). */
+export function AppIcon({
+  app,
+  size = "md",
+  className,
+}: {
+  app: MenuNode;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  const Icon = appIcon(app);
+  return (
     <span
       aria-hidden
       className={cn(
-        "grid place-items-center rounded-md bg-surface-sunken font-semibold text-text-muted",
+        "grid shrink-0 place-items-center rounded-lg border border-border bg-surface-sunken",
+        size === "sm" ? "size-7 [&_svg]:size-4" : "size-11 [&_svg]:size-5",
+        appTone(app),
         className,
       )}
     >
-      {app.name.slice(0, 1)}
+      <Icon strokeWidth={1.75} />
     </span>
   );
 }

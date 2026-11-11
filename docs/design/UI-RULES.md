@@ -88,6 +88,8 @@ DRY is about **knowledge, not text**. Each fact lives in exactly one place, and 
 
 ## 4. Visual design
 
+- **NOVI has its own visual identity, not Odoo's (D-23).** Never reproduce Odoo's look, layout patterns, colours, icons, illustrations or other design assets. Use Odoo only for *data and meaning* (labels, fields, rules), never for *appearance*. App icons come from NOVI's icon set via `packages/shell/src/appIcons.ts`; Odoo's `webIconData` is ignored. If a screen "looks like Odoo", redesign it.
+
 - **Tokens only.** Every colour, size, radius, shadow and duration comes from tokens. If a token is missing, propose it (one place) rather than inlining a value.
 - **Hierarchy through layout, not decoration.** One primary action per surface. Use secondary and ghost for the rest; overflow goes into a "⋯" menu.
 - **Dense but breathable.** This is a business tool: 15px base text, compact rows (36–40px) in tables, comfortable form rows, a 4px spacing grid.

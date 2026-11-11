@@ -16,6 +16,7 @@ NOVI is a React + TypeScript frontend engine and gateway for an **unmodified** O
 - **DRY is mandatory:** every piece of knowledge (labels, options, rules, formatting, colours, spacing, data access) has one source. Extend existing components; never fork them. Extract on the third occurrence (rule of three), not before.
 - Respect the layers L0 tokens → L1 primitives → L2 patterns → L3 fields → L4 views → L5 overrides. Only `engine` talks to Odoo. ESLint enforces the boundaries and bans hard-coded colours and inline styles in UI packages.
 - Generic first: render from Odoo metadata; model-specific UI only as a registered L5 override with a reason.
+- **NOVI must not look like Odoo** (D-23): own icons, layouts and colours. Use Odoo for data and meaning, never for appearance or design assets.
 
 ## Progress workflow (every session)
 1. Read **ROADMAP.md → "Now / Next"** to find the current task. The detailed checklist is in **TASKS.md**.

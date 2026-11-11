@@ -51,7 +51,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LayoutGrid aria-hidden />
           </Link>
         </Button>
-        {app ? <AppIcon app={app} className="size-6 text-xs" /> : null}
+        {app ? <AppIcon app={app} size="sm" /> : null}
         <Breadcrumb
           className="flex-1"
           items={path.map((n, i) => {

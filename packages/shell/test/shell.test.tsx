@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
+import { appIcon, appTone } from "../src/appIcons";
 import { ShellRoutes } from "../src/index";
 
 const MENUS = {
@@ -159,5 +160,18 @@ describe("shell", () => {
     await waitFor(() =>
       expect(screen.getByRole("navigation", { name: "Breadcrumb" }).textContent).toBe("SalesOrdersCustomers"),
     );
+  });
+});
+
+describe("NOVI app icons (D-23)", () => {
+  const node = (xmlid: string) => ({ id: 1, name: "X", appId: 1, xmlid, children: [] });
+  it("maps apps by owning module and xmlid, with a generic fallback", () => {
+    expect(appIcon(node("sale.sale_menu_root")).displayName).toBe("ShoppingBag");
+    expect(appIcon(node("base.menu_administration")).displayName).toBe("Settings");
+    expect(appIcon(node("custom_module.root")).displayName).toBe("AppWindow");
+  });
+  it("gives each app a stable token tone", () => {
+    expect(appTone(node("crm.crm_menu_root"))).toBe(appTone(node("crm.crm_menu_root")));
+    expect(appTone(node("crm.crm_menu_root"))).toMatch(/^text-(primary|accent|success|warning|info)$/);
   });
 });

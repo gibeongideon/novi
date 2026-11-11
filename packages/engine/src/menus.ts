@@ -1,6 +1,7 @@
 /**
  * Odoo menu tree from GET /web/webclient/load_menus (Odoo 20 shape verified live): a flat map
- * keyed by id plus "root"; apps are root's children. Everything the shell shows comes from here.
+ * keyed by id plus "root"; apps are root's children. Odoo's icon images are deliberately ignored:
+ * NOVI has its own visual identity (D-23).
  */
 
 export interface RawMenu {
@@ -12,7 +13,6 @@ export interface RawMenu {
   actionID: number | false;
   actionModel: string | false;
   actionPath: string | false;
-  webIconData?: string | false | null;
 }
 
 export interface MenuNode {
@@ -22,8 +22,6 @@ export interface MenuNode {
   xmlid: string;
   /** Action opened by this menu, if any. */
   action?: { id: number; model: string; path?: string };
-  /** App icon as a data URL (apps only). */
-  icon?: string;
   children: MenuNode[];
   parentId?: number;
 }
@@ -49,9 +47,6 @@ export function buildMenuTree(raw: Record<string, RawMenu>): MenuTree {
         ? {
             action: { id: r.actionID, model: r.actionModel, ...(r.actionPath ? { path: r.actionPath } : {}) },
           }
-        : {}),
-      ...(typeof r.webIconData === "string" && r.webIconData.startsWith("data:")
-        ? { icon: r.webIconData }
         : {}),
     };
     byId.set(id, node);

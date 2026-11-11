@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P1.11.1] NOVI's own look (D-23): own app icons (Lucide set mapped per Odoo module, token colours), redesigned launcher (greeting + app cards), Odoo icon data removed from the engine; rule added to UI-RULES §4 and CLAUDE.md.
 - [P1.11] App shell: login (same-domain, Odoo's own session), app launcher with real Odoo icons, app sidebar menus, routing with deep links, breadcrumbs from the menu tree; engine session/menu/action hooks (TanStack Query); verified end to end in a browser against local Odoo 20.
 - [P0.3] Slim two-stage Odoo image (2.91 GB, was 5.43 GB) in use; all live contract tests pass on it.
 - [P1.10] UI kit: Tailwind preset generated from tokens, `ThemeProvider` (runtime tenant theming with contrast guard, dark mode), NOVI i18n catalogue, 11 primitives (Button, Input, Badge, Avatar, Skeleton, Breadcrumb, Tooltip, DropdownMenu, Dialog, Toast, Command) with 26 Storybook stories and 15 behaviour tests; Storybook added to `pnpm dev` (:6006); web app uses the kit.
