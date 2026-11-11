@@ -19,7 +19,7 @@ export function ShellRoutes({ productName }: { productName?: string }) {
   if (status === "loading") return <Skeleton className="m-6 h-8 w-48" />;
   if (status === "anonymous") return <LoginPage productName={productName} />;
   return (
-    <AppShell>
+    <AppShell productName={productName}>
       <Routes>
         <Route path="/" element={<AppLauncher />} />
         <Route path="/apps/:appId" element={<OpenApp />} />

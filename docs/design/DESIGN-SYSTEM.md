@@ -11,6 +11,7 @@ The tokens live in code: [`packages/ui/src/tokens.ts`](../../packages/ui/src/tok
 | Colour | `bg`, `surface`, `surfaceSunken`, `text`, `textMuted`, `border`, `primary`, `primaryText`, `accent`, `success`, `warning`, `danger`, `info`, `focus` | Light + dark, same names. CSS: `--novi-color-<kebab-name>` |
 | Type | `fontSans`, `fontMono`, sizes `xs…3xl`, weights, line heights | Base size 15px for dense business UI |
 | Space | 4px grid: `0,1,2,3,4,5,6,8,10,12,16` | `--novi-space-4` = 16px |
+| App palette | 8 gradient pairs (`from`/`to`), light + dark, for app tiles (`.novi-tile[data-tone=1..8]`) | White glyph ≥ 3:1 on every `from` (tested). NOVI's own look, D-23 |
 | Radius / shadow / motion | `sm…xl`, `sm/md/lg`, `fast/normal/slow` + easing | Motion respects `prefers-reduced-motion` |
 
 `themeStylesheet(theme)` emits light on `:root`, dark under `prefers-color-scheme` (unless `data-theme="light"`) and under `[data-theme="dark"]`.

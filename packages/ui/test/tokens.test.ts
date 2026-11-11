@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { color, contrastRatio, cssVariables, themeStylesheet, validateTheme } from "../src/index.js";
+import {
+  appPalette,
+  color,
+  contrastRatio,
+  cssVariables,
+  themeStylesheet,
+  validateTheme,
+} from "../src/index.js";
 
 describe("tokens", () => {
   it("light and dark schemes define the same tokens", () => {
@@ -37,5 +44,17 @@ describe("contrast (WCAG 2.1)", () => {
     expect(issues.map((i) => i.pair)).toEqual(
       expect.arrayContaining(["primaryText on primary", "primary on surface"]),
     );
+  });
+});
+
+describe("app tile palette", () => {
+  it("light tiles keep the white glyph readable (≥ 3:1 for icons)", () => {
+    for (const p of appPalette.light)
+      expect(contrastRatio("#ffffff", p.from), p.from).toBeGreaterThanOrEqual(3);
+  });
+  it("emits one CSS variable pair per palette entry", () => {
+    const vars = cssVariables("dark");
+    expect(vars["--novi-app-1-from"]).toBe(appPalette.dark[0].from);
+    expect(vars["--novi-app-8-to"]).toBe(appPalette.dark[7].to);
   });
 });

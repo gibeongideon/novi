@@ -1,30 +1,32 @@
 import type { MenuNode } from "@novi/engine";
 import { cn } from "@novi/ui";
 
-import { appIcon, appTone } from "./appIcons";
+import { appIdentity } from "./appIcons";
 
-/** NOVI app icon: a token-coloured glyph on a neutral chip (D-23: not Odoo's icon artwork). */
+const sizes = {
+  sm: "size-7 rounded-lg [&_svg]:size-4",
+  md: "size-12 rounded-xl [&_svg]:size-6",
+  lg: "size-14 rounded-2xl [&_svg]:size-7",
+} as const;
+
+/** NOVI app tile: white glyph on a palette gradient (D-23: not Odoo's artwork). */
 export function AppIcon({
   app,
   size = "md",
   className,
 }: {
   app: MenuNode;
-  size?: "sm" | "md";
+  size?: keyof typeof sizes;
   className?: string;
 }) {
-  const Icon = appIcon(app);
+  const { icon: Icon, tone } = appIdentity(app);
   return (
     <span
       aria-hidden
-      className={cn(
-        "grid shrink-0 place-items-center rounded-lg border border-border bg-surface-sunken",
-        size === "sm" ? "size-7 [&_svg]:size-4" : "size-11 [&_svg]:size-5",
-        appTone(app),
-        className,
-      )}
+      data-tone={tone}
+      className={cn("novi-tile grid shrink-0 place-items-center", sizes[size], className)}
     >
-      <Icon strokeWidth={1.75} />
+      <Icon strokeWidth={2} />
     </span>
   );
 }

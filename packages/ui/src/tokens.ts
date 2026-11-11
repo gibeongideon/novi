@@ -89,6 +89,33 @@ export const motion = {
   easing: "cubic-bezier(0.2, 0, 0, 1)",
 } as const;
 
+/**
+ * App tile palette (D-23, NOVI's own look): gradient pairs for app icon tiles, white glyph on top.
+ * Every `from` keeps ≥ 3:1 contrast with white (tested). Dark scheme uses slightly lifted hues.
+ */
+export const appPalette = {
+  light: [
+    { from: "#6366f1", to: "#4338ca" }, // 1 indigo
+    { from: "#8b5cf6", to: "#6d28d9" }, // 2 violet
+    { from: "#e11d48", to: "#9f1239" }, // 3 rose
+    { from: "#ea580c", to: "#9a3412" }, // 4 orange
+    { from: "#d97706", to: "#92400e" }, // 5 amber
+    { from: "#059669", to: "#065f46" }, // 6 emerald
+    { from: "#0891b2", to: "#155e75" }, // 7 cyan
+    { from: "#0284c7", to: "#075985" }, // 8 sky
+  ],
+  dark: [
+    { from: "#818cf8", to: "#4f46e5" },
+    { from: "#a78bfa", to: "#7c3aed" },
+    { from: "#fb7185", to: "#be123c" },
+    { from: "#fb923c", to: "#c2410c" },
+    { from: "#fbbf24", to: "#b45309" },
+    { from: "#34d399", to: "#047857" },
+    { from: "#22d3ee", to: "#0e7490" },
+    { from: "#38bdf8", to: "#0369a1" },
+  ],
+} as const satisfies Record<ColorScheme, readonly { from: string; to: string }[]>;
+
 /** Layout grammar (P0.9.2): how Odoo structures map onto NOVI layout. */
 export const layout = {
   sidebarWidth: "248px",
@@ -131,6 +158,10 @@ export function cssVariables(scheme: ColorScheme, theme: TenantTheme = {}): Reco
   for (const [k, v] of Object.entries(radius)) vars[`--novi-radius-${k}`] = v;
   for (const [k, v] of Object.entries(shadow)) vars[`--novi-shadow-${k}`] = v;
   for (const [k, v] of Object.entries(motion)) vars[`--novi-motion-${k}`] = v;
+  appPalette[scheme].forEach((p, i) => {
+    vars[`--novi-app-${i + 1}-from`] = p.from;
+    vars[`--novi-app-${i + 1}-to`] = p.to;
+  });
   return vars;
 }
 

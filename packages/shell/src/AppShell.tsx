@@ -19,7 +19,7 @@ import { Sidebar } from "./Sidebar";
 import { menuUrl } from "./urls";
 
 /** Top bar + current app's sidebar + content. The active menu comes from `?menu=` (deep-linkable). */
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({ children, productName = "NOVI" }: { children: ReactNode; productName?: string }) {
   const t = useT();
   const navigate = useNavigate();
   const { info, logout } = useSession();
@@ -51,7 +51,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             <LayoutGrid aria-hidden />
           </Link>
         </Button>
-        {app ? <AppIcon app={app} size="sm" /> : null}
+        {app ? (
+          <AppIcon app={app} size="sm" />
+        ) : (
+          <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
+            <span
+              aria-hidden
+              data-tone="1"
+              className="novi-tile grid size-7 place-items-center rounded-lg text-sm"
+            >
+              {productName.slice(0, 1)}
+            </span>
+            {productName}
+          </Link>
+        )}
         <Breadcrumb
           className="flex-1"
           items={path.map((n, i) => {

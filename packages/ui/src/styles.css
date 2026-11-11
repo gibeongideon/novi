@@ -25,3 +25,62 @@
     }
   }
 }
+
+@layer components {
+  /* App tile (D-23): gradient from the app palette tokens, picked with data-tone="1".."8" */
+  .novi-tile {
+    background: linear-gradient(135deg, var(--tile-from), var(--tile-to));
+    color: white; /* glyph on tile: contrast ≥ 3:1 is tested for every palette colour */
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+      0 1px 2px color-mix(in srgb, var(--tile-to) 40%, transparent),
+      0 6px 16px -6px color-mix(in srgb, var(--tile-to) 55%, transparent);
+  }
+  .novi-tile[data-tone="1"] {
+    --tile-from: var(--novi-app-1-from);
+    --tile-to: var(--novi-app-1-to);
+  }
+  .novi-tile[data-tone="2"] {
+    --tile-from: var(--novi-app-2-from);
+    --tile-to: var(--novi-app-2-to);
+  }
+  .novi-tile[data-tone="3"] {
+    --tile-from: var(--novi-app-3-from);
+    --tile-to: var(--novi-app-3-to);
+  }
+  .novi-tile[data-tone="4"] {
+    --tile-from: var(--novi-app-4-from);
+    --tile-to: var(--novi-app-4-to);
+  }
+  .novi-tile[data-tone="5"] {
+    --tile-from: var(--novi-app-5-from);
+    --tile-to: var(--novi-app-5-to);
+  }
+  .novi-tile[data-tone="6"] {
+    --tile-from: var(--novi-app-6-from);
+    --tile-to: var(--novi-app-6-to);
+  }
+  .novi-tile[data-tone="7"] {
+    --tile-from: var(--novi-app-7-from);
+    --tile-to: var(--novi-app-7-to);
+  }
+  .novi-tile[data-tone="8"] {
+    --tile-from: var(--novi-app-8-from);
+    --tile-to: var(--novi-app-8-to);
+  }
+
+  /* Soft brand wash behind page heroes, built from the (tenant-overridable) primary/accent tokens */
+  .novi-hero {
+    background:
+      radial-gradient(
+        60% 120% at 0% 0%,
+        color-mix(in srgb, var(--novi-color-primary) 16%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 100% at 100% 0%,
+        color-mix(in srgb, var(--novi-color-accent) 14%, transparent),
+        transparent 70%
+      );
+  }
+}
