@@ -145,7 +145,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P0.10 Spike: 2FA login without Odoo changes
 - [x] P0.10.1 Server-side relay: GET `/web/login`, extract `csrf_token`, POST credentials
 - [x] P0.10.2 Detect the redirect to `/web/login/totp`, then POST `totp_token` and capture `session_id` (simpler than planned: `authenticate` already leaves `pre_uid` in the session)
-- [~] P0.10.3 Handle the trusted-device cookie (`completeTwoFactor(code, {remember:true})` sends `remember`; the `td_id` cookie is kept by the jar, but not yet verified live)
+- [x] P0.10.3 Handle the trusted-device cookie: `completeTwoFactor(code, {remember, userAgent})` + `resumeTrustedDevice()`; verified live (the relay must send a real browser User-Agent, else Odoo 500s naming the device)
 - [-] P0.10.4 Fallback flow: redirect to Odoo's login page and hand the session back to the gateway (not needed: the relay uses stock routes directly)
 - [x] P0.10.5 Write up the result, risks and the chosen approach in DECISIONS.md
 

@@ -40,6 +40,15 @@ interface JsonRpcResponse {
   error?: { code?: number; message?: string; data?: unknown };
 }
 
+/** Odoo auth_totp trusted-device cookie name. */
+const TRUSTED_DEVICE_COOKIE = "td_id";
+/**
+ * Odoo names a remembered device from the browser User-Agent and crashes (HTTP 500) when it can't
+ * parse one. The gateway should pass the end user's real UA; this is the fallback.
+ */
+const DEFAULT_RELAY_UA =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 NOVI-Gateway";
+
 export class JsonRpcTransport implements OrmTransport {
   readonly http: Http;
   private ctx: OdooContext;
@@ -178,16 +187,15 @@ export class JsonRpcTransport implements OrmTransport {
    * We fetch the CSRF token from the stock `/web/login/totp` page and post the 6-digit code to it,
    * exactly like a browser would; Odoo then finalises the session. No Odoo changes needed.
    */
-  async completeTwoFactor(code: string, opts: { remember?: boolean } = {}): Promise<SessionInfo> {
-    if (!this.http.jar) throw new Error("completeTwoFactor is server-side only (gateway)");
-    const page = await this.http.send({
-      url: "/web/login/totp",
-      method: "GET",
-      headers: { Accept: "text/html" },
-      retry: false,
-    });
-    const html = await page.text();
-    const csrf = html.match(/name="csrf_token"[^>]*value="([^"]+)"/)?.[1];
+  async completeTwoFactor(
+    code: string,
+    opts: { remember?: boolean; userAgent?: string } = {},
+  ): Promise<SessionInfo> {
+    const ua = opts.userAgent ?? DEFAULT_RELAY_UA;
+    const page = await this.totpPage(ua);
+    // A valid trusted-device cookie makes Odoo finalise the session without a code
+    if (page.redirected) return this.finalizeTwoFactor();
+    const csrf = page.html.match(/name="csrf_token"[^>]*value="([^"]+)"/)?.[1];
     if (!csrf) {
       throw new AccessDenied("No pending 2FA login in this session (call authenticate() first)", {
         status: page.status,
@@ -198,12 +206,51 @@ export class JsonRpcTransport implements OrmTransport {
     await this.http.send({
       url: "/web/login/totp",
       method: "POST",
-      headers: { Accept: "text/html" },
+      headers: { Accept: "text/html", "User-Agent": ua },
       form,
       retry: false,
     });
-    // A wrong code leaves the session in its pre-login state: get_session_info then fails
-    // ("user is not connected") or returns no uid. Both mean the verification failed.
+    return this.finalizeTwoFactor();
+  }
+
+  /**
+   * Trusted-device login (P0.10.3): after `authenticate()` threw TwoFactorRequiredError, a valid
+   * `td_id` cookie (from an earlier `completeTwoFactor(code, { remember: true })`) lets Odoo skip
+   * the code. Returns the session, or null when the device is not (or no longer) trusted.
+   */
+  async resumeTrustedDevice(userAgent = DEFAULT_RELAY_UA): Promise<SessionInfo | null> {
+    if (!this.trustedDevice) return null;
+    const page = await this.totpPage(userAgent);
+    return page.redirected ? this.finalizeTwoFactor() : null;
+  }
+
+  /** Odoo's trusted-device cookie (`td_id`), to store per user in the gateway vault. */
+  get trustedDevice(): string | undefined {
+    return this.http.jar?.get(TRUSTED_DEVICE_COOKIE);
+  }
+
+  set trustedDevice(key: string | undefined) {
+    if (!this.http.jar) throw new Error("trustedDevice can only be set server-side");
+    if (key) this.http.jar.set(TRUSTED_DEVICE_COOKIE, key);
+  }
+
+  private async totpPage(userAgent: string): Promise<{ status: number; redirected: boolean; html: string }> {
+    if (!this.http.jar) throw new Error("2FA relay is server-side only (gateway)");
+    const res = await this.http.send({
+      url: "/web/login/totp",
+      method: "GET",
+      headers: { Accept: "text/html", "User-Agent": userAgent },
+      retry: false,
+    });
+    const redirected = res.status >= 300 && res.status < 400;
+    return { status: res.status, redirected, html: redirected ? "" : await res.text() };
+  }
+
+  /**
+   * A failed step leaves the session in its pre-login state: get_session_info then fails
+   * ("user is not connected") or returns no uid. Both mean the verification failed.
+   */
+  private async finalizeTwoFactor(): Promise<SessionInfo> {
     let info: SessionInfo;
     try {
       info = await this.getSessionInfo({ retry: false });

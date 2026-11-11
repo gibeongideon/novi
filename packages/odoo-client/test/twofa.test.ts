@@ -46,3 +46,28 @@ describe("2FA relay (completeTwoFactor)", () => {
     await expect(t.completeTwoFactor("000000")).rejects.toBeInstanceOf(AccessDenied);
   });
 });
+
+describe("trusted device (resumeTrustedDevice)", () => {
+  it("returns the session when /web/login/totp redirects (device trusted)", async () => {
+    const fetch = vi.fn(async (u: string | URL | Request, init: RequestInit = {}) => {
+      const url = String(u);
+      if (url.endsWith("/web/login/totp")) {
+        expect((init.headers as Record<string, string>).Cookie).toContain("td_id=dev123");
+        return new Response(null, { status: 303, headers: { Location: "/odoo" } });
+      }
+      return rpc({ uid: 9 });
+    }) as unknown as typeof globalThis.fetch;
+    const t = new JsonRpcTransport({ baseUrl: "http://o", fetch });
+    t.trustedDevice = "dev123";
+    expect((await t.resumeTrustedDevice())?.uid).toBe(9);
+  });
+
+  it("returns null when the device is not trusted (totp form shown)", async () => {
+    const fetch = vi.fn(
+      async () => new Response('<input name="csrf_token" value="x"/>', { status: 200 }),
+    ) as unknown as typeof globalThis.fetch;
+    const t = new JsonRpcTransport({ baseUrl: "http://o", fetch });
+    t.trustedDevice = "stale";
+    expect(await t.resumeTrustedDevice()).toBeNull();
+  });
+});

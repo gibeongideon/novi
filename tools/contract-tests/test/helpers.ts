@@ -109,3 +109,18 @@ export async function totp(base32Secret: string, at = Date.now()): Promise<strin
   const code = (h.readUInt32BE(off) & 0x7fffffff) % 1_000_000;
   return code.toString().padStart(6, "0");
 }
+
+const usedTotpWindows = new Set<number>();
+/**
+ * A TOTP code from a window not used yet in this run: Odoo rejects re-used codes
+ * (totp_last_counter), so consecutive 2FA tests wait for the next 30 s window.
+ */
+export async function freshTotp(secret: string): Promise<string> {
+  let win = Math.floor(Date.now() / 30_000);
+  while (usedTotpWindows.has(win)) {
+    await new Promise((r) => setTimeout(r, 1000));
+    win = Math.floor(Date.now() / 30_000);
+  }
+  usedTotpWindows.add(win);
+  return totp(secret);
+}
