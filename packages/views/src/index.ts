@@ -1,2 +1,2 @@
-/** @novi/views: List, Form, Kanban, Calendar, Pivot, Graph, Activity and Search views. */
-export const PACKAGE_NAME = "@novi/views";
+/** @novi/views: view renderers (P2) and the L5 override registry. */
+export * from "./overrides.js";

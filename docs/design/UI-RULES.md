@@ -15,9 +15,30 @@ Architecture: [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) · Tokens a
 5. **Where does every piece of knowledge come from?** Labels, options, rules, colours, spacing and formatting each have exactly one source (see §1). If you're typing it in, stop.
 6. **What are its states?** Loading, empty, error, read-only, disabled, invalid, long content, RTL, mobile and dark mode. Design all of them, not just the happy path.
 
-When all six have answers, build it.
+7. **What did you delete?** Name the props, variants, steps or parts you removed or refused to add (Musk step 2). "Nothing" usually means you didn't look.
+
+When all seven have answers, build it.
 
 ---
+
+## 0b. Musk's design algorithm: "the best part is no part"
+
+Apply these five steps **in this order** to every design, component, prop, screen, service and process. Most waste comes from doing them out of order, e.g. polishing or automating something that shouldn't exist.
+
+1. **Make the requirement less dumb.** Every requirement has a **named owner** (a person, not "the team" or "Odoo does it"). Question it, including requirements from smart or senior people. If no one can defend it, delete it.
+2. **Delete the part or process.** Remove every prop, variant, screen, step, setting, dependency or abstraction you can. If you aren't adding back at least ~10% of what you delete, you didn't delete enough. A field Odoo already renders well needs no custom widget, and a step users never take needs no button.
+3. **Simplify, then optimise**, but only what survived step 2. Never optimise something that shouldn't exist: no memoising, caching or virtualising a component before you know it's needed.
+4. **Accelerate cycle time.** Make the loop from idea to feedback fast: Storybook first, hot reload, small PRs, `pnpm verify` before push, show users early.
+5. **Automate last.** Generators, codemods, CI gates and scripts come only after the manual process has been proven right. Automating a wrong process just makes mistakes faster.
+
+**Companion rules**
+- **First principles:** reason from what Odoo actually provides (metadata, server rules) and what the user actually needs, not from how other ERPs or the old OWL client look.
+- **The best part is no part.** Every component, prop, dependency and line of code is a liability that must be built, tested, documented and maintained. The cheapest UI is the one generated from metadata you already have.
+- **The best process is no process.** Don't add a review step, setting or approval unless it prevents a real, observed failure.
+- **Every requirement and every L5 override names its owner** (`reason` + owner in the override registry, owner in TASKS/DECISIONS).
+- **Delete on a schedule.** At the end of each phase, list components, props and overrides with no usage (scanner + Storybook) and delete them.
+
+How it combines with DRY and YAGNI: **Musk** decides *whether* a part should exist, **YAGNI** says not to build it before it's needed, and **DRY** makes sure the parts that survive have one source each.
 
 ## 1. DRY: one source for every piece of knowledge
 
@@ -126,7 +147,8 @@ DRY is about **knowledge, not text**. Each fact lives in exactly one place, and 
 
 ## 10. Definition of Done for UI work
 
-- [ ] Pre-flight checklist (§0) answered in the PR description
+- [ ] Pre-flight checklist (§0, all 7 questions) answered in the PR description
+- [ ] Musk order respected (§0b): requirement owned, parts deleted before optimising or automating
 - [ ] No duplicated knowledge (§1); reused or extended existing parts (§2)
 - [ ] Works for any model with this field/view type (or is a registered L5 override with a reason)
 - [ ] All states from §5 designed and implemented

@@ -20,3 +20,4 @@
 4. Real need today (scanner count / task)? →
 5. Source of each piece of knowledge? →
 6. States designed? →
+7. What did you delete (Musk step 2)? →

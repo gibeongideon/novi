@@ -8,6 +8,9 @@ NOVI is a React + TypeScript frontend engine and gateway for an **unmodified** O
 - Never copy Odoo OWL/SCSS/JS UI code. All UI is written from scratch.
 - `odoo_20.0+e.20261111.tar.gz` is reference material only. Don't commit it or anything extracted from it.
 
+## Design algorithm (all work, not only UI): Musk's five steps, in order
+1. Make requirements less dumb: each has a named owner and gets questioned. 2. Delete parts and processes (if you add back < 10%, you didn't delete enough). 3. Simplify/optimise only what survived. 4. Accelerate cycle time. 5. Automate last. "The best part is no part." Details: `docs/design/UI-RULES.md` §0b. Combined with YAGNI (don't build ahead of need) and DRY (one source per piece of knowledge).
+
 ## UI work: read before designing anything
 - **Before designing or building any UI** (component, widget, view, override, or Figma), read `docs/design/UI-RULES.md` and answer its pre-flight checklist (§0). Architecture: `docs/design/COMPONENT-ARCHITECTURE.md`.
 - **DRY is mandatory:** every piece of knowledge (labels, options, rules, formatting, colours, spacing, data access) has one source. Extend existing components; never fork them. Extract on the third occurrence (rule of three), not before.

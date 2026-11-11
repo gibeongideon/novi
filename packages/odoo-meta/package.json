@@ -2,7 +2,7 @@
   "name": "@novi/odoo-meta",
   "version": "0.0.0",
   "private": true,
-  "description": "Odoo view arch XML → normalized ViewSchema, plus field specification builder",
+  "description": "Odoo view arch XML \u2192 normalized ViewSchema, plus field specification builder",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -22,6 +22,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@novi/odoo-expr": "workspace:*"
+    "@novi/odoo-expr": "workspace:*",
+    "@novi/odoo-client": "workspace:*"
   }
 }

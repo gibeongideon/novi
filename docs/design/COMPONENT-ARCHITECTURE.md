@@ -97,11 +97,11 @@ interface FieldProps<V = unknown> {
 Widgets are registered once:
 
 ```ts
-registerField({ widget: "many2many_tags", types: ["many2many"], component: Many2ManyTags, supportsInline: true });
+registerField({ widget: "many2many_tags", types: ["many2many"], component: Many2ManyTags });
 registerField({ type: "monetary", component: Monetary });   // default widget for a field type
 ```
 
-**Resolution order:** `widget=` from the arch → default widget for the field type → **fallback per type** (never crash; log for the coverage scanner).
+**Resolution order:** `widget=` from the arch → default widget for the field type → **one fallback widget** that renders any type from `meta.type` (never crash; `source` tells the caller it was a miss).
 
 Each widget renders both modes (read and edit), so list cells, form fields, kanban cards and mobile cards all reuse the same widget. Formatting (money, dates, numbers, durations) comes from **one** `engine/format` module that follows the user's lang, tz and currency from Odoo. Widgets never format by themselves.
 
@@ -115,8 +115,8 @@ One renderer per Odoo view type: `ListView`, `FormView`, `KanbanView`, `SearchVi
 Bespoke screens are allowed only when the generic renderer measurably fails users (UAT feedback, or a workflow the arch can't express). Overrides are registered, not hard-wired:
 
 ```ts
-registerOverride({ model: "crm.lead", view: "kanban", component: PipelineBoard });          // whole view
-registerOverride({ model: "sale.order", view: "form", slot: "order_line", component: QuoteLines }); // one slot
+registerOverride({ model: "crm.lead", view: "kanban", component: PipelineBoard, reason, owner });          // whole view
+registerOverride({ model: "sale.order", view: "form", slot: "order_line", component: QuoteLines, reason, owner }); // one slot
 ```
 
 Overrides **compose** L2–L4 pieces (e.g. `PipelineBoard` = `Board` + `RecordCard` + forecast header). They don't fork them. Prefer the smallest override (a slot) over replacing a whole view.

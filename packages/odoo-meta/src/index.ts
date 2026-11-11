@@ -1,2 +1,2 @@
-/** @novi/odoo-meta: Odoo view arch XML → normalized ViewSchema, plus field specification builder. */
-export const PACKAGE_NAME = "@novi/odoo-meta";
+/** @novi/odoo-meta: Odoo view arch → ViewSchema, field specification builder, shared metadata types. */
+export type * from "./types.js";
