@@ -1,0 +1,7 @@
+{
+  "$comment": "What the NOVI engine renders natively. Updated as Phase 2/3 tasks land; the scanner measures coverage against it.",
+  "viewTypes": [],
+  "widgets": [],
+  "fieldTypes": [],
+  "clientActions": []
+}
