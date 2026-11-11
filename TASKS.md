@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 9 | 🟦 |
-| 1 Gateway, provisioning & shell | 16 | 0 | ⬜ |
+| 1 Gateway, provisioning & shell | 17 | 0 | ⬜ |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -296,6 +296,17 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 **Done when:** Storybook is published and every primitive has stories and a11y checks.
 
+### P1.17 UI architecture guardrails (DRY and reuse)
+- [x] P1.17.1 Component architecture plan: layers L0–L5 + headless engine, field contract, override registry (`docs/design/COMPONENT-ARCHITECTURE.md`)
+- [x] P1.17.2 UI rules with the pre-flight checklist and DRY single-source table (`docs/design/UI-RULES.md`), linked from CLAUDE.md and the PR template
+- [x] P1.17.3 ESLint layer boundaries (`no-restricted-imports` per package) + ban on hard-coded colours / inline styles in UI packages
+- [ ] P1.17.4 `FieldProps` contract + `registerField` / `registerOverride` registries with type fallbacks (types only, no widgets yet)
+- [ ] P1.17.5 `useFormat()` single formatter (lang/tz/currency from Odoo session) + one NOVI i18n catalogue
+- [ ] P1.17.6 CI check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx`
+- [ ] P1.17.7 Registry writes `tools/coverage-scanner/supported.json` automatically (no hand-maintained list)
+
+**Done when:** a new widget or pattern can only be added through the registry and stories, and lint fails on boundary or token violations.
+
 ### P1.11 Shell: navigation
 - [ ] P1.11.1 App launcher (home grid) from `load_menus` root items with icons
 - [ ] P1.11.2 Sidebar / top menu of the current app, with nested menus
@@ -486,7 +497,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
 - [ ] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner)
-- [ ] P2.13.12 Registry API: `registerWidget(name, component, {supportedTypes})`
+- [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)
 
 **Done when:** every widget has stories, tests and works inside forms and lists.
 

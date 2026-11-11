@@ -1,5 +1,7 @@
 # NOVI design system: foundations (P0.9)
 
+Before designing anything, read the rules in [UI-RULES.md](UI-RULES.md). For how components are layered and reused, see [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md).
+
 The tokens live in code: [`packages/ui/src/tokens.ts`](../../packages/ui/src/tokens.ts). This document covers the parts that aren't a value: how Odoo's structures map onto NOVI layout, what tenants may change, and the accessibility baseline. The Figma kit (P0.9.3) mirrors these names one to one.
 
 ## 1. Tokens (P0.9.1)

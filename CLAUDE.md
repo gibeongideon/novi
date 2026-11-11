@@ -8,6 +8,12 @@ NOVI is a React + TypeScript frontend engine and gateway for an **unmodified** O
 - Never copy Odoo OWL/SCSS/JS UI code. All UI is written from scratch.
 - `odoo_20.0+e.20261111.tar.gz` is reference material only. Don't commit it or anything extracted from it.
 
+## UI work: read before designing anything
+- **Before designing or building any UI** (component, widget, view, override, or Figma), read `docs/design/UI-RULES.md` and answer its pre-flight checklist (§0). Architecture: `docs/design/COMPONENT-ARCHITECTURE.md`.
+- **DRY is mandatory:** every piece of knowledge (labels, options, rules, formatting, colours, spacing, data access) has one source. Extend existing components; never fork them. Extract on the third occurrence (rule of three), not before.
+- Respect the layers L0 tokens → L1 primitives → L2 patterns → L3 fields → L4 views → L5 overrides. Only `engine` talks to Odoo. ESLint enforces the boundaries and bans hard-coded colours and inline styles in UI packages.
+- Generic first: render from Odoo metadata; model-specific UI only as a registered L5 override with a reason.
+
 ## Progress workflow (every session)
 1. Read **ROADMAP.md → "Now / Next"** to find the current task. The detailed checklist is in **TASKS.md**.
 2. Work only on tasks in the current phase. Phases run strictly in order: don't start phase N+1 until every Gate checkbox of phase N in TASKS.md is ticked.
