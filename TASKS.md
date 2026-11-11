@@ -135,10 +135,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P0.9 Design system foundation
 - [x] P0.9.1 Brand-neutral design tokens: color (light/dark), typography, spacing, radius, shadow, motion
 - [x] P0.9.2 Layout grammar: page header, action bar, sheet → card grid, tabs, side drawer, dialog sizes
-- [ ] P0.9.3 Figma kit: shell, list, form, kanban, search bar, dialogs, toasts, empty states
+- [-] P0.9.3 Figma kit: shell, list, form, kanban, search bar, dialogs, toasts, empty states *(deferred, D-20: now a Phase 2 gate item)*
 - [x] P0.9.4 Theming contract: which tokens a tenant can override (logo, primary, accent, font)
 - [x] P0.9.5 Accessibility baseline: contrast ratios, focus rings, keyboard map
-- [ ] P0.9.6 Design review and sign-off with stakeholders
+- [-] P0.9.6 Design review and sign-off with stakeholders *(deferred, D-20: now a Phase 2 gate item)*
 
 **Done when:** the Figma kit is approved and tokens are exported to `packages/ui/tokens`.
 
@@ -162,11 +162,11 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** one script creates a fresh, isolated, log-in-able tenant and the timings are recorded.
 
 ### P0.12 Business & legal prerequisites
-- [ ] P0.12.1 Confirm Odoo Enterprise hosting/partner terms and per-tenant subscription cost with Odoo S.A.
-- [ ] P0.12.2 Decide Community-only vs Enterprise plans and record it in DECISIONS
-- [ ] P0.12.3 Choose a cloud provider and region(s); estimate cost per tenant
-- [ ] P0.12.4 Draft a data-protection position (GDPR / Kenya DPA): data location, processor terms
-- [ ] P0.12.5 Pick a product domain (e.g. `novi.app`) and register it
+- [-] P0.12.1 Confirm Odoo Enterprise hosting/partner terms and per-tenant subscription cost with Odoo S.A. *(deferred, D-20: licensing/cost now a Phase 4 gate item; legal also P7.9)*
+- [-] P0.12.2 Decide Community-only vs Enterprise plans and record it in DECISIONS *(deferred, D-20: licensing/cost now a Phase 4 gate item; legal also P7.9)*
+- [-] P0.12.3 Choose a cloud provider and region(s); estimate cost per tenant *(deferred, D-20: licensing/cost now a Phase 4 gate item; legal also P7.9)*
+- [-] P0.12.4 Draft a data-protection position (GDPR / Kenya DPA): data location, processor terms *(deferred, D-20: licensing/cost now a Phase 4 gate item; legal also P7.9)*
+- [-] P0.12.5 Pick a product domain (e.g. `novi.app`) and register it *(deferred, D-20: licensing/cost now a Phase 4 gate item; legal also P7.9)*
 
 **Done when:** a licensing decision and a cost model per tenant are recorded.
 
@@ -190,8 +190,8 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] Coverage report for the demo DB committed
 - [x] 2FA approach decided (DECISIONS)
 - [x] Provisioning spike < 5 min, recorded (DECISIONS)
-- [ ] Licensing decision recorded
-- [ ] Design tokens and Figma kit approved
+- [-] Licensing decision recorded *(deferred to the Phase 4 gate, D-20)*
+- [-] Design tokens and Figma kit approved *(tokens done; Figma kit + sign-off deferred to the Phase 2 gate, D-20)*
 
 ---
 
@@ -523,6 +523,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** the parity suite is green and the docs are published.
 
 ### Phase 2 Gate
+- [ ] Figma kit (ex-P0.9.3) built on the tokens and design sign-off (ex-P0.9.6) done (D-20)
 - [ ] Every act_window in the demo DB opens without crashing
 - [ ] Parity tests pass on 50 sampled actions (admin + restricted)
 - [ ] Coverage scanner shows List/Form/Kanban/Search supported
@@ -686,6 +687,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** UAT is signed off.
 
 ### Phase 4 Gate
+- [ ] Odoo Enterprise hosting licence and per-tenant cost confirmed (ex-P0.12) before the pilot customer goes live (D-20)
 - [ ] E2E green
 - [ ] Pilot tenant UAT signed off
 

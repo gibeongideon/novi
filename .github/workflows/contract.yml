@@ -1,0 +1,67 @@
+name: Contract tests (live Odoo 20)
+
+# Runs the API contract suite against the stock Odoo 20 image (private GHCR package, built
+# from the tarball with infra/images/odoo20). Catches Odoo API drift and client regressions.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/odoo-client/**"
+      - "tools/contract-tests/**"
+      - "infra/compose/**"
+      - "infra/images/odoo20/**"
+      - ".github/workflows/contract.yml"
+  pull_request:
+    paths:
+      - "packages/odoo-client/**"
+      - "tools/contract-tests/**"
+      - "infra/compose/**"
+  schedule:
+    - cron: "0 4 * * 1" # weekly, to catch image/infra drift
+  workflow_dispatch:
+
+concurrency:
+  group: contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: read
+    env:
+      ODOO_IMAGE: ghcr.io/gibeongideon/novi-odoo20:stock
+      CONTRACT_REQUIRED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build client
+        run: pnpm turbo run build --filter=@novi/contract-tests...
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Start Odoo 20 and seed demo data
+        run: bash infra/compose/seed-dev.sh
+
+      - name: Contract suite
+        run: pnpm --filter @novi/contract-tests test
+
+      - name: Odoo logs on failure
+        if: failure()
+        run: docker compose -f infra/compose/docker-compose.dev.yml logs --tail 300 odoo
+
+      - name: Stop stack
+        if: always()
+        run: docker compose -f infra/compose/docker-compose.dev.yml down -v

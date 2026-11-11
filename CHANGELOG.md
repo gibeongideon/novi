@@ -7,6 +7,9 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P0.10.3] 2FA trusted devices verified live (gateway must forward the user's browser User-Agent).
+- [P0.7] CI workflow for live contract tests against the private Odoo image; slimmer two-stage Odoo image; GHCR push script.
+- [—] D-20: Figma kit/design sign-off deferred to the Phase 2 gate, licensing/cost to the Phase 4 gate.
 - [P1.17] UI architecture and rules: layered component plan (L0–L5 + headless engine), UI-RULES with DRY single-source table and pre-flight checklist, ESLint layer boundaries and token-only rule, CLAUDE.md + PR template wired (D-19).
 - [P0.13] Staging live: https://novi.dafeapp.com serves the progress dashboard (MT5 server, `novi` user, Caddy basic auth); deploys on every push to `main`.
 - [P0.11] Template-based provisioning: frozen template DB per (plan, country) with localisation; sign-up clones it in **8–13 s** instead of 160 s, with per-tenant secrets, ownership reassignment and stronger DB isolation (D-18).

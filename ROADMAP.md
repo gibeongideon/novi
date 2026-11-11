@@ -11,10 +11,10 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 | | |
 |---|---|
 | **Current phase** | Phase 0 — Foundations (in progress) |
-| **In progress** | Phase 0 wrap-up: everything codeable is done (9/13 tasks complete); waiting on people/business items |
-| **Next task** | Close the Phase 0 gate: `P0.9.3` Figma kit + `P0.9.6` design sign-off, `P0.12` licensing/cost decisions, `P0.13.6–9` staging setup. Then Phase 1 starts with `P1.1` |
-| **Blockers** | Phase 1 is gated on: licensing decision (P0.12.1–2), design sign-off (P0.9.6), contract suite in CI (needs the Odoo image in a private registry) |
-| **Open business items** | `P0.12` Odoo Enterprise hosting licence |
+| **In progress** | Phase 0 close-out: live contract tests in CI (slim Odoo image → private GHCR) |
+| **Next task** | Push the Odoo image to GHCR → `contract.yml` green → Phase 0 ✅ → Phase 1 starts with `P1.1` gateway and `P1.17.4` field contract |
+| **Blockers** | `docker login ghcr.io` needed on the dev machine (token with `write:packages`) |
+| **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-11 |
 
 ---
