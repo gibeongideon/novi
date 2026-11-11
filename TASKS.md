@@ -237,7 +237,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P1.4.8 Idempotency: every step is safe to re-run
 - [ ] P1.4.9 Compensation / rollback for each step on failure; status `failed` + alert
 - [ ] P1.4.10 Admin action: retry a failed provisioning from its last step
-- [ ] P1.4.11 Template DB per (plan, country) + clone fast path from `tools/spikes/provision-tenant.sh` (D-18); rebuild templates on image/plan change
+- [ ] P1.4.11 Template DB per (plan, country) + clone fast path from `tools/spikes/provision-tenant.sh` (D-18): template DBs owned by the platform role, guard against `REASSIGN OWNED` moving shared objects; rebuild templates on image/plan change
 
 **Done when:** sign-up results in an active tenant in < 5 min, and a forced failure rolls back cleanly.
 

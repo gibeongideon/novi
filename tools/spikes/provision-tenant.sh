@@ -20,6 +20,10 @@ DBC="novi-dev-db-1"
 PLAN="${NOVI_PLAN:-starter}"
 MODULES="${NOVI_TENANT_MODULES:-base,web,mail,sale_management,crm,account,stock,hr}"
 TPL_ROLE="novi_tpl"
+# Platform admin role (the superuser this script runs psql as). Owns the template *databases*,
+# so REASSIGN OWNED BY novi_tpl (which also moves shared objects such as databases!) can never
+# hand a template to a tenant.
+PLATFORM_ROLE="odoo"
 
 psql() { docker exec -i "$DBC" psql -v ON_ERROR_STOP=1 -U odoo -d "${PGDB:-postgres}" -tA "$@"; }
 tpl_names() { # plan cc -> TPL_DB TPL_VOL
@@ -93,8 +97,10 @@ if [ "$cmd" = template ]; then
     { echo "module init failed, see $DIR/init.log" >&2; exit 1; }
   step init_modules
 
-  # freeze: nobody can log in as the template role or connect to the template
+  # freeze: nobody can log in as the template role or connect to the template, and the template
+  # database itself belongs to the platform role (not novi_tpl): see PLATFORM_ROLE above
   psql -c "ALTER ROLE \"$TPL_ROLE\" NOLOGIN;" >/dev/null
+  psql -c "ALTER DATABASE \"$TPL_DB\" OWNER TO \"$PLATFORM_ROLE\";" >/dev/null
   psql -c "ALTER DATABASE \"$TPL_DB\" WITH IS_TEMPLATE true ALLOW_CONNECTIONS false;" >/dev/null
   step freeze
   SIZE=$(psql -c "SELECT pg_size_pretty(pg_database_size('$TPL_DB'));")
@@ -140,7 +146,11 @@ echo "==> provisioning $id ($( $FAST && echo "fast path: clone $TPL_DB" || echo 
 DBPASS="$(openssl rand -hex 16)"
 psql -c "CREATE ROLE \"$ROLE\" LOGIN PASSWORD '$DBPASS' NOCREATEDB NOCREATEROLE NOSUPERUSER;" >/dev/null
 
+tpl_owner() { psql -c "SELECT pg_get_userbyid(datdba) FROM pg_database WHERE datname='$TPL_DB'"; }
+shared_owned() { psql -c "SELECT count(*) FROM pg_database WHERE datdba = (SELECT oid FROM pg_roles WHERE rolname='$TPL_ROLE')"; }
 if $FAST; then
+  # guard: the template role must own no databases, otherwise REASSIGN OWNED would give them away
+  [ "$(shared_owned)" = 0 ] || { echo "ABORT: $TPL_ROLE owns databases; fix template ownership first" >&2; exit 1; }
   psql -c "CREATE DATABASE \"$DB\" OWNER \"$ROLE\" TEMPLATE \"$TPL_DB\";" >/dev/null
   psql -c "REVOKE ALL ON DATABASE \"$DB\" FROM PUBLIC;" >/dev/null
   # every table/sequence/view inside still belongs to the template role: hand them to the tenant,
@@ -151,6 +161,7 @@ UPDATE ir_config_parameter SET value = gen_random_uuid()::text WHERE key IN ('da
 UPDATE ir_config_parameter SET value = to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI:SS') WHERE key = 'database.create_date';
 DELETE FROM ir_config_parameter WHERE key IN ('web.base.url', 'web.base.url.freeze');
 SQL
+  [ "$(tpl_owner)" = "$PLATFORM_ROLE" ] || { echo "ABORT: template ownership changed to $(tpl_owner)" >&2; exit 1; }
   step clone_db
   docker volume create "$VOL" >/dev/null
   docker run --rm -v "$TPL_VOL":/src:ro -v "$VOL":/var/lib/odoo --entrypoint "" --user root "$IMAGE" sh -c \
