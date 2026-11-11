@@ -1,0 +1,14 @@
+# Odoo reference tarball / extracted sources (never commit)
+*.tar.gz
+odoo-20.0*/
+
+node_modules/
+dist/
+.turbo/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Generated in CI
+deploy/staging/progress/

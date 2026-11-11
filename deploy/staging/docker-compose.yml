@@ -1,0 +1,38 @@
+# NOVI staging — temporary home on the dafeapp server, until the MVP gets its own server (DECISIONS D-12).
+#
+# Isolation from dafeapp:
+#   • separate compose project ("novi") in /opt/novi, with its own volumes
+#   • publishes NO host ports; dafeapp's Caddy (80/443) reaches us over the
+#     shared external docker network "edge", and only `novi-proxy` joins it
+#   • memory/CPU limits on every service so NOVI can never starve dafeapp
+#
+# Run on the server:  docker compose -p novi -f docker-compose.yml up -d --remove-orphans
+
+name: novi
+
+services:
+  # Internal HTTP entrypoint for novi.dafeapp.com (TLS is terminated by dafeapp's Caddy).
+  novi-proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./progress:/srv/progress:ro
+      - novi_caddy_data:/data
+    networks: [edge, internal]
+    mem_limit: 128m
+    cpus: 0.5
+
+  # ── Added in later tasks (kept here so the layout is clear) ───────────────
+  # P0.3  odoo + postgres (stock Odoo 20 image)  → host odoo.novi.dafeapp.com, mem_limit 2g
+  # P1.x  gateway (Fastify BFF) + redis          → novi.dafeapp.com/api
+  # P1.x  web (React SPA static)                 → novi.dafeapp.com/
+
+networks:
+  edge:
+    external: true   # created once: `docker network create edge` (shared with dafeapp's caddy)
+  internal: {}
+
+volumes:
+  novi_caddy_data:

@@ -1,0 +1,930 @@
+# NOVI — Master Task List
+
+This is the complete, tickable list of everything that needs to be built. Each phase is done in order, top to bottom.
+
+**Related files:**
+- [ROADMAP.md](ROADMAP.md): phase status, "Now / Next" and the phase gates
+- [PLAN.md](PLAN.md): architecture and the reasons behind it
+- [CHANGELOG.md](CHANGELOG.md): what was done, and when
+- [DECISIONS.md](DECISIONS.md): decision log
+
+## Conventions
+
+- **Markers:** `[ ]` todo · `[~]` in progress · `[x]` done · `[-]` dropped (add the reason inline) · `[!]` blocked (add the reason inline)
+- **IDs:** `P<phase>.<task>.<subtask>`, e.g. `P2.4.3`. Use the task ID (`P2.4`) in the branch name (`p2.4-onchange-loop`) and in commits (`P2.4.3: apply onchange warnings`).
+- **When a task is done:** it is done only when every subtask is ticked **and** its **Done when** line is true. Then add a CHANGELOG line and update "Now / Next" in ROADMAP.md.
+- **Phase gate:** a phase is closed only when every **Gate** checkbox at the end of the phase is ticked. Until then, the next phase stays locked.
+- **New work found mid-phase:** add it as a new subtask under the right task (next free number). Never renumber existing IDs.
+- **Definition of Done (DoD), applies to every code task:**
+  - typed (no `any` without a comment)
+  - unit tests written
+  - lint, typecheck and tests green in CI
+  - reviewed via PR
+  - docs or README updated if the public API changed
+  - no Odoo code changed or copied
+
+---
+
+## Progress summary
+
+| Phase | Tasks | Done | Status |
+|---|---|---|---|
+| 0 Foundations | 12 | 0 | ⬜ |
+| 1 Gateway, provisioning & shell | 16 | 0 | ⬜ |
+| 2 Engine core | 16 | 0 | ⬜ |
+| 3 Breadth | 12 | 0 | ⬜ |
+| 4 Sales + CRM | 8 | 0 | ⬜ |
+| 5 Accounting | 10 | 0 | ⬜ |
+| 6 Inventory + HR | 11 | 0 | ⬜ |
+| 7 SaaS hardening & GA | 14 | 0 | ⬜ |
+
+(Update the **Done** column when you tick a task.)
+
+---
+
+# Phase 0 — Foundations (≈ 3 weeks)
+
+**Goal:** a repo, a local Odoo 20, a proven client library, and answers to the two biggest unknowns (2FA and provisioning).
+
+### P0.1 Monorepo setup
+- [ ] P0.1.1 Initialise git, set the default branch to `main`, protect the branch (PR required, CI required)
+- [ ] P0.1.2 Set up a pnpm workspace and Turborepo pipeline (`build`, `lint`, `typecheck`, `test`, `dev`)
+- [ ] P0.1.3 Add a shared `tsconfig.base.json` (strict, `noUncheckedIndexedAccess`, path aliases)
+- [ ] P0.1.4 Add ESLint (typescript-eslint, react, react-hooks, import order) and a Prettier config
+- [ ] P0.1.5 Add Vitest config (workspace mode) and coverage reporting
+- [ ] P0.1.6 Create empty package skeletons: `odoo-client`, `odoo-expr`, `odoo-meta`, `engine`, `ui`, `fields`, `views`, `chatter`, `realtime`, `shell`, `apps/*`
+- [ ] P0.1.7 Create service and app skeletons: `services/gateway`, `services/provisioner`, `apps/web` (Vite + React), `apps/admin`
+- [ ] P0.1.8 Create tool skeletons: `tools/contract-tests`, `tools/coverage-scanner`; add `infra/helm`, `infra/images`
+- [ ] P0.1.9 Write the root README: repo layout, prerequisites, `pnpm dev` quick start
+- [ ] P0.1.10 Add Husky + lint-staged pre-commit hook, and a commitlint rule requiring the task-ID prefix
+
+**Done when:** `pnpm install && pnpm build && pnpm test` passes on a clean clone.
+
+### P0.2 CI/CD & versioning
+- [ ] P0.2.1 Add a CI workflow: install (with cache), lint, typecheck, test, build (affected packages only)
+- [ ] P0.2.2 Set up Changesets for package versioning and a private npm registry (GitHub Packages / Verdaccio)
+- [ ] P0.2.3 Add a Docker build job for `web`, `gateway` and `provisioner` (tagged by commit SHA)
+- [ ] P0.2.4 Add dependency scanning (Renovate/Dependabot) and a license checker (block GPL/AGPL deps in the frontend)
+- [ ] P0.2.5 Add PR template with a DoD checklist and a "Task ID" field
+
+**Done when:** a PR runs the full pipeline and a merge to `main` publishes snapshot images.
+
+### P0.3 Local Odoo 20 environment
+- [ ] P0.3.1 Write `infra/images/odoo20/Dockerfile` that builds a stock image from the tarball (no code changes, layer checksum recorded)
+- [ ] P0.3.2 Write `docker-compose.dev.yml` with PostgreSQL 16, Odoo 20, Redis and Mailpit (to catch outgoing mail)
+- [ ] P0.3.3 Write the Odoo config for dev (`dbfilter`, `list_db=False`, `proxy_mode`, workers for websocket/gevent)
+- [ ] P0.3.4 Write a seed script: create `novi_demo` with demo data and install `sale_management`, `crm`, `account_accountant`, `stock`, `hr`, `hr_holidays`, `hr_attendance`, `hr_expense`, `api_doc`
+- [ ] P0.3.5 Seed users: admin, a sales user, an accountant, a stock user, an HR officer, a portal user, and a 2FA-enabled user
+- [ ] P0.3.6 Add `make`/`pnpm` scripts: `odoo:up`, `odoo:reset`, `odoo:shell`, `odoo:logs`
+- [ ] P0.3.7 Document the API key creation steps for JSON-2 testing
+
+**Done when:** one command brings up a seeded Odoo 20 at `localhost:8069` with every pilot app installed.
+
+### P0.4 `odoo-client`: JSON-RPC (session) transport
+- [ ] P0.4.1 JSON-RPC 2.0 envelope builder and response/error parser
+- [ ] P0.4.2 `session.authenticate(db, login, password)`, `getSessionInfo()`, `destroy()`
+- [ ] P0.4.3 `callKw(model, method, args, kwargs)` via `/web/dataset/call_kw/<model>/<method>`
+- [ ] P0.4.4 `callButton(...)` via `/web/dataset/call_button`
+- [ ] P0.4.5 Helpers for route calls: `/web/action/load`, `/web/action/run`, `/web/webclient/load_menus`, `/web/webclient/translations`
+- [ ] P0.4.6 Cookie handling for Node (cookie jar) vs browser (credentials include)
+- [ ] P0.4.7 Context management (lang, tz, uid, allowed_company_ids) merged into every call
+- [ ] P0.4.8 Request batching / de-duplication of identical in-flight calls
+
+**Done when:** contract tests can log in and read `res.partner` through this transport.
+
+### P0.5 `odoo-client`: JSON-2 (bearer) transport
+- [ ] P0.5.1 `POST /json/2/<model>/<method>` with an `Authorization: bearer` header and `X-Odoo-Database`
+- [ ] P0.5.2 Confirm the request body envelope against `Json2Dispatcher` (record the finding in DECISIONS)
+- [ ] P0.5.3 Map 404/422/401/403 to typed errors
+- [ ] P0.5.4 `/web/version` version detection and a capability flag set
+- [ ] P0.5.5 Common `Transport` interface so the engine doesn't care which transport is used
+
+**Done when:** the same test suite passes on both transports for ORM methods.
+
+### P0.6 `odoo-client`: errors, retries, cancellation
+- [ ] P0.6.1 Typed errors: `UserError`, `ValidationError`, `AccessError`, `MissingError`, `RedirectWarning`, `SessionExpired`, `NetworkError`
+- [ ] P0.6.2 Parse Odoo error payloads (name, message, arguments, debug), keeping `data.context` for RedirectWarning actions
+- [ ] P0.6.3 Retry policy for safe calls only (reads), with exponential backoff
+- [ ] P0.6.4 `AbortSignal` support on every call
+- [ ] P0.6.5 Hooks: `onSessionExpired`, `onRequest`, `onResponse` (for logging and telemetry)
+
+**Done when:** every error type has a test reproducing it against real Odoo.
+
+### P0.7 Contract test suite
+- [ ] P0.7.1 Test harness: start Odoo (compose), wait for health, reset the DB per suite
+- [ ] P0.7.2 Auth contracts: authenticate, session info, destroy, wrong password, 2FA user returns `uid: null`
+- [ ] P0.7.3 Metadata contracts: `get_views` (form/list/kanban/search), `fields_get`, `/web/model/get_definitions`
+- [ ] P0.7.4 Data contracts: `web_search_read`, `web_read`, `web_save` (create/update), `web_unlink`, `onchange`, `web_name_search`, `web_read_group`, `formatted_read_group`
+- [ ] P0.7.5 Navigation contracts: `load_menus`, `action/load`, `action/run`, `load_breadcrumbs`
+- [ ] P0.7.6 File contracts: `/web/image`, `/web/content`, `upload_attachment`, `/report/download`
+- [ ] P0.7.7 Mail contracts: `/mail/store`, `/mail/message/post`
+- [ ] P0.7.8 Bus contracts: websocket connect, subscribe, receive a notification triggered by a write
+- [ ] P0.7.9 Snapshot the response shapes; CI fails if Odoo's response shape changes
+
+**Done when:** the full suite is green in CI against the dockerised Odoo 20.
+
+### P0.8 Coverage scanner v1
+- [ ] P0.8.1 Enumerate every `ir.actions.*` and every view (`ir.ui.view`) per model
+- [ ] P0.8.2 Parse arch and collect view types, `widget=` names, field types and client action tags
+- [ ] P0.8.3 Compare with the engine's supported-registry manifest (JSON)
+- [ ] P0.8.4 Output a Markdown + JSON report: % supported and the top missing widgets, ranked by usage
+- [ ] P0.8.5 CLI: `pnpm scan --tenant <url> --db <db>`
+
+**Done when:** a report is produced for `novi_demo` and committed under `docs/coverage/`.
+
+### P0.9 Design system foundation
+- [ ] P0.9.1 Brand-neutral design tokens: color (light/dark), typography, spacing, radius, shadow, motion
+- [ ] P0.9.2 Layout grammar: page header, action bar, sheet → card grid, tabs, side drawer, dialog sizes
+- [ ] P0.9.3 Figma kit: shell, list, form, kanban, search bar, dialogs, toasts, empty states
+- [ ] P0.9.4 Theming contract: which tokens a tenant can override (logo, primary, accent, font)
+- [ ] P0.9.5 Accessibility baseline: contrast ratios, focus rings, keyboard map
+- [ ] P0.9.6 Design review and sign-off with stakeholders
+
+**Done when:** the Figma kit is approved and tokens are exported to `packages/ui/tokens`.
+
+### P0.10 Spike: 2FA login without Odoo changes
+- [ ] P0.10.1 Server-side relay: GET `/web/login`, extract `csrf_token`, POST credentials
+- [ ] P0.10.2 Detect the redirect to `/web/login/totp`, then POST `totp_token` and capture `session_id`
+- [ ] P0.10.3 Handle the trusted-device cookie
+- [ ] P0.10.4 Fallback flow: redirect to Odoo's login page and hand the session back to the gateway
+- [ ] P0.10.5 Write up the result, risks and the chosen approach in DECISIONS.md
+
+**Done when:** a 2FA user can log in through the relay script, and the decision is recorded.
+
+### P0.11 Spike: tenant provisioning
+- [ ] P0.11.1 Script: create a PostgreSQL role and DB `tenant_<id>`
+- [ ] P0.11.2 Run `odoo -d tenant_<id> -i base,<modules> --without-demo --load-language` in a one-off container
+- [ ] P0.11.3 Bootstrap the admin user, company name, country and currency via RPC
+- [ ] P0.11.4 Start a tenant Odoo container with its own filestore volume and config
+- [ ] P0.11.5 Time each step; record total time and resource usage (RAM/CPU idle and under load)
+- [ ] P0.11.6 Write the result to DECISIONS.md (target is < 5 min)
+
+**Done when:** one script creates a fresh, isolated, log-in-able tenant and the timings are recorded.
+
+### P0.12 Business & legal prerequisites
+- [ ] P0.12.1 Confirm Odoo Enterprise hosting/partner terms and per-tenant subscription cost with Odoo S.A.
+- [ ] P0.12.2 Decide Community-only vs Enterprise plans and record it in DECISIONS
+- [ ] P0.12.3 Choose a cloud provider and region(s); estimate cost per tenant
+- [ ] P0.12.4 Draft a data-protection position (GDPR / Kenya DPA): data location, processor terms
+- [ ] P0.12.5 Pick a product domain (e.g. `novi.app`) and register it
+
+**Done when:** a licensing decision and a cost model per tenant are recorded.
+
+### Phase 0 Gate
+- [ ] Contract suite green in CI against Odoo 20
+- [ ] Coverage report for the demo DB committed
+- [ ] 2FA approach decided (DECISIONS)
+- [ ] Provisioning spike < 5 min, recorded (DECISIONS)
+- [ ] Licensing decision recorded
+- [ ] Design tokens and Figma kit approved
+
+---
+
+# Phase 1 — Gateway, tenant provisioning & shell (≈ 6 weeks)
+
+**Goal:** a customer signs up, gets their own Odoo and database, logs in, and browses real menus in the new UI.
+
+### P1.1 Gateway service foundation
+- [ ] P1.1.1 Fastify app with structured logging (pino), request IDs, health/readiness endpoints
+- [ ] P1.1.2 Config loading (env + schema validation), secrets from a vault or KMS
+- [ ] P1.1.3 Gateway Postgres schema and migrations (tenants, users, sessions, prefs, audit)
+- [ ] P1.1.4 Redis connection (cache, rate limits, job queue)
+- [ ] P1.1.5 OpenAPI spec for the gateway's own endpoints
+
+**Done when:** the gateway runs in compose, migrations apply, and health checks pass.
+
+### P1.2 Tenant registry
+- [ ] P1.2.1 Tenant model: id, slug, status (`provisioning|active|suspended|deleting|failed`), tier, plan, odoo_url, db_name, version, branding, created_at
+- [ ] P1.2.2 Resolve the tenant by hostname (`<slug>.novi.app` and custom domains)
+- [ ] P1.2.3 "Bring your own Odoo" registration: URL + DB + connection test
+- [ ] P1.2.4 Internal admin API: list, get, update, change status
+
+**Done when:** requests are routed to the correct tenant context by hostname.
+
+### P1.3 Sign-up flow
+- [ ] P1.3.1 Sign-up page: company name, admin name, email, password, country, language, plan/trial
+- [ ] P1.3.2 Slug generation and availability check
+- [ ] P1.3.3 Email verification (token link) before provisioning starts
+- [ ] P1.3.4 Bot protection (captcha / rate limit per IP)
+- [ ] P1.3.5 Progress screen that polls provisioning status
+- [ ] P1.3.6 Welcome email with the tenant URL and a one-time auto-login link
+
+**Done when:** a new user goes from the sign-up form to a verified, queued tenant.
+
+### P1.4 Provisioner worker
+- [ ] P1.4.1 Job queue (BullMQ) with a step-based state machine, persisted per tenant
+- [ ] P1.4.2 Step: create the DB role and database (`tenant_<id>`) with least-privilege grants
+- [ ] P1.4.3 Step: create the filestore volume
+- [ ] P1.4.4 Step: run the module-init job (Odoo CLI) for the plan's modules, language and country
+- [ ] P1.4.5 Step: deploy the tenant Odoo release (Helm `odoo-tenant`)
+- [ ] P1.4.6 Step: wait for health, then bootstrap the admin user and company via RPC
+- [ ] P1.4.7 Step: store the encrypted service credentials, register the URL, set status `active`
+- [ ] P1.4.8 Idempotency: every step is safe to re-run
+- [ ] P1.4.9 Compensation / rollback for each step on failure; status `failed` + alert
+- [ ] P1.4.10 Admin action: retry a failed provisioning from its last step
+
+**Done when:** sign-up results in an active tenant in < 5 min, and a forced failure rolls back cleanly.
+
+### P1.5 Tenant infrastructure (Helm / Kubernetes)
+- [ ] P1.5.1 `odoo-tenant` chart: deployment, service, PVC (filestore), configmap (`odoo.conf`), secret
+- [ ] P1.5.2 Odoo config hardening: `list_db=False`, `dbfilter=^tenant_<id>$`, random `admin_passwd`, `proxy_mode`
+- [ ] P1.5.3 Separate HTTP and websocket (gevent) ports routed correctly
+- [ ] P1.5.4 NetworkPolicy: a tenant pod can reach only its DB and the gateway
+- [ ] P1.5.5 Resource requests/limits per plan tier
+- [ ] P1.5.6 Ingress / wildcard TLS for `*.novi.app`
+- [ ] P1.5.7 `platform` chart: web, gateway, provisioner, Redis, gateway Postgres
+
+**Done when:** two tenants run side by side in staging with no network path between them.
+
+### P1.6 Auth bridge
+- [ ] P1.6.1 Password login → Odoo `authenticate` → issue our own session (httpOnly JWT cookie + refresh)
+- [ ] P1.6.2 2FA login using the approach chosen in P0.10
+- [ ] P1.6.3 Logout everywhere (our session + Odoo `destroy`)
+- [ ] P1.6.4 Session expiry and silent refresh; 401 → redirect to login
+- [ ] P1.6.5 Password reset (relay to Odoo's `auth_signup` reset flow)
+- [ ] P1.6.6 Brute-force protection and lockout
+
+**Done when:** normal and 2FA users can log in and out, and expired sessions recover.
+
+### P1.7 Session vault & both modes
+- [ ] P1.7.1 Encrypted storage of the Odoo `session_id` per (tenant, user) using envelope encryption
+- [ ] P1.7.2 `sessionStrategy=vault`: the gateway attaches the Odoo cookie on outbound calls
+- [ ] P1.7.3 `sessionStrategy=passthrough`: same-domain mode, the browser's own cookie is forwarded
+- [ ] P1.7.4 Config per tenant; both modes covered by e2e tests
+
+**Done when:** the same UI build works in both modes.
+
+### P1.8 RPC proxy
+- [ ] P1.8.1 Proxy `/api/rpc/*` → Odoo `/web/dataset/*`, `/web/action/*`, `/mail/*`, file routes
+- [ ] P1.8.2 Allow-list of routes and methods (block `/web/database/*`, private methods)
+- [ ] P1.8.3 Rate limiting per user and per tenant
+- [ ] P1.8.4 Audit log for writes (model, method, ids, user, timestamp)
+- [ ] P1.8.5 Streaming for file downloads/uploads (no buffering in memory)
+- [ ] P1.8.6 Websocket relay for `/websocket` (vault mode)
+
+**Done when:** all contract tests also pass when run **through** the gateway.
+
+### P1.9 Metadata cache
+- [ ] P1.9.1 Cache `get_views`, `load_menus` and translations keyed by tenant + uid + lang + company + Odoo version
+- [ ] P1.9.2 Invalidate on module install/upgrade (version bump) and on a manual purge
+- [ ] P1.9.3 Measure: target a cache-hit view load in < 50 ms
+
+**Done when:** repeat view loads are served from cache, and invalidation is proven by a test.
+
+### P1.10 `ui` package (component library)
+- [ ] P1.10.1 Tailwind preset from the tokens (P0.9), with dark mode
+- [ ] P1.10.2 shadcn/ui primitives: Button, Input, Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Dialog, Drawer, Popover, Tooltip, DropdownMenu, Tabs, Badge, Avatar, Toast, Skeleton, Table base, Card, Breadcrumb, Command
+- [ ] P1.10.3 Runtime tenant theming (CSS variables from the tenant config)
+- [ ] P1.10.4 Storybook with every component and its state variants
+- [ ] P1.10.5 Visual regression tests (Storybook snapshots)
+
+**Done when:** Storybook is published and every primitive has stories and a11y checks.
+
+### P1.11 Shell: navigation
+- [ ] P1.11.1 App launcher (home grid) from `load_menus` root items with icons
+- [ ] P1.11.2 Sidebar / top menu of the current app, with nested menus
+- [ ] P1.11.3 Router: `/:app/action/:id`, `/:app/:model/:id`, deep links, browser back/forward
+- [ ] P1.11.4 Breadcrumbs (restored from URL via `load_breadcrumbs`)
+- [ ] P1.11.5 Responsive layout: desktop, tablet, mobile (bottom nav)
+
+**Done when:** every menu of every installed app is reachable and deep links survive a reload.
+
+### P1.12 Shell: user context
+- [ ] P1.12.1 User menu: profile, preferences (lang, tz), API key management link, logout
+- [ ] P1.12.2 Multi-company switcher (`allowed_company_ids` in context)
+- [ ] P1.12.3 Translations loaded and applied, with a language switcher
+- [ ] P1.12.4 Notifications/toast centre
+- [ ] P1.12.5 Global error boundary and an error dialog for Odoo errors
+
+**Done when:** switching language or company updates every subsequent call's context.
+
+### P1.13 Command palette (⌘K)
+- [ ] P1.13.1 Search menus and actions
+- [ ] P1.13.2 Search records (global `web_name_search` across key models)
+- [ ] P1.13.3 Recent items and quick commands (new invoice, new lead…)
+
+**Done when:** ⌘K opens any menu or record in ≤ 3 keystrokes after typing.
+
+### P1.14 SSO
+- [ ] P1.14.1 OAuth providers via Odoo `auth_oauth` redirect flow, then session capture
+- [ ] P1.14.2 Google and Microsoft tested
+
+**Done when:** a user can log in with Google into a tenant.
+
+### P1.15 Apps per plan
+- [ ] P1.15.1 Plan → module list mapping (config)
+- [ ] P1.15.2 Install/uninstall via `button_immediate_install` / `button_immediate_uninstall` RPC as a provisioner job
+- [ ] P1.15.3 Invalidate the metadata cache after module changes
+
+**Done when:** a plan upgrade installs the new apps and their menus appear.
+
+### P1.16 Phase 1 testing
+- [ ] P1.16.1 E2E: sign-up → verify → provision → auto-login → browse menus
+- [ ] P1.16.2 Isolation test: tenant A session/credentials can't access tenant B
+- [ ] P1.16.3 E2E for both session modes
+- [ ] P1.16.4 Load test: 20 concurrent sign-ups
+
+**Done when:** all of the above are green in CI/staging.
+
+### Phase 1 Gate
+- [ ] New sign-up gets an isolated instance (own pod, DB, filestore) in < 5 min
+- [ ] Isolation verified between two tenants
+- [ ] Login works in both modes (incl. 2FA)
+- [ ] All menus of installed apps browsable
+
+---
+
+# Phase 2 — Engine core (≈ 8 weeks)
+
+**Goal:** any standard Odoo list, form or kanban opens, edits and saves through the generic engine.
+
+### P2.1 `odoo-expr`: expression evaluator
+- [ ] P2.1.1 Tokenizer and parser for the Python expression subset used in arch (comparisons, `and/or/not`, `in`, literals, lists/tuples/dicts, attribute and subscript access, function calls)
+- [ ] P2.1.2 Evaluator with a context (record values, `context`, `uid`, `parent`, `today`, `now`, `context_today()`, `relativedelta`, `datetime`, `time`)
+- [ ] P2.1.3 Harvest every `invisible/readonly/required/column_invisible/domain/context` expression from all views in Odoo 20 into a test corpus
+- [ ] P2.1.4 Corpus test: 100% parse; evaluation matches Odoo on sampled records
+- [ ] P2.1.5 Clear errors for unsupported constructs (log them, never crash the view)
+
+**Done when:** the corpus passes 100% parsing and ≥ 99% evaluation parity.
+
+### P2.2 `odoo-expr`: domains
+- [ ] P2.2.1 Parse domain strings and arrays (prefix `&`, `|`, `!` notation)
+- [ ] P2.2.2 Evaluate dynamic domains with record/context values
+- [ ] P2.2.3 Domain builder API (combine, AND/OR, normalise)
+- [ ] P2.2.4 Client-side domain matching for local filtering (e.g. kanban fold)
+
+**Done when:** domain tests cover every operator Odoo supports.
+
+### P2.3 `odoo-meta`: arch parser
+- [ ] P2.3.1 XML parsing (works in both browser and Node)
+- [ ] P2.3.2 ViewSchema types (JSON) for form, list, kanban, search
+- [ ] P2.3.3 Form: `sheet`, `header`, `group` (col/colspan), `notebook/page`, `field`, `button`, `div`, `label`, `separator`, `widget`, `oe_*` semantic classes → semantic hints
+- [ ] P2.3.4 List: columns, `editable`, `decoration-*`, `sum/avg`, `optional`, `handle`, buttons in rows
+- [ ] P2.3.5 Kanban: `templates` → card schema (title, subtitle, tags, avatar, priority, footer); `default_group_by`, `progressbar`, `quick_create`
+- [ ] P2.3.6 Search: filters, separators/groups, group-bys, fields (`filter_domain`), search panel
+- [ ] P2.3.7 Merge field metadata from `get_views().models` into the schema
+- [ ] P2.3.8 Snapshot tests of the schema for every view in the demo DB
+
+**Done when:** every view in the demo DB parses into a schema without errors.
+
+### P2.4 `odoo-meta`: specification builder
+- [ ] P2.4.1 Build the `specification` from a schema (fields shown + needed by modifiers)
+- [ ] P2.4.2 Nested specs for many2one (`display_name`), x2many (sub-view fields, limit/order)
+- [ ] P2.4.3 Context per field (`context` attr) in the spec
+
+**Done when:** specs for the demo DB match what the official client requests (spot-checked on 20 views).
+
+### P2.5 Engine: record model
+- [ ] P2.5.1 `Record`: values, field metadata, evaluated modifiers, dirty tracking, validity
+- [ ] P2.5.2 `RecordList`: pagination, sort, selection, count limit
+- [ ] P2.5.3 `GroupedList`: lazy groups via `web_read_group`, fold/unfold, aggregates
+- [ ] P2.5.4 x2many sub-lists with local create/update/delete → command list (0,1,2,3,4,5,6 / `Command.*`)
+- [ ] P2.5.5 Change notification for React (subscribe/selectors), TanStack Query integration
+
+**Done when:** unit tests cover all x2many command combinations.
+
+### P2.6 Engine: onchange & defaults
+- [ ] P2.6.1 New record: `onchange(values, [], spec)` → defaults
+- [ ] P2.6.2 Field change: `onchange` for the changed field, then apply the returned values
+- [ ] P2.6.3 Show onchange warnings (dialog / notification type)
+- [ ] P2.6.4 Debounce and serialise onchanges so race conditions can't happen
+- [ ] P2.6.5 Nested onchange inside x2many lines (parent values)
+
+**Done when:** the sale order line product change updates price/taxes exactly like Odoo.
+
+### P2.7 Engine: save, delete, actions on records
+- [ ] P2.7.1 `web_save(vals, spec)` with only changed values
+- [ ] P2.7.2 Field-level validation errors and the required fields check before save
+- [ ] P2.7.3 Discard changes, with an unsaved-changes guard on navigation
+- [ ] P2.7.4 Delete (`web_unlink`), duplicate (`copy`), archive/unarchive
+- [ ] P2.7.5 Bulk write on multiple selected records (`web_save_multi`)
+
+**Done when:** create/edit/delete/duplicate/archive all work on 10 different models.
+
+### P2.8 ActionManager
+- [ ] P2.8.1 `ir.actions.act_window` (current, new = dialog, fullscreen; view modes; domain; context; limit)
+- [ ] P2.8.2 `ir.actions.server` via `/web/action/run`
+- [ ] P2.8.3 `ir.actions.report` → download/preview
+- [ ] P2.8.4 `ir.actions.act_url` (new tab / self)
+- [ ] P2.8.5 `ir.actions.client`: registry + iframe fallback for unknown tags
+- [ ] P2.8.6 `ir.actions.act_window_close` (close dialog, reload parent)
+- [ ] P2.8.7 Button execution: `type="object"` (call_button) and `type="action"`; handle `confirm=` attr
+- [ ] P2.8.8 Action stack / breadcrumbs, restored from the URL
+
+**Done when:** every button in the demo sales/accounting flows works.
+
+### P2.9 List view
+- [ ] P2.9.1 TanStack Table with virtual scrolling (10k rows smooth)
+- [ ] P2.9.2 Sort, column resize/reorder, optional columns toggle (saved in gateway prefs)
+- [ ] P2.9.3 Grouped rows with aggregates and lazy loading
+- [ ] P2.9.4 Inline editing (`editable="top|bottom"`), keyboard navigation
+- [ ] P2.9.5 Selection + bulk actions menu (action/print toolbar from `get_views` toolbar)
+- [ ] P2.9.6 Row decorations, handle widget (resequence), row buttons
+- [ ] P2.9.7 Pager and record count (with `count_limit`)
+- [ ] P2.9.8 Empty state (view `help` html)
+
+**Done when:** partner, product and invoice lists match Odoo's data and actions.
+
+### P2.10 Form view
+- [ ] P2.10.1 Layout renderer: sheet → card, groups → responsive 12-column grid, notebook → tabs
+- [ ] P2.10.2 Header: statusbar stepper + primary/secondary action buttons
+- [ ] P2.10.3 Smart buttons (`oe_button_box`) → stat chips
+- [ ] P2.10.4 Title area (`oe_title`), avatar/image
+- [ ] P2.10.5 Modifiers live: invisible / readonly / required re-evaluated on change
+- [ ] P2.10.6 Edit-mode UX: always editable, save/discard bar when dirty, autosave on leave (configurable)
+- [ ] P2.10.7 Record pager (prev/next within the list)
+- [ ] P2.10.8 Chatter slot (drawer placeholder until P3.7)
+
+**Done when:** the sale order, partner, product and employee forms render and save correctly.
+
+### P2.11 Kanban view
+- [ ] P2.11.1 Card renderer from the kanban schema
+- [ ] P2.11.2 Columns by `default_group_by`, fold/unfold, column counts and aggregates
+- [ ] P2.11.3 Drag-and-drop between columns (write the group field) and within a column (resequence)
+- [ ] P2.11.4 Quick create (simple form or `quick_create_view`)
+- [ ] P2.11.5 Progress bars (`progressbar` attr)
+- [ ] P2.11.6 Infinite load per column
+
+**Done when:** the CRM pipeline works generically (before the bespoke version in P4).
+
+### P2.12 Search
+- [ ] P2.12.1 Search bar with facets (field search, filters, group-bys)
+- [ ] P2.12.2 Filter groups (OR within a group, AND across groups), date filters (period options)
+- [ ] P2.12.3 Custom filter builder (domain editor)
+- [ ] P2.12.4 Custom group-by
+- [ ] P2.12.5 Favourites: load/save/delete via `ir.filters`, default favourite, shared
+- [ ] P2.12.6 Search panel (left sidebar categories/filters)
+- [ ] P2.12.7 Search state in the URL
+
+**Done when:** searching, grouping and favourites behave the same as in Odoo for 10 actions.
+
+### P2.13 Core field widgets (with read/edit modes)
+- [ ] P2.13.1 char, text, email, phone, url
+- [ ] P2.13.2 integer, float, monetary (currency field, digits), percentage
+- [ ] P2.13.3 boolean, boolean_toggle
+- [ ] P2.13.4 selection, radio, badge, priority (stars)
+- [ ] P2.13.5 date, datetime (tz-aware), daterange
+- [ ] P2.13.6 many2one (search, create & edit, open record, `options` no_create/no_open)
+- [ ] P2.13.7 many2many_tags (colours), many2many_checkboxes
+- [ ] P2.13.8 one2many / many2many inline list (editable sub-list, dialog form)
+- [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
+- [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
+- [ ] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner)
+- [ ] P2.13.12 Registry API: `registerWidget(name, component, {supportedTypes})`
+
+**Done when:** every widget has stories, tests and works inside forms and lists.
+
+### P2.14 Iframe fallback host
+- [ ] P2.14.1 Embed Odoo's own action URL for unsupported client actions/views
+- [ ] P2.14.2 Session sharing (same domain) / gateway-proxied frame (vault mode)
+- [ ] P2.14.3 Clear "classic view" indicator and an "open in new tab" option
+
+**Done when:** Discuss and a spreadsheet dashboard open inside the shell.
+
+### P2.15 Access handling
+- [ ] P2.15.1 Respect `create/edit/delete/duplicate` arch attrs and `groups` (already filtered by the server)
+- [ ] P2.15.2 `check_access_rights` probes to hide create/edit buttons
+- [ ] P2.15.3 Show AccessError gracefully (no crash, clear message)
+
+**Done when:** a restricted user sees only what Odoo allows.
+
+### P2.16 Parity harness & engine docs
+- [ ] P2.16.1 Parity test: for 50 sampled actions, compare records, fields and buttons against Odoo for admin and a restricted user
+- [ ] P2.16.2 Performance budget: list open < 1 s, form open < 800 ms (p75, staging)
+- [ ] P2.16.3 Engine developer docs: how to write an override and a widget
+
+**Done when:** the parity suite is green and the docs are published.
+
+### Phase 2 Gate
+- [ ] Every act_window in the demo DB opens without crashing
+- [ ] Parity tests pass on 50 sampled actions (admin + restricted)
+- [ ] Coverage scanner shows List/Form/Kanban/Search supported
+
+---
+
+# Phase 3 — Breadth (≈ 6 weeks)
+
+**Goal:** ≥ 90% of views render natively; files, reports, chatter and live updates work.
+
+### P3.1 Calendar view
+- [ ] P3.1.1 Month/week/day views, `date_start/date_stop/all_day` from the arch
+- [ ] P3.1.2 Create by click/drag, move/resize to update dates
+- [ ] P3.1.3 Colour by field, attendee filters sidebar
+- [ ] P3.1.4 Quick create and popover
+
+**Done when:** time off and CRM activities calendars work.
+
+### P3.2 Pivot view
+- [ ] P3.2.1 Row/column headers via `formatted_read_grouping_sets`
+- [ ] P3.2.2 Expand/collapse, swap axes, multiple measures
+- [ ] P3.2.3 Totals and comparison periods
+- [ ] P3.2.4 Download xlsx; drill-down to list
+
+**Done when:** sales and invoice analysis pivots match Odoo totals.
+
+### P3.3 Graph view
+- [ ] P3.3.1 Bar, line and pie charts (Recharts/ECharts) from `formatted_read_group`
+- [ ] P3.3.2 Stacked, cumulative, measure switch, group-by switch
+- [ ] P3.3.3 Click → filtered list
+
+**Done when:** every graph view in the demo DB renders.
+
+### P3.4 Activity view & activities
+- [ ] P3.4.1 Activity matrix view (records × activity types)
+- [ ] P3.4.2 Schedule, mark done, edit, cancel activities
+- [ ] P3.4.3 "My activities" systray widget
+
+**Done when:** a user can plan and complete activities on any record.
+
+### P3.5 Export & import
+- [ ] P3.5.1 Export dialog: field tree (`/web/export/get_fields`), templates, csv/xlsx
+- [ ] P3.5.2 Import wizard via `base_import` RPC (upload, map columns, test, import)
+- [ ] P3.5.3 Error report display for failed import rows
+
+**Done when:** contacts can be exported and re-imported without data loss.
+
+### P3.6 Reports & attachments
+- [ ] P3.6.1 Print menu from the toolbar → `/report/download` (PDF), in-app PDF preview
+- [ ] P3.6.2 Attachments panel: upload (drag-drop), list, preview, delete
+- [ ] P3.6.3 Image/document preview (PDF, images)
+
+**Done when:** printing an invoice and a quotation gives the same PDF as Odoo.
+
+### P3.7 Chatter
+- [ ] P3.7.1 `/mail/store` client: thread messages, followers, attachments, activities
+- [ ] P3.7.2 Message list with author, date, tracking values (field changes)
+- [ ] P3.7.3 Composer: log note vs send message, @mentions, attachments, full composer (templates)
+- [ ] P3.7.4 Followers: add/remove, subscription types
+- [ ] P3.7.5 Reactions, edit/delete own message, star
+- [ ] P3.7.6 Layout: side drawer on desktop, tab on mobile
+
+**Done when:** chatter on sale.order behaves like Odoo (post, log, follow, attach).
+
+### P3.8 Realtime
+- [ ] P3.8.1 Bus client: connect, subscribe, `last` id, reconnect with backoff, version check
+- [ ] P3.8.2 Gateway websocket relay (vault mode)
+- [ ] P3.8.3 Map bus notifications → query invalidation (record updates, new messages)
+- [ ] P3.8.4 Presence and live chatter updates
+- [ ] P3.8.5 Polling fallback via `/websocket/peek_notifications`
+
+**Done when:** a change by user A appears for user B without a reload.
+
+### P3.9 Notifications & mail UX
+- [ ] P3.9.1 In-app notification inbox (mentions, assigned activities)
+- [ ] P3.9.2 Browser push (optional, per user)
+
+**Done when:** mentions show up in the inbox in real time.
+
+### P3.10 Remaining widgets (from scanner backlog)
+- [ ] P3.10.1 Rerun the scanner and rank the missing widgets by usage
+- [ ] P3.10.2 Implement the top N until ≥ 90% coverage (add subtasks as P3.10.x)
+
+**Done when:** the scanner reports ≥ 90%.
+
+### P3.11 Settings screens
+- [ ] P3.11.1 `res.config.settings` form (app sections, search within settings)
+- [ ] P3.11.2 Users & companies management screens
+
+**Done when:** an admin can change company settings and manage users in NOVI.
+
+### P3.12 Mobile & accessibility pass
+- [ ] P3.12.1 Mobile layouts for list (cards), form, kanban, search
+- [ ] P3.12.2 Keyboard shortcuts map (save, new, discard, next/prev)
+- [ ] P3.12.3 axe-core audit with no serious violations
+
+**Done when:** core flows are usable on a phone and pass the axe audit.
+
+### Phase 3 Gate
+- [ ] Scanner ≥ 90% of views natively rendered
+- [ ] Chatter, reports, attachments, export/import working
+- [ ] Realtime updates verified across two browsers
+
+---
+
+# Phase 4 — Sales + CRM (≈ 5 weeks)
+
+**Goal:** bespoke, best-in-class screens for the sales cycle.
+
+### P4.1 CRM pipeline
+- [ ] P4.1.1 Pipeline board: stage columns, expected revenue totals, win probability
+- [ ] P4.1.2 Rich lead cards (customer, value, activity status, tags, owner)
+- [ ] P4.1.3 Drag to stage, mark won/lost (lost reason wizard)
+- [ ] P4.1.4 Filters: my pipeline, team, salesperson
+
+**Done when:** sales users prefer it over the generic kanban (UAT feedback).
+
+### P4.2 Lead / opportunity form
+- [ ] P4.2.1 Redesigned layout (contact info, deal details, timeline)
+- [ ] P4.2.2 Convert lead to opportunity, merge, create quotation
+
+**Done when:** lead → opportunity → quotation works end to end.
+
+### P4.3 Forecast & planning
+- [ ] P4.3.1 Forecast by expected closing month
+- [ ] P4.3.2 Activity planning view for sales reps
+
+**Done when:** forecast totals match Odoo's forecast view.
+
+### P4.4 Quotation editor
+- [ ] P4.4.1 Lines editor: product search, quantity, UoM, price, discount, taxes, subtotal (keyboard-first)
+- [ ] P4.4.2 Sections and notes, reordering
+- [ ] P4.4.3 Optional products, pricelist and currency
+- [ ] P4.4.4 Live totals panel (untaxed, taxes, total) driven by onchange
+
+**Done when:** totals equal Odoo exactly on 20 test quotations.
+
+### P4.5 Sales flows
+- [ ] P4.5.1 Send by email (composer with template), preview the portal link
+- [ ] P4.5.2 Confirm, cancel, set to quotation, create invoice wizard
+- [ ] P4.5.3 Customer and product quick-create inline
+
+**Done when:** the quote → send → confirm → invoice flow is complete.
+
+### P4.6 Sales & CRM dashboards
+- [ ] P4.6.1 KPIs: revenue, pipeline value, win rate, avg deal size, quotations to follow up
+- [ ] P4.6.2 Charts: revenue by month, top customers, top products
+- [ ] P4.6.3 Customisable widgets (prefs stored in the gateway)
+
+**Done when:** KPI values match Odoo reporting for the same period.
+
+### P4.7 Customers (contacts)
+- [ ] P4.7.1 Customer 360 page: info, sales, invoices, open activities, chatter
+
+**Done when:** the customer page shows the complete picture from Odoo data.
+
+### P4.8 Testing & UAT
+- [ ] P4.8.1 E2E: lead → opportunity → quotation → confirmed order → invoice
+- [ ] P4.8.2 UAT with pilot sales users; record feedback as subtasks
+
+**Done when:** UAT is signed off.
+
+### Phase 4 Gate
+- [ ] E2E green
+- [ ] Pilot tenant UAT signed off
+
+---
+
+# Phase 5 — Accounting (≈ 7 weeks)
+
+**Goal:** accountants can do their daily work, with figures identical to Odoo.
+
+### P5.1 Invoice / bill editor
+- [ ] P5.1.1 Customer invoice, vendor bill, credit note layouts
+- [ ] P5.1.2 Lines with accounts, analytic distribution, taxes; journal items tab
+- [ ] P5.1.3 Post, reset to draft, cancel, add credit note, send & print
+- [ ] P5.1.4 Bill upload with PDF side-by-side (attachment preview)
+
+**Done when:** invoice totals and journal entries are identical to Odoo.
+
+### P5.2 Payments
+- [ ] P5.2.1 Register payment wizard (full/partial, batch, write-off)
+- [ ] P5.2.2 Payments list and form; outstanding credits widget (assign to invoice)
+
+**Done when:** partial and full payments reconcile correctly.
+
+### P5.3 Bank reconciliation
+- [ ] P5.3.1 Bank statement lines list (per journal)
+- [ ] P5.3.2 Matching UI: suggested matches, manual match, write-off, partner set
+- [ ] P5.3.3 Reconciliation models applied
+- [ ] P5.3.4 Bank statement import (via Odoo import RPC)
+
+**Done when:** a month of demo statements can be reconciled entirely in NOVI.
+
+### P5.4 Financial reports
+- [ ] P5.4.1 Generic `account.report` renderer using its RPC methods (lines, unfold, options)
+- [ ] P5.4.2 Balance sheet, P&L, cash flow, general ledger, trial balance, aged receivable/payable, tax report
+- [ ] P5.4.3 Filters: dates, comparison, journals, analytic, multi-company
+- [ ] P5.4.4 Export PDF/XLSX via Odoo's report export methods
+- [ ] P5.4.5 Drill-down to journal items
+
+**Done when:** every report's figures match Odoo to the cent.
+
+### P5.5 Journal entries & chart of accounts
+- [ ] P5.5.1 Journal entry editor (balanced lines check)
+- [ ] P5.5.2 Chart of accounts, journals, taxes, fiscal positions screens (generic + polish)
+
+**Done when:** manual journal entries post correctly.
+
+### P5.6 Period closing & lock dates
+- [ ] P5.6.1 Lock dates settings, tax return / closing flows (via Odoo actions)
+
+**Done when:** lock dates are enforced and shown.
+
+### P5.7 Accounting dashboard
+- [ ] P5.7.1 Journal cards (bank balance, to reconcile, unpaid invoices, bills to pay)
+- [ ] P5.7.2 KPIs: cash, receivables, payables, overdue, profit this month
+
+**Done when:** dashboard numbers match Odoo's accounting dashboard.
+
+### P5.8 Follow-ups
+- [ ] P5.8.1 Customer statements and payment follow-up actions
+
+**Done when:** a follow-up email/letter can be sent from NOVI.
+
+### P5.9 Multi-currency & multi-company checks
+- [ ] P5.9.1 Test invoices and payments in a foreign currency, exchange differences
+- [ ] P5.9.2 Inter-company visibility respects company context
+
+**Done when:** foreign-currency tests pass.
+
+### P5.10 Testing & UAT
+- [ ] P5.10.1 E2E: invoice → payment → bank reconcile → reports reflect it
+- [ ] P5.10.2 Accountant UAT sign-off
+
+**Done when:** UAT is signed off.
+
+### Phase 5 Gate
+- [ ] All financial reports match Odoo to the cent
+- [ ] E2E green
+- [ ] Accountant UAT signed off
+
+---
+
+# Phase 6 — Inventory + HR (≈ 6 weeks)
+
+**Goal:** warehouse and HR teams can work fully in NOVI.
+
+### P6.1 Transfers
+- [ ] P6.1.1 Receipts / deliveries / internal transfers lists with state and readiness filters
+- [ ] P6.1.2 Transfer form: operations lines, quantities, lots/serials, check availability, validate
+- [ ] P6.1.3 Backorder wizard, return wizard
+- [ ] P6.1.4 Barcode-friendly mode: scan input focus, big touch targets
+
+**Done when:** receipt → stock → delivery works with lots/serials.
+
+### P6.2 Products & stock
+- [ ] P6.2.1 Product form polish (variants, UoM, routes, inventory tab)
+- [ ] P6.2.2 Stock on hand, forecast and moves history
+- [ ] P6.2.3 Inventory adjustments (physical count) flow
+
+**Done when:** stock quantities match Odoo after adjustments.
+
+### P6.3 Replenishment
+- [ ] P6.3.1 Reordering rules list, replenishment report, order once / automate
+
+**Done when:** replenishment creates the expected RFQs.
+
+### P6.4 Inventory dashboard & reports
+- [ ] P6.4.1 Operation-type cards (to process, late, waiting), stock valuation report
+
+**Done when:** dashboard counts match Odoo.
+
+### P6.5 Employees
+- [ ] P6.5.1 Employee directory (cards, org chart)
+- [ ] P6.5.2 Employee profile (work info, private info with access rules, documents)
+- [ ] P6.5.3 Departments and job positions
+
+**Done when:** HR officer and normal employee see the correct fields.
+
+### P6.6 Time off
+- [ ] P6.6.1 My time off: balances, request form, calendar
+- [ ] P6.6.2 Manager approval inbox (approve/refuse/validate)
+- [ ] P6.6.3 Allocations and accrual display
+
+**Done when:** request → approve updates balances correctly.
+
+### P6.7 Attendance
+- [ ] P6.7.1 Check-in/check-out widget, kiosk-friendly mode
+- [ ] P6.7.2 Attendance list and overtime display
+
+**Done when:** check-in/out records appear in Odoo.
+
+### P6.8 Expenses
+- [ ] P6.8.1 Expense capture with receipt upload (mobile camera)
+- [ ] P6.8.2 Expense reports: submit, approve, post, pay
+
+**Done when:** expense → approval → accounting entry works.
+
+### P6.9 HR dashboard
+- [ ] P6.9.1 Headcount, absences today, pending approvals
+
+**Done when:** numbers match Odoo.
+
+### P6.10 Inventory ↔ Sales/Accounting links
+- [ ] P6.10.1 Delivery status on sale orders, invoice from delivered quantities
+
+**Done when:** a full order → delivery → invoice cycle works.
+
+### P6.11 Testing & UAT
+- [ ] P6.11.1 E2E: purchase receipt → stock → sale delivery
+- [ ] P6.11.2 E2E: time-off request → approval; expense → payment
+- [ ] P6.11.3 Warehouse and HR UAT sign-off
+
+**Done when:** UAT is signed off.
+
+### Phase 6 Gate
+- [ ] E2E green
+- [ ] Inventory and HR UAT signed off
+
+---
+
+# Phase 7 — SaaS hardening & GA (≈ 5 weeks)
+
+**Goal:** production-ready, sellable, operable product.
+
+### P7.1 Admin console (platform operators)
+- [ ] P7.1.1 Tenant list/search, status, plan, resource usage
+- [ ] P7.1.2 Tenant detail: logs link, provisioning history, retry, suspend, delete
+- [ ] P7.1.3 Operator roles and audited actions
+
+**Done when:** operators can manage all tenants without kubectl.
+
+### P7.2 Tenant self-service settings
+- [ ] P7.2.1 Branding: logo, colours, favicon, email sender name
+- [ ] P7.2.2 Custom domain with automatic TLS (DNS verification)
+- [ ] P7.2.3 App selection within plan limits; user seat management
+
+**Done when:** a tenant can white-label their instance on a custom domain.
+
+### P7.3 Billing & plans
+- [ ] P7.3.1 Plans (apps, seats, resources), trial length
+- [ ] P7.3.2 Payment provider integration (Stripe / M-Pesa / Paystack) and invoices
+- [ ] P7.3.3 Trial expiry → reminder emails → suspend
+- [ ] P7.3.4 Upgrade/downgrade → provisioner jobs (apps, resources)
+
+**Done when:** a trial converts to paid and a non-payment suspends automatically.
+
+### P7.4 Tenant lifecycle
+- [ ] P7.4.1 Suspend/resume (scale to 0, friendly suspended page)
+- [ ] P7.4.2 Scheduled backups: per-DB `pg_dump` + filestore snapshot, retention policy, offsite copy
+- [ ] P7.4.3 Restore to the same tenant or a new one; restore drill documented
+- [ ] P7.4.4 Delete: grace period, GDPR data export, full resource removal
+- [ ] P7.4.5 Odoo upgrade waves (canary tenants → all), with a rollback plan
+- [ ] P7.4.6 Shared-instance density tier for trials (dbfilter by hostname), migration between tiers
+
+**Done when:** backup → restore and delete have been tested end to end.
+
+### P7.5 Feature flags
+- [ ] P7.5.1 Flags per tenant/plan/user (e.g. native vs iframe for a screen)
+
+**Done when:** a screen can be switched per tenant without a deploy.
+
+### P7.6 Observability
+- [ ] P7.6.1 OpenTelemetry traces: browser → gateway → Odoo call timings
+- [ ] P7.6.2 Metrics dashboards: latency, error rate, provisioning time, active tenants
+- [ ] P7.6.3 Alerts: failed provisioning, tenant down, error spikes, backup failures
+- [ ] P7.6.4 Front-end error tracking (Sentry or similar)
+
+**Done when:** on-call can see and get alerts on all critical paths.
+
+### P7.7 Performance & load
+- [ ] P7.7.1 Load test: N tenants × M users; gateway p95 overhead < 150 ms
+- [ ] P7.7.2 Front-end budgets: bundle size, LCP < 2.5 s, code-splitting per app
+- [ ] P7.7.3 Capacity plan per tier (nodes, DB sizing)
+
+**Done when:** load targets are met and the capacity plan is recorded.
+
+### P7.8 Security
+- [ ] P7.8.1 Threat model (gateway, vault, provisioner, tenant isolation)
+- [ ] P7.8.2 Security headers, CSP, CSRF on gateway endpoints, cookie flags
+- [ ] P7.8.3 Secrets rotation (vault keys, DB passwords)
+- [ ] P7.8.4 External penetration test and fixing every high/critical finding
+- [ ] P7.8.5 Dependency and container image scanning in CI
+
+**Done when:** the pentest report has no open high/critical issues.
+
+### P7.9 Compliance & legal
+- [ ] P7.9.1 Terms of service, privacy policy, DPA
+- [ ] P7.9.2 Data residency options documented
+- [ ] P7.9.3 Odoo licensing compliance confirmed for production
+
+**Done when:** legal sign-off is received.
+
+### P7.10 Accessibility & i18n
+- [ ] P7.10.1 WCAG 2.1 AA audit and fixes
+- [ ] P7.10.2 Translations for NOVI's own strings (en, fr, sw at minimum), RTL check
+
+**Done when:** the audit passes and the languages ship.
+
+### P7.11 Documentation
+- [ ] P7.11.1 User guide per app
+- [ ] P7.11.2 Admin/tenant guide (branding, users, domains)
+- [ ] P7.11.3 Operator runbooks (provisioning, backup/restore, upgrades, incidents)
+- [ ] P7.11.4 Developer docs (engine, widgets, overrides, packages)
+
+**Done when:** docs are published.
+
+### P7.12 Support & onboarding
+- [ ] P7.12.1 In-app onboarding tour, sample data option for trials
+- [ ] P7.12.2 Support channel / help widget, status page
+
+**Done when:** a new user can get started without help.
+
+### P7.13 Release engineering
+- [ ] P7.13.1 Semantic versioning and release notes from the CHANGELOG
+- [ ] P7.13.2 Staging → production promotion, blue/green or canary deploy for the platform
+
+**Done when:** a release can be promoted and rolled back with one command.
+
+### P7.14 GA readiness review
+- [ ] P7.14.1 Go/no-go checklist review with stakeholders
+- [ ] P7.14.2 Launch plan (marketing site, pricing page, sign-up open)
+
+**Done when:** GA is approved.
+
+### Phase 7 Gate — GA
+- [ ] Billing, lifecycle, backups/restore verified
+- [ ] Observability and alerts live
+- [ ] Pentest clean, legal sign-off
+- [ ] Docs published
+- [ ] GA approved

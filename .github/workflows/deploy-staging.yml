@@ -1,0 +1,71 @@
+name: Deploy staging (novi.dafeapp.com)
+
+# Every push to main updates the live staging site.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50   # recent commits shown on the dashboard
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build progress dashboard
+        run: node tools/progress-dashboard/build.mjs --out deploy/staging/progress
+
+      - name: Validate deploy secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          for v in VPS_HOST VPS_USER VPS_SSH_KEY; do
+            [ -n "${!v}" ] || { echo "::error::Missing GitHub secret $v"; exit 1; }
+          done
+
+      - name: Copy staging bundle to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy/staging/docker-compose.yml,deploy/staging/Caddyfile,deploy/staging/progress"
+          target: "/opt/novi"
+          strip_components: 2
+          rm: false
+
+      - name: Start / update NOVI stack
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/novi
+            if [ ! -f .env ] || grep -q CHANGE_ME .env; then
+              echo "::error::/opt/novi/.env missing or still has placeholders (see DEPLOYMENT.md step 3)"
+              exit 1
+            fi
+            docker network inspect edge >/dev/null 2>&1 || docker network create edge
+            docker compose -p novi -f docker-compose.yml up -d --remove-orphans
+            # Caddy serves the new dashboard files immediately; reload picks up Caddyfile changes.
+            docker compose -p novi -f docker-compose.yml exec -T novi-proxy caddy reload --config /etc/caddy/Caddyfile || true
+            docker compose -p novi -f docker-compose.yml ps
+            echo "Deployed: https://novi.dafeapp.com/progress/"
