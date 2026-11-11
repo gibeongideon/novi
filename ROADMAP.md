@@ -11,9 +11,9 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 | | |
 |---|---|
 | **Current phase** | Phase 0 — Foundations (in progress) |
-| **In progress** | `P0.13` Live staging: run setup-server.sh, set GitHub secrets, add DNS |
-| **Next task** | `P0.1` Monorepo setup → first subtask `P0.1.1` |
-| **Blockers** | — |
+| **In progress** | Phase 0 wrap-up: everything codeable is done (9/13 tasks complete); waiting on people/business items |
+| **Next task** | Close the Phase 0 gate: `P0.9.3` Figma kit + `P0.9.6` design sign-off, `P0.12` licensing/cost decisions, `P0.13.6–9` staging setup. Then Phase 1 starts with `P1.1` |
+| **Blockers** | Phase 1 is gated on: licensing decision (P0.12.1–2), design sign-off (P0.9.6), contract suite in CI (needs the Odoo image in a private registry) |
 | **Open business items** | `P0.12` Odoo Enterprise hosting licence |
 | **Last updated** | 2026-11-11 |
 

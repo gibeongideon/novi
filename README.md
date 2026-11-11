@@ -31,6 +31,8 @@ pnpm --filter @novi/web dev      # web app skeleton
 
 Local services: Odoo http://localhost:18069 (admin / admin) · Mailpit http://localhost:8025
 
+`pnpm odoo:seed` writes the test users, the 2FA user's TOTP secret and an **admin API key** to `.cache/dev-credentials.json` (git-ignored). To create an API key by hand for JSON-2 testing: log in to Odoo → avatar → **My Profile** → **Account Security** → **New API Key** (scope: RPC). Then call `POST /json/2/<model>/<method>` with `Authorization: bearer <key>` and `X-Odoo-Database: novi_demo`.
+
 ## Layout
 
 | Path | What |

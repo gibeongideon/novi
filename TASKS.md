@@ -29,7 +29,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
-| 0 Foundations | 13 | 0 | 🟦 |
+| 0 Foundations | 13 | 9 | 🟦 |
 | 1 Gateway, provisioning & shell | 16 | 0 | ⬜ |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
@@ -73,10 +73,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P0.3.1 Write `infra/images/odoo20/Dockerfile` that builds a stock image from the tarball (no code changes, layer checksum recorded)
 - [x] P0.3.2 Write `docker-compose.dev.yml` with PostgreSQL 16, Odoo 20, Redis and Mailpit (to catch outgoing mail)
 - [x] P0.3.3 Write the Odoo config for dev (`dbfilter`, `list_db=False`, `proxy_mode`, workers for websocket/gevent)
-- [ ] P0.3.4 Write a seed script: create `novi_demo` with demo data and install `sale_management`, `crm`, `account_accountant`, `stock`, `hr`, `hr_holidays`, `hr_attendance`, `hr_expense`, `api_doc`
-- [ ] P0.3.5 Seed users: admin, a sales user, an accountant, a stock user, an HR officer, a portal user, and a 2FA-enabled user
+- [x] P0.3.4 Write a seed script: create `novi_demo` with demo data and install `sale_management`, `crm`, `account_accountant`, `stock`, `hr`, `hr_holidays`, `hr_attendance`, `hr_expense`, `api_doc`
+- [x] P0.3.5 Seed users: admin, a sales user, an accountant, a stock user, an HR officer, a portal user, and a 2FA-enabled user
 - [x] P0.3.6 Add `make`/`pnpm` scripts: `odoo:up`, `odoo:reset`, `odoo:shell`, `odoo:logs`
-- [ ] P0.3.7 Document the API key creation steps for JSON-2 testing
+- [x] P0.3.7 Document the API key creation steps for JSON-2 testing
 
 **Done when:** one command brings up a seeded Odoo 20 at `localhost:8069` with every pilot app installed.
 
@@ -112,19 +112,19 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 ### P0.7 Contract test suite
 - [x] P0.7.1 Test harness: start Odoo (compose), wait for health, reset the DB per suite
-- [ ] P0.7.2 Auth contracts: authenticate, session info, destroy, wrong password, 2FA user returns `uid: null`
-- [ ] P0.7.3 Metadata contracts: `get_views` (form/list/kanban/search), `fields_get`, `/web/model/get_definitions`
-- [ ] P0.7.4 Data contracts: `web_search_read`, `web_read`, `web_save` (create/update), `web_unlink`, `onchange`, `web_name_search`, `web_read_group`, `formatted_read_group`
-- [ ] P0.7.5 Navigation contracts: `load_menus`, `action/load`, `action/run`, `load_breadcrumbs`
-- [ ] P0.7.6 File contracts: `/web/image`, `/web/content`, `upload_attachment`, `/report/download`
-- [ ] P0.7.7 Mail contracts: `/mail/store`, `/mail/message/post`
-- [ ] P0.7.8 Bus contracts: websocket connect, subscribe, receive a notification triggered by a write
-- [ ] P0.7.9 Snapshot the response shapes; CI fails if Odoo's response shape changes
+- [x] P0.7.2 Auth contracts: authenticate, session info, destroy, wrong password, 2FA user returns `uid: null`
+- [x] P0.7.3 Metadata contracts: `get_views` (form/list/kanban/search), `fields_get`, `/web/model/get_definitions`
+- [x] P0.7.4 Data contracts: `web_search_read`, `web_read`, `web_save` (create/update), `web_unlink`, `onchange`, `web_name_search`, `web_read_group`, `formatted_read_group`
+- [x] P0.7.5 Navigation contracts: `load_menus`, `action/load`, `action/run`, `load_breadcrumbs`
+- [x] P0.7.6 File contracts: `/web/image`, `/web/content`, `upload_attachment`, `/report/download`
+- [x] P0.7.7 Mail contracts: `/mail/store`, `/mail/message/post`
+- [x] P0.7.8 Bus contracts: websocket connect, subscribe, receive a notification triggered by a write
+- [x] P0.7.9 Snapshot the response shapes; CI fails if Odoo's response shape changes
 
 **Done when:** the full suite is green in CI against the dockerised Odoo 20.
 
 ### P0.8 Coverage scanner v1
-- [ ] P0.8.1 Enumerate every `ir.actions.*` and every view (`ir.ui.view`) per model
+- [x] P0.8.1 Enumerate every `ir.actions.*` and every view (`ir.ui.view`) per model (views via `get_views` per action, i.e. with inheritance applied)
 - [x] P0.8.2 Parse arch and collect view types, `widget=` names, field types and client action tags
 - [x] P0.8.3 Compare with the engine's supported-registry manifest (JSON)
 - [x] P0.8.4 Output a Markdown + JSON report: % supported and the top missing widgets, ranked by usage
@@ -145,19 +145,19 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P0.10 Spike: 2FA login without Odoo changes
 - [x] P0.10.1 Server-side relay: GET `/web/login`, extract `csrf_token`, POST credentials
 - [x] P0.10.2 Detect the redirect to `/web/login/totp`, then POST `totp_token` and capture `session_id` (simpler than planned: `authenticate` already leaves `pre_uid` in the session)
-- [ ] P0.10.3 Handle the trusted-device cookie
+- [~] P0.10.3 Handle the trusted-device cookie (`completeTwoFactor(code, {remember:true})` sends `remember`; the `td_id` cookie is kept by the jar, but not yet verified live)
 - [-] P0.10.4 Fallback flow: redirect to Odoo's login page and hand the session back to the gateway (not needed: the relay uses stock routes directly)
-- [ ] P0.10.5 Write up the result, risks and the chosen approach in DECISIONS.md
+- [x] P0.10.5 Write up the result, risks and the chosen approach in DECISIONS.md
 
 **Done when:** a 2FA user can log in through the relay script, and the decision is recorded.
 
 ### P0.11 Spike: tenant provisioning
-- [ ] P0.11.1 Script: create a PostgreSQL role and DB `tenant_<id>`
-- [ ] P0.11.2 Run `odoo -d tenant_<id> -i base,<modules> --without-demo --load-language` in a one-off container
-- [ ] P0.11.3 Bootstrap the admin user, company name, country and currency via RPC
-- [ ] P0.11.4 Start a tenant Odoo container with its own filestore volume and config
-- [ ] P0.11.5 Time each step; record total time and resource usage (RAM/CPU idle and under load)
-- [ ] P0.11.6 Write the result to DECISIONS.md (target is < 5 min)
+- [x] P0.11.1 Script: create a PostgreSQL role and DB `tenant_<id>`
+- [x] P0.11.2 Run `odoo -d tenant_<id> -i base,<modules> --without-demo --load-language` in a one-off container
+- [x] P0.11.3 Bootstrap the admin user, company name, country and currency via RPC
+- [x] P0.11.4 Start a tenant Odoo container with its own filestore volume and config
+- [x] P0.11.5 Time each step; record total time and resource usage (RAM/CPU idle and under load): 160 s, 158 MB idle, 70 MB DB (D-16)
+- [x] P0.11.6 Write the result to DECISIONS.md (target is < 5 min)
 
 **Done when:** one script creates a fresh, isolated, log-in-able tenant and the timings are recorded.
 
@@ -177,7 +177,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P0.13.4 Private GitHub repo created and `main` pushed
 - [-] P0.13.5 dafeapp server: dropped. `192.34.61.66` is a DigitalOcean IP no longer ours (host key changed), so the dafeapp edits were reverted
 - [ ] P0.13.6 Run `setup-server.sh` on the MT5 server (68.183.91.240)
-- [ ] P0.13.7 GitHub secrets: `VPS_HOST`, `VPS_USER=novi`, `VPS_SSH_KEY`, `VPS_FINGERPRINT`
+- [ ] P0.13.7 GitHub secrets: `VPS_HOST=68.183.91.240`, `VPS_USER=novi`, `VPS_SSH_KEY` (host keys are pinned in `deploy/staging/known_hosts`; `VPS_FINGERPRINT` no longer used)
 - [ ] P0.13.8 DNS: `novi.dafeapp.com` A record → 68.183.91.240 (Cloudflare)
 - [ ] P0.13.9 First deploy green; https://novi.dafeapp.com/progress/ loads behind the login
 - [ ] P0.13.10 Get a separate staging server (≥ 8 GB) before P0.3/P1 for Odoo, gateway and web. The MT5 server has no headroom.
@@ -186,10 +186,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** every push to `main` updates https://novi.dafeapp.com within ~2 min, with no effect on the MT5 bots.
 
 ### Phase 0 Gate
-- [ ] Contract suite green in CI against Odoo 20
-- [ ] Coverage report for the demo DB committed
-- [ ] 2FA approach decided (DECISIONS)
-- [ ] Provisioning spike < 5 min, recorded (DECISIONS)
+- [~] Contract suite green in CI against Odoo 20 (27/27 green locally; CI job needs an Odoo service, see P0.7 note)
+- [x] Coverage report for the demo DB committed
+- [x] 2FA approach decided (DECISIONS)
+- [x] Provisioning spike < 5 min, recorded (DECISIONS)
 - [ ] Licensing decision recorded
 - [ ] Design tokens and Figma kit approved
 

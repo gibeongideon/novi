@@ -58,6 +58,7 @@ list_db = False
 admin_passwd = $(openssl rand -hex 24)
 data_dir = /var/lib/odoo
 proxy_mode = True
+http_interface = 0.0.0.0
 workers = 0
 max_cron_threads = 1
 limit_memory_hard = 1610612736
