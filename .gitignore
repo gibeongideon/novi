@@ -15,3 +15,6 @@ deploy/staging/progress/
 
 # Local caches (Odoo build context, etc.)
 .cache/
+
+# Odoo coverage reports are committed (P0.8)
+!docs/coverage/

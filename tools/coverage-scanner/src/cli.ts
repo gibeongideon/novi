@@ -94,7 +94,9 @@ async function main(): Promise<void> {
         analyzeArch(usage, type, view.arch, action.res_model, own, related);
       }
     } catch (err) {
-      errors.push(`action ${action.id} (${action.res_model}): ${(err as Error).message.slice(0, 160)}`);
+      errors.push(
+        `action ${action.id} (${action.res_model}): ${(err as Error).message.replace(/\s+/g, " ").slice(0, 160)}`,
+      );
     }
   }
 

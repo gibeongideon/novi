@@ -1,0 +1,1981 @@
+{
+  "db": "novi_demo",
+  "odooVersion": "20.0+e-20261111",
+  "generatedAt": "2026-11-11 13:48 UTC",
+  "counts": {
+    "windowActions": 499,
+    "clientActions": 40,
+    "serverActions": 174,
+    "reports": 43,
+    "views": 1691,
+    "errors": 7
+  },
+  "coverage": [
+    {
+      "label": "View types",
+      "supported": 0,
+      "total": 1691,
+      "pct": 0,
+      "missing": [
+        [
+          "search",
+          492
+        ],
+        [
+          "form",
+          422
+        ],
+        [
+          "list",
+          363
+        ],
+        [
+          "kanban",
+          150
+        ],
+        [
+          "graph",
+          83
+        ],
+        [
+          "pivot",
+          77
+        ],
+        [
+          "activity",
+          43
+        ],
+        [
+          "calendar",
+          35
+        ],
+        [
+          "map",
+          9
+        ],
+        [
+          "hierarchy",
+          7
+        ],
+        [
+          "gantt",
+          5
+        ],
+        [
+          "cohort",
+          3
+        ],
+        [
+          "grid",
+          2
+        ]
+      ]
+    },
+    {
+      "label": "Widgets",
+      "supported": 0,
+      "total": 5592,
+      "pct": 0,
+      "missing": [
+        [
+          "statinfo",
+          373
+        ],
+        [
+          "monetary",
+          368
+        ],
+        [
+          "many2many_tags",
+          351
+        ],
+        [
+          "<widget>web_ribbon",
+          302
+        ],
+        [
+          "radio",
+          271
+        ],
+        [
+          "many2one_avatar_user",
+          256
+        ],
+        [
+          "upgrade_boolean",
+          220
+        ],
+        [
+          "badge",
+          176
+        ],
+        [
+          "handle",
+          154
+        ],
+        [
+          "image",
+          118
+        ],
+        [
+          "statusbar",
+          107
+        ],
+        [
+          "many2many_tax_tags",
+          107
+        ],
+        [
+          "phone",
+          98
+        ],
+        [
+          "priority",
+          87
+        ],
+        [
+          "text",
+          78
+        ],
+        [
+          "<widget>iap_buy_more_credits",
+          77
+        ],
+        [
+          "res_partner_many2one",
+          71
+        ],
+        [
+          "boolean_toggle",
+          68
+        ],
+        [
+          "many2one_avatar_employee",
+          67
+        ],
+        [
+          "float_time",
+          60
+        ],
+        [
+          "kanban_activity",
+          56
+        ],
+        [
+          "list_activity",
+          54
+        ],
+        [
+          "email",
+          52
+        ],
+        [
+          "relative_date",
+          46
+        ],
+        [
+          "float",
+          45
+        ],
+        [
+          "daterange",
+          45
+        ],
+        [
+          "stock_rescheduling_popover",
+          45
+        ],
+        [
+          "percentage",
+          45
+        ],
+        [
+          "document_tax_mode_selector",
+          42
+        ],
+        [
+          "x2many_buttons",
+          39
+        ],
+        [
+          "properties",
+          36
+        ],
+        [
+          "many2one_bank",
+          36
+        ],
+        [
+          "labeled_monetary_field",
+          36
+        ],
+        [
+          "field_partner_autocomplete",
+          32
+        ],
+        [
+          "url",
+          31
+        ],
+        [
+          "color",
+          31
+        ],
+        [
+          "<widget>pls_tooltip_button",
+          30
+        ],
+        [
+          "<widget>documentation_link",
+          29
+        ],
+        [
+          "stock_picking_locked_statusbar",
+          28
+        ],
+        [
+          "boolean_favorite",
+          28
+        ],
+        [
+          "many2many_tags_email",
+          27
+        ],
+        [
+          "boolean_checkbox",
+          27
+        ],
+        [
+          "many2one_avatar",
+          26
+        ],
+        [
+          "activity_exception",
+          25
+        ],
+        [
+          "float_time_selection",
+          25
+        ],
+        [
+          "payment",
+          24
+        ],
+        [
+          "label_selection",
+          22
+        ],
+        [
+          "color_picker",
+          22
+        ],
+        [
+          "<widget>section_state",
+          22
+        ],
+        [
+          "many2one_barcode",
+          21
+        ],
+        [
+          "account-tax-totals-field",
+          21
+        ],
+        [
+          "CopyClipboardChar",
+          21
+        ],
+        [
+          "contact_image",
+          21
+        ],
+        [
+          "actionable_errors",
+          19
+        ],
+        [
+          "partner_field",
+          18
+        ],
+        [
+          "extract_state_header",
+          18
+        ],
+        [
+          "sol_product_many2one",
+          18
+        ],
+        [
+          "labeled_percentage_field",
+          18
+        ],
+        [
+          "<widget>qty_at_date_widget",
+          18
+        ],
+        [
+          "badges_selection",
+          17
+        ],
+        [
+          "badges_many2one",
+          17
+        ],
+        [
+          "selection",
+          17
+        ],
+        [
+          "mail_composer_attachment_list",
+          17
+        ],
+        [
+          "sms_widget",
+          17
+        ],
+        [
+          "background_image",
+          16
+        ],
+        [
+          "formatted_date",
+          16
+        ],
+        [
+          "html_composer_message",
+          16
+        ],
+        [
+          "one2many",
+          15
+        ],
+        [
+          "rotting_statusbar_duration",
+          15
+        ],
+        [
+          "many2one_avatar_leader_user",
+          15
+        ],
+        [
+          "CopyClipboardURL",
+          15
+        ],
+        [
+          "stock_move_one2many",
+          14
+        ],
+        [
+          "description_picking_text",
+          14
+        ],
+        [
+          "forecast_widget",
+          14
+        ],
+        [
+          "open_move_widget",
+          14
+        ],
+        [
+          "char_with_placeholder_field",
+          14
+        ],
+        [
+          "matching_link_widget",
+          13
+        ],
+        [
+          "kanban_color_picker",
+          13
+        ],
+        [
+          "text_scheduled_date",
+          13
+        ],
+        [
+          "mail_composer_template_selector",
+          13
+        ],
+        [
+          "contact_statistics",
+          13
+        ],
+        [
+          "binary",
+          12
+        ],
+        [
+          "radio_followed_by_element",
+          12
+        ],
+        [
+          "receipt_selector",
+          12
+        ],
+        [
+          "product_label_section_and_note_field_o2m",
+          12
+        ],
+        [
+          "account_product_field",
+          12
+        ],
+        [
+          "account_label_text",
+          12
+        ],
+        [
+          "many2many_avatar_user",
+          12
+        ],
+        [
+          "many2many_tags_color_dot",
+          12
+        ],
+        [
+          "filterable_selection",
+          11
+        ],
+        [
+          "many2one_uom",
+          11
+        ],
+        [
+          "<widget>res_config_invite_users",
+          11
+        ],
+        [
+          "<widget>res_config_dev_tool",
+          11
+        ],
+        [
+          "<widget>res_config_edition",
+          11
+        ],
+        [
+          "progressbar",
+          10
+        ],
+        [
+          "many2many_tags_salary_bank",
+          10
+        ],
+        [
+          "many2one_work_entry_type",
+          10
+        ],
+        [
+          "hr_presence_status_private",
+          9
+        ],
+        [
+          "domain",
+          9
+        ],
+        [
+          "rotting",
+          9
+        ],
+        [
+          "sol_o2m",
+          9
+        ],
+        [
+          "sol_label_text",
+          9
+        ],
+        [
+          "labeled_float_field",
+          9
+        ],
+        [
+          "sale-extra-totals",
+          9
+        ],
+        [
+          "<widget>line_number",
+          9
+        ],
+        [
+          "<widget>combo_menu",
+          9
+        ],
+        [
+          "<widget>customContentKanbanLikeWidget",
+          9
+        ],
+        [
+          "image_with_media_dialog",
+          9
+        ],
+        [
+          "many2many_checkboxes",
+          9
+        ],
+        [
+          "confirm_boolean",
+          9
+        ],
+        [
+          "html_mail",
+          8
+        ],
+        [
+          "mail_boolean_toggle_label",
+          8
+        ],
+        [
+          "mail_composer_attachment_selector",
+          8
+        ],
+        [
+          "hr_presence_status",
+          8
+        ],
+        [
+          "code",
+          8
+        ],
+        [
+          "hr_org_chart",
+          7
+        ],
+        [
+          "resume_one2many",
+          7
+        ],
+        [
+          "skills_one2many",
+          7
+        ],
+        [
+          "<widget>internal_resume_lines",
+          7
+        ],
+        [
+          "many2many",
+          7
+        ],
+        [
+          "additional_identifiers_button",
+          7
+        ],
+        [
+          "additional_identifiers_list_partner_autocomplete",
+          7
+        ],
+        [
+          "<widget>mail_activity_mixin_list_reschedule_dropdown",
+          7
+        ],
+        [
+          "line_open_move_widget",
+          6
+        ],
+        [
+          "many2many_tags_banks",
+          6
+        ],
+        [
+          "nb_attachment",
+          6
+        ],
+        [
+          "<widget>attach_document",
+          6
+        ],
+        [
+          "rotting_days",
+          6
+        ],
+        [
+          "gauge",
+          6
+        ],
+        [
+          "field_selector",
+          6
+        ],
+        [
+          "employee_user_status",
+          5
+        ],
+        [
+          "versions_timeline",
+          5
+        ],
+        [
+          "contract_template_button",
+          5
+        ],
+        [
+          "date_dynamic_min",
+          5
+        ],
+        [
+          "<widget>button_new_contract",
+          5
+        ],
+        [
+          "CopyClipboardButton",
+          5
+        ],
+        [
+          "image_url",
+          5
+        ],
+        [
+          "selection_badge_with_filter",
+          5
+        ],
+        [
+          "analytic_distribution",
+          5
+        ],
+        [
+          "<widget>sms_char_counter",
+          5
+        ],
+        [
+          "<widget>mail_activity_list_reschedule_dropdown",
+          4
+        ],
+        [
+          "<widget>hr_leave_stats",
+          4
+        ],
+        [
+          "many2many_avatar_employee",
+          4
+        ],
+        [
+          "mail_server_configurator_selection",
+          4
+        ],
+        [
+          "timezone_mismatch",
+          4
+        ],
+        [
+          "html",
+          4
+        ],
+        [
+          "<widget>account_file_uploader",
+          4
+        ],
+        [
+          "package_m2o",
+          4
+        ],
+        [
+          "stock.forced_placeholder",
+          4
+        ],
+        [
+          "shortcut",
+          3
+        ],
+        [
+          "many2many_falsy_value_label",
+          3
+        ],
+        [
+          "<widget>notification_alert",
+          3
+        ],
+        [
+          "discuss_channel_member_list",
+          3
+        ],
+        [
+          "many2many_binary",
+          3
+        ],
+        [
+          "resource_avatar",
+          3
+        ],
+        [
+          "account_reports.forced_placeholder",
+          3
+        ],
+        [
+          "stock_action_field",
+          3
+        ],
+        [
+          "sotl_product_many2one",
+          3
+        ],
+        [
+          "boolean_radio",
+          2
+        ],
+        [
+          "correct_employee_button",
+          2
+        ],
+        [
+          "account_review_state_selection_badge",
+          2
+        ],
+        [
+          "account_number",
+          2
+        ],
+        [
+          "bank_rec_list_many2one_multi_id",
+          2
+        ],
+        [
+          "formatted_transaction_details",
+          2
+        ],
+        [
+          "stock_picking_many2many",
+          2
+        ],
+        [
+          "discuss_call_history_duration",
+          2
+        ],
+        [
+          "account_type_selection",
+          2
+        ],
+        [
+          "iframe_wrapper",
+          2
+        ],
+        [
+          "many2one_tags_skills",
+          2
+        ],
+        [
+          "binary_spreadsheet",
+          2
+        ],
+        [
+          "<widget>hr_department_chart",
+          2
+        ],
+        [
+          "many2one_reference_integer",
+          2
+        ],
+        [
+          "PaymentWizardCopyClipboardButtonField",
+          2
+        ],
+        [
+          "many2manyattendeeexpandable",
+          2
+        ],
+        [
+          "calendar_open_event",
+          2
+        ],
+        [
+          "many2manyattendee_email",
+          2
+        ],
+        [
+          "<widget>calendar_week_days",
+          2
+        ],
+        [
+          "stock.max_qty_to_order",
+          2
+        ],
+        [
+          "time_period_selection",
+          2
+        ],
+        [
+          "property_selection",
+          2
+        ],
+        [
+          "char",
+          2
+        ],
+        [
+          "code_ir_ui_view",
+          2
+        ],
+        [
+          "account_tax_repartition_line_factor_percent",
+          2
+        ],
+        [
+          "work_entry_type_badge",
+          2
+        ],
+        [
+          "tour_start_widget",
+          2
+        ],
+        [
+          "many2many_tags_avatar",
+          2
+        ],
+        [
+          "res_user_group_ids",
+          2
+        ],
+        [
+          "account_audit_progressbar",
+          2
+        ],
+        [
+          "user_groupby_widget",
+          1
+        ],
+        [
+          "account_report_lines_list_x2many",
+          1
+        ],
+        [
+          "day_selection",
+          1
+        ],
+        [
+          "accrual_levels",
+          1
+        ],
+        [
+          "pavs_one2many",
+          1
+        ],
+        [
+          "audit_trail_body_field",
+          1
+        ],
+        [
+          "domain_count",
+          1
+        ],
+        [
+          "accountAuditClickableCharField",
+          1
+        ],
+        [
+          "discuss_call_history_indicators",
+          1
+        ],
+        [
+          "call_debrief",
+          1
+        ],
+        [
+          "password",
+          1
+        ],
+        [
+          "open_decimal_precision_button",
+          1
+        ],
+        [
+          "account_journal_dashboard_graph",
+          1
+        ],
+        [
+          "<widget>bank_journal_status",
+          1
+        ],
+        [
+          "<widget>account_onboarding",
+          1
+        ],
+        [
+          "<widget>bank_configure",
+          1
+        ],
+        [
+          "<widget>invoice_upload_guide",
+          1
+        ],
+        [
+          "<widget>bill_upload_guide",
+          1
+        ],
+        [
+          "integer",
+          1
+        ],
+        [
+          "reference",
+          1
+        ],
+        [
+          "portal_wizard_user_one2many",
+          1
+        ],
+        [
+          "many2many_tags_res_group_users",
+          1
+        ],
+        [
+          "picking_type_dashboard_graph",
+          1
+        ],
+        [
+          "profiling_qweb_view",
+          1
+        ],
+        [
+          "activity_model_selector",
+          1
+        ],
+        [
+          "account_merge_wizard_lines_one2many",
+          1
+        ],
+        [
+          "many2many_image_tags",
+          1
+        ],
+        [
+          "payment_term_line_ids",
+          1
+        ],
+        [
+          "datetime",
+          1
+        ],
+        [
+          "lead_days_widget",
+          1
+        ],
+        [
+          "update_demand_button",
+          1
+        ],
+        [
+          "account_resequence_widget",
+          1
+        ],
+        [
+          "many2many_tags_skills",
+          1
+        ],
+        [
+          "boolean_toggle_load",
+          1
+        ],
+        [
+          "many2one",
+          1
+        ],
+        [
+          "mail_preview_record_field",
+          1
+        ],
+        [
+          "many2one_spreadsheet",
+          1
+        ],
+        [
+          "so_template_line_o2m",
+          1
+        ],
+        [
+          "sotl_label_text",
+          1
+        ],
+        [
+          "quotation_document_many2many",
+          1
+        ],
+        [
+          "many2many_barcode_tags",
+          1
+        ],
+        [
+          "global_filters",
+          1
+        ],
+        [
+          "<widget>auth_signup.button_reset_password_link",
+          1
+        ],
+        [
+          "resource_calendar_hours_by_day",
+          1
+        ],
+        [
+          "calendar_type_confirm_radio",
+          1
+        ],
+        [
+          "resource_calendar_attendance_filtered_one2many",
+          1
+        ],
+        [
+          "resource_calendar_attendance_calendar_one2many",
+          1
+        ]
+      ]
+    },
+    {
+      "label": "Field types (default widget)",
+      "supported": 0,
+      "total": 21557,
+      "pct": 0,
+      "missing": [
+        [
+          "many2one",
+          5746
+        ],
+        [
+          "boolean",
+          4338
+        ],
+        [
+          "char",
+          4085
+        ],
+        [
+          "selection",
+          1700
+        ],
+        [
+          "integer",
+          983
+        ],
+        [
+          "float",
+          951
+        ],
+        [
+          "date",
+          864
+        ],
+        [
+          "monetary",
+          684
+        ],
+        [
+          "datetime",
+          568
+        ],
+        [
+          "many2many",
+          460
+        ],
+        [
+          "text",
+          379
+        ],
+        [
+          "one2many",
+          266
+        ],
+        [
+          "html",
+          220
+        ],
+        [
+          "properties",
+          115
+        ],
+        [
+          "binary",
+          58
+        ],
+        [
+          "json",
+          57
+        ],
+        [
+          "reference",
+          54
+        ],
+        [
+          "many2one_reference",
+          28
+        ],
+        [
+          "properties_definition",
+          1
+        ]
+      ]
+    },
+    {
+      "label": "Client actions",
+      "supported": 0,
+      "total": 40,
+      "pct": 0,
+      "missing": [
+        [
+          "account_report",
+          22
+        ],
+        [
+          "stock_barcode_client_action",
+          3
+        ],
+        [
+          "stock_forecasted",
+          2
+        ],
+        [
+          "allocation_report",
+          1
+        ],
+        [
+          "stock_barcode_main_menu",
+          1
+        ],
+        [
+          "account_report_followup",
+          1
+        ],
+        [
+          "action_spreadsheet_dashboard",
+          1
+        ],
+        [
+          "mail.action_discuss",
+          1
+        ],
+        [
+          "stock_valuation_report",
+          1
+        ],
+        [
+          "hr_attendance_greeting_message",
+          1
+        ],
+        [
+          "mysubscription.dashboard",
+          1
+        ],
+        [
+          "mail.discuss_notification_settings_action",
+          1
+        ],
+        [
+          "reload",
+          1
+        ],
+        [
+          "stock_report_generic",
+          1
+        ],
+        [
+          "mail.discuss_call_settings_action",
+          1
+        ],
+        [
+          "journal_create_wizard",
+          1
+        ]
+      ]
+    }
+  ],
+  "examples": {
+    "badges_selection": [
+      "res.users.apikeys.description:form",
+      "base.document.layout:form",
+      "res.partner:form"
+    ],
+    "image": [
+      "hr.employee:list",
+      "hr.employee:form",
+      "ir.module.module:form"
+    ],
+    "phone": [
+      "hr.employee:list",
+      "hr.employee:kanban",
+      "hr.employee:form"
+    ],
+    "monetary": [
+      "hr.employee:list",
+      "product.value:form",
+      "account.analytic.account:kanban"
+    ],
+    "list_activity": [
+      "hr.employee:list",
+      "account.move:list",
+      "res.partner:list"
+    ],
+    "many2one_avatar_employee": [
+      "hr.employee:list",
+      "hr.employee:form",
+      "hr.leave.allocation:list"
+    ],
+    "many2one_avatar_user": [
+      "hr.employee:list",
+      "hr.employee:kanban",
+      "hr.employee:form"
+    ],
+    "many2many_tags": [
+      "hr.employee:list",
+      "hr.employee:kanban",
+      "hr.employee:form"
+    ],
+    "background_image": [
+      "hr.employee:kanban",
+      "hr.employee.public:kanban",
+      "hr.employee.public:hierarchy"
+    ],
+    "hr_presence_status_private": [
+      "hr.employee:kanban",
+      "hr.employee:form"
+    ],
+    "properties": [
+      "hr.employee:kanban",
+      "stock.picking:kanban",
+      "res.partner:kanban"
+    ],
+    "kanban_activity": [
+      "hr.employee:kanban",
+      "stock.picking:kanban",
+      "stock.picking.batch:kanban"
+    ],
+    "employee_user_status": [
+      "hr.employee:form"
+    ],
+    "versions_timeline": [
+      "hr.employee:form"
+    ],
+    "email": [
+      "hr.employee:form",
+      "account.move:form",
+      "res.users:form"
+    ],
+    "contract_template_button": [
+      "hr.employee:form"
+    ],
+    "date_dynamic_min": [
+      "hr.employee:form"
+    ],
+    "hr_org_chart": [
+      "hr.employee:form",
+      "hr.employee.public:form"
+    ],
+    "resume_one2many": [
+      "hr.employee:form",
+      "hr.employee.public:form"
+    ],
+    "skills_one2many": [
+      "hr.employee:form",
+      "hr.employee.public:form"
+    ],
+    "progressbar": [
+      "hr.employee:form",
+      "hr.department:kanban",
+      "hr.employee.public:form"
+    ],
+    "one2many": [
+      "hr.employee:form",
+      "res.currency:form",
+      "calendar.event:form"
+    ],
+    "formatted_date": [
+      "hr.employee:form",
+      "hr.employee.skill:list",
+      "hr.employee.public:form"
+    ],
+    "binary": [
+      "hr.employee:form",
+      "hr.employee.skill:list",
+      "hr.resume.line:list"
+    ],
+    "many2many_tags_salary_bank": [
+      "hr.employee:form"
+    ],
+    "boolean_toggle": [
+      "hr.employee:form",
+      "account.report:form",
+      "mail.followers.edit:form"
+    ],
+    "label_selection": [
+      "ir.access:list",
+      "stock.picking:kanban",
+      "stock.picking.batch:kanban"
+    ],
+    "text": [
+      "ir.access:form",
+      "mail.activity.plan:form",
+      "mail.activity.type:form"
+    ],
+    "color_picker": [
+      "account.account.tag:list",
+      "calendar.calendar:form",
+      "res.company:form"
+    ],
+    "handle": [
+      "account.report:list",
+      "account.report:form",
+      "mail.activity.plan:form"
+    ],
+    "user_groupby_widget": [
+      "account.report:form"
+    ],
+    "account_report_lines_list_x2many": [
+      "account.report:form"
+    ],
+    "statinfo": [
+      "hr.leave.accrual.plan:form",
+      "stock.picking:form",
+      "account.analytic.account:form"
+    ],
+    "radio": [
+      "hr.leave.accrual.plan:form",
+      "stock.add.to.wave:form",
+      "stock.picking.to.batch:form"
+    ],
+    "boolean_radio": [
+      "hr.leave.accrual.plan:form"
+    ],
+    "radio_followed_by_element": [
+      "hr.leave.accrual.plan:form",
+      "res.config.settings:form"
+    ],
+    "day_selection": [
+      "hr.leave.accrual.plan:form"
+    ],
+    "accrual_levels": [
+      "hr.leave.accrual.plan:form"
+    ],
+    "many2one_avatar": [
+      "crm.activity.report:list",
+      "mail.message:list",
+      "calendar.calendar:list"
+    ],
+    "relative_date": [
+      "mail.activity:list",
+      "stock.picking:list",
+      "hr.employee:list"
+    ],
+    "badges_many2one": [
+      "mail.activity:form",
+      "hr.employee.skill:form",
+      "base.document.layout:form"
+    ],
+    "filterable_selection": [
+      "mail.activity.plan:form",
+      "res.partner:form",
+      "ir.model.fields:form"
+    ],
+    "many2many_tags_email": [
+      "mail.followers.edit:form",
+      "mail.compose.message:form",
+      "portal.share:form"
+    ],
+    "html_mail": [
+      "mail.followers.edit:form",
+      "res.users:form",
+      "mail.template:form"
+    ],
+    "badge": [
+      "stock.move.line:list",
+      "mail.alias:list",
+      "mail.alias:form"
+    ],
+    "CopyClipboardButton": [
+      "mail.alias:form",
+      "account.journal:form",
+      "crm.team:form"
+    ],
+    "activity_exception": [
+      "hr.leave.allocation:list",
+      "hr.leave:list",
+      "stock.picking:list"
+    ],
+    "float": [
+      "hr.leave.allocation:kanban",
+      "hr.leave:kanban",
+      "account.analytic.line:grid"
+    ],
+    "statusbar": [
+      "hr.leave.allocation:form",
+      "hr.leave:form",
+      "hr.attendance:form"
+    ],
+    "image_url": [
+      "ir.module.module:kanban",
+      "res.country:form",
+      "mail.link.preview:form"
+    ],
+    "many2one_work_entry_type": [
+      "hr.leave:list",
+      "hr.leave:form",
+      "hr.leave.generate.multi.wizard:form"
+    ],
+    "float_time_selection": [
+      "hr.leave:kanban",
+      "hr.leave.generate.multi.wizard:form",
+      "res.config.settings:form"
+    ],
+    "daterange": [
+      "hr.leave:form",
+      "hr.attendance:form",
+      "account.move.line:list"
+    ],
+    "float_time": [
+      "hr.leave:form",
+      "account.analytic.line:graph",
+      "hr.attendance:list"
+    ],
+    "selection_badge_with_filter": [
+      "hr.leave:form"
+    ],
+    "priority": [
+      "stock.picking:list",
+      "stock.picking:kanban",
+      "stock.picking:form"
+    ],
+    "stock_rescheduling_popover": [
+      "stock.picking:list",
+      "stock.picking:kanban",
+      "stock.picking:form"
+    ],
+    "stock_picking_locked_statusbar": [
+      "stock.picking:form"
+    ],
+    "stock_move_one2many": [
+      "stock.picking:form"
+    ],
+    "description_picking_text": [
+      "stock.picking:form"
+    ],
+    "forecast_widget": [
+      "stock.picking:form"
+    ],
+    "open_move_widget": [
+      "account.move.line:list"
+    ],
+    "char_with_placeholder_field": [
+      "account.analytic.distribution.model:list",
+      "account.move:list",
+      "account.account:list"
+    ],
+    "analytic_distribution": [
+      "account.analytic.distribution.model:list",
+      "account.analytic.distribution.model:form",
+      "account.analytic.line:list"
+    ],
+    "line_open_move_widget": [
+      "account.analytic.line:list",
+      "account.analytic.line:form"
+    ],
+    "url": [
+      "ir.module.module:form",
+      "ir.attachment:kanban",
+      "ir.attachment:form"
+    ],
+    "correct_employee_button": [
+      "hr.attendance:form"
+    ],
+    "pavs_one2many": [
+      "product.attribute:form"
+    ],
+    "color": [
+      "product.attribute:form",
+      "base.document.layout:form",
+      "hr.employee.cv.wizard:form"
+    ],
+    "audit_trail_body_field": [
+      "mail.message:list"
+    ],
+    "domain_count": [
+      "hr.time.rule:list"
+    ],
+    "domain": [
+      "hr.time.rule:form",
+      "base.language.export:form",
+      "account.report.horizontal.group:form"
+    ],
+    "percentage": [
+      "hr.time.rule:form",
+      "account.account:list",
+      "account.move:form"
+    ],
+    "accountAuditClickableCharField": [
+      "account.account:list"
+    ],
+    "account_review_state_selection_badge": [
+      "account.account:list",
+      "account.return:kanban"
+    ],
+    "actionable_errors": [
+      "res.partner.bank:form",
+      "account.move:form",
+      "account.payment:form"
+    ],
+    "x2many_buttons": [
+      "res.partner.bank:form",
+      "account.move:form",
+      "account.payment:form"
+    ],
+    "account_number": [
+      "res.partner.bank:form"
+    ],
+    "many2many_avatar_employee": [
+      "res.partner.bank:form",
+      "hr.leave.generate.multi.wizard:form",
+      "hr.leave.allocation.generate.multi.wizard:form"
+    ],
+    "bank_rec_list_many2one_multi_id": [
+      "account.bank.statement.line:list"
+    ],
+    "formatted_transaction_details": [
+      "account.bank.statement.line:list"
+    ],
+    "many2many_tax_tags": [
+      "account.move.line:list",
+      "account.move.line:kanban",
+      "account.move:form"
+    ],
+    "matching_link_widget": [
+      "account.move.line:list"
+    ],
+    "stock_picking_many2many": [
+      "stock.picking.batch:form"
+    ],
+    "many2many": [
+      "stock.picking.batch:form",
+      "account.batch.payment:form",
+      "ir.cron:form"
+    ],
+    "partner_field": [
+      "account.move:list"
+    ],
+    "extract_state_header": [
+      "account.move:form",
+      "hr.expense:form"
+    ],
+    "receipt_selector": [
+      "account.move:form"
+    ],
+    "res_partner_many2one": [
+      "account.move:form",
+      "res.partner:form",
+      "crm.lead:form"
+    ],
+    "many2one_bank": [
+      "account.move:form",
+      "account.payment:form"
+    ],
+    "document_tax_mode_selector": [
+      "account.move:form",
+      "sale.order:form"
+    ],
+    "product_label_section_and_note_field_o2m": [
+      "account.move:form"
+    ],
+    "account_product_field": [
+      "account.move:form"
+    ],
+    "account_label_text": [
+      "account.move:form"
+    ],
+    "many2one_barcode": [
+      "account.move:form",
+      "sale.order:form"
+    ],
+    "account-tax-totals-field": [
+      "account.move:form",
+      "sale.order:form"
+    ],
+    "payment": [
+      "account.move:form"
+    ],
+    "CopyClipboardChar": [
+      "account.move:form",
+      "hr.expense:form",
+      "calendar.event:form"
+    ],
+    "many2many_avatar_user": [
+      "calendar.calendar:list",
+      "calendar.calendar:form",
+      "crm.lead2opportunity.partner.mass:form"
+    ],
+    "selection": [
+      "calendar.calendar:list",
+      "base.document.layout:form",
+      "quotation.document:kanban"
+    ],
+    "discuss_call_history_duration": [
+      "discuss.call.history:list",
+      "discuss.call.history:form"
+    ],
+    "discuss_call_history_indicators": [
+      "discuss.call.history:list"
+    ],
+    "call_debrief": [
+      "discuss.call.history:form"
+    ],
+    "kanban_color_picker": [
+      "utm.campaign:kanban",
+      "account.journal:kanban",
+      "hr.department:kanban"
+    ],
+    "shortcut": [
+      "mail.canned.response:list",
+      "mail.canned.response:form",
+      "mail.canned.response:kanban"
+    ],
+    "many2many_falsy_value_label": [
+      "mail.canned.response:list",
+      "mail.canned.response:form",
+      "mail.canned.response:kanban"
+    ],
+    "contact_image": [
+      "res.users:form",
+      "discuss.channel:form",
+      "res.company:form"
+    ],
+    "mail_server_configurator_selection": [
+      "res.users:form"
+    ],
+    "timezone_mismatch": [
+      "res.users:form"
+    ],
+    "password": [
+      "change.password.wizard:form"
+    ],
+    "discuss_channel_member_list": [
+      "discuss.channel:form"
+    ],
+    "account_type_selection": [
+      "account.account:list",
+      "account.account:form"
+    ],
+    "field_partner_autocomplete": [
+      "res.company:form",
+      "res.partner:form"
+    ],
+    "additional_identifiers_button": [
+      "res.company:form",
+      "res.partner:form"
+    ],
+    "additional_identifiers_list_partner_autocomplete": [
+      "res.company:form",
+      "res.partner:form"
+    ],
+    "mail_boolean_toggle_label": [
+      "mail.compose.message:form"
+    ],
+    "html_composer_message": [
+      "mail.compose.message:form"
+    ],
+    "mail_composer_attachment_list": [
+      "mail.compose.message:form",
+      "mail.template.preview:form"
+    ],
+    "mail_composer_attachment_selector": [
+      "mail.compose.message:form"
+    ],
+    "text_scheduled_date": [
+      "mail.compose.message:form",
+      "sms.composer:form"
+    ],
+    "mail_composer_template_selector": [
+      "mail.compose.message:form",
+      "sms.composer:form"
+    ],
+    "iframe_wrapper": [
+      "base.document.layout:form"
+    ],
+    "contact_statistics": [
+      "res.partner:list",
+      "res.partner:kanban",
+      "res.partner:hierarchy"
+    ],
+    "many2many_tags_banks": [
+      "res.partner:form"
+    ],
+    "many2many_binary": [
+      "account.bank.statement:form",
+      "mail.template:form",
+      "hr.leave:form"
+    ],
+    "many2one_tags_skills": [
+      "hr.job:form"
+    ],
+    "open_decimal_precision_button": [
+      "res.currency:form"
+    ],
+    "html": [
+      "account.payment:form"
+    ],
+    "boolean_favorite": [
+      "account.journal:kanban",
+      "product.product:kanban",
+      "stock.picking.type:kanban"
+    ],
+    "account_journal_dashboard_graph": [
+      "account.journal:kanban"
+    ],
+    "binary_spreadsheet": [
+      "spreadsheet.dashboard:form",
+      "sale.order.spreadsheet:list"
+    ],
+    "nb_attachment": [
+      "hr.expense:list"
+    ],
+    "hr_presence_status": [
+      "hr.employee.public:kanban",
+      "hr.employee.public:hierarchy",
+      "hr.employee.public:form"
+    ],
+    "many2one_uom": [
+      "product.product:form",
+      "product.uom:list",
+      "product.template:form"
+    ],
+    "integer": [
+      "hr.export.work.entries:form"
+    ],
+    "many2one_reference_integer": [
+      "ir.model.data:list",
+      "ir.model.data:form"
+    ],
+    "reference": [
+      "ir.model.data:form"
+    ],
+    "code": [
+      "ir.model.fields:form",
+      "ir.model:form",
+      "ir.cron:form"
+    ],
+    "rotting_days": [
+      "crm.lead:kanban"
+    ],
+    "rotting": [
+      "crm.lead:list"
+    ],
+    "rotting_statusbar_duration": [
+      "crm.lead:form"
+    ],
+    "many2one_avatar_leader_user": [
+      "crm.lead:form"
+    ],
+    "PaymentWizardCopyClipboardButtonField": [
+      "payment.link.wizard:form"
+    ],
+    "portal_wizard_user_one2many": [
+      "portal.wizard:form"
+    ],
+    "many2many_tags_res_group_users": [
+      "res.group.functional:form"
+    ],
+    "picking_type_dashboard_graph": [
+      "stock.picking.type:kanban"
+    ],
+    "profiling_qweb_view": [
+      "ir.profile:form"
+    ],
+    "activity_model_selector": [
+      "mail.activity.schedule:form"
+    ],
+    "resource_avatar": [
+      "resource.resource:list"
+    ],
+    "many2manyattendeeexpandable": [
+      "calendar.event:calendar"
+    ],
+    "CopyClipboardURL": [
+      "calendar.event:calendar",
+      "res.config.settings:form",
+      "spreadsheet.dashboard.share:list"
+    ],
+    "calendar_open_event": [
+      "calendar.event:calendar"
+    ],
+    "many2manyattendee_email": [
+      "calendar.event:form"
+    ],
+    "account_merge_wizard_lines_one2many": [
+      "account.merge.wizard:form"
+    ],
+    "sol_o2m": [
+      "sale.order:form"
+    ],
+    "sol_product_many2one": [
+      "sale.order:form"
+    ],
+    "sol_label_text": [
+      "sale.order:form"
+    ],
+    "labeled_percentage_field": [
+      "sale.order:form"
+    ],
+    "labeled_float_field": [
+      "sale.order:form"
+    ],
+    "labeled_monetary_field": [
+      "sale.order:form"
+    ],
+    "sale-extra-totals": [
+      "sale.order:form"
+    ],
+    "package_m2o": [
+      "stock.package:list",
+      "stock.package:form",
+      "stock.put.in.pack:form"
+    ],
+    "many2many_image_tags": [
+      "payment.provider:form"
+    ],
+    "payment_term_line_ids": [
+      "account.payment.term:form"
+    ],
+    "datetime": [
+      "stock.inventory.adjustment.name:form"
+    ],
+    "many2many_tags_color_dot": [
+      "product.product:list",
+      "product.product:form",
+      "product.template:form"
+    ],
+    "boolean_checkbox": [
+      "product.product:form",
+      "product.template:form"
+    ],
+    "image_with_media_dialog": [
+      "product.product:form",
+      "product.template:form"
+    ],
+    "many2many_checkboxes": [
+      "product.product:form",
+      "product.template:form"
+    ],
+    "confirm_boolean": [
+      "product.product:form",
+      "product.template:form"
+    ],
+    "stock.forced_placeholder": [
+      "stock.warehouse.orderpoint:list"
+    ],
+    "stock.max_qty_to_order": [
+      "stock.warehouse.orderpoint:list"
+    ],
+    "lead_days_widget": [
+      "stock.replenishment.info:form"
+    ],
+    "time_period_selection": [
+      "stock.replenishment.info:form",
+      "stock.orderpoint.suggest:form"
+    ],
+    "update_demand_button": [
+      "stock.replenishment.info:form"
+    ],
+    "account_resequence_widget": [
+      "account.resequence.wizard:form"
+    ],
+    "account_reports.forced_placeholder": [
+      "account.return.type:list"
+    ],
+    "sms_widget": [
+      "sms.sms:form",
+      "sms.composer:form",
+      "sms.template:form"
+    ],
+    "gauge": [
+      "crm.team:form",
+      "crm.team.member:kanban"
+    ],
+    "field_selector": [
+      "ir.cron:form",
+      "ir.actions.server:form"
+    ],
+    "property_selection": [
+      "ir.cron:form",
+      "ir.actions.server:form"
+    ],
+    "char": [
+      "ir.cron:form",
+      "ir.actions.server:form"
+    ],
+    "upgrade_boolean": [
+      "res.config.settings:form"
+    ],
+    "many2many_tags_skills": [
+      "hr.skill.type:list"
+    ],
+    "boolean_toggle_load": [
+      "hr.skill.type:form"
+    ],
+    "stock_action_field": [
+      "product.product:list"
+    ],
+    "many2one": [
+      "stock.quant:list"
+    ],
+    "code_ir_ui_view": [
+      "ir.ui.view:form"
+    ],
+    "account_tax_repartition_line_factor_percent": [
+      "account.tax:form"
+    ],
+    "mail_preview_record_field": [
+      "mail.template.preview:form"
+    ],
+    "many2one_spreadsheet": [
+      "sale.order.template:form"
+    ],
+    "so_template_line_o2m": [
+      "sale.order.template:form"
+    ],
+    "sotl_product_many2one": [
+      "sale.order.template:form"
+    ],
+    "sotl_label_text": [
+      "sale.order.template:form"
+    ],
+    "quotation_document_many2many": [
+      "sale.order.template:form"
+    ],
+    "work_entry_type_badge": [
+      "hr.work.entry.type:list"
+    ],
+    "tour_start_widget": [
+      "web_tour.tour:list",
+      "web_tour.tour:form"
+    ],
+    "many2many_barcode_tags": [
+      "uom.uom:form"
+    ],
+    "many2many_tags_avatar": [
+      "spreadsheet.dashboard.favorite.filters:list",
+      "spreadsheet.dashboard.favorite.filters:form"
+    ],
+    "global_filters": [
+      "spreadsheet.dashboard.favorite.filters:form"
+    ],
+    "res_user_group_ids": [
+      "res.users:form"
+    ],
+    "account_audit_progressbar": [
+      "account.return:kanban"
+    ],
+    "resource_calendar_hours_by_day": [
+      "resource.calendar:list"
+    ],
+    "calendar_type_confirm_radio": [
+      "resource.calendar:form"
+    ],
+    "resource_calendar_attendance_filtered_one2many": [
+      "resource.calendar:form"
+    ],
+    "resource_calendar_attendance_calendar_one2many": [
+      "resource.calendar:form"
+    ]
+  },
+  "errors": [
+    "action 170 (account.analytic.plan): You are not allowed to access 'Analytic Plan' (account.analytic.plan) records. This operation is allowed for the following groups: - Analytic Accounting - Show ",
+    "action 626 (account.return.check.template): You are not allowed to access 'Account Return Check Template' (account.return.check.template) records. This operation is allowed for the following groups: - Sho",
+    "action 630 (account.return.check): You are not allowed to access 'Accounting Return Check' (account.return.check) records. This operation is allowed for the following groups: - Show Accounting Fe",
+    "action 623 (account.return.creation.wizard): You are not allowed to access 'Return creation wizard' (account.return.creation.wizard) records. This operation is allowed for the following groups: - Show Full",
+    "action 512 (account.auto.reconcile.wizard): You are not allowed to access 'Account automatic reconciliation wizard' (account.auto.reconcile.wizard) records. This operation is allowed for the following gro",
+    "action 627 (account.return.creation.wizard): You are not allowed to access 'Return creation wizard' (account.return.creation.wizard) records. This operation is allowed for the following groups: - Show Full",
+    "action 267 (account.automatic.entry.wizard): You are not allowed to access 'Create Automatic Entries' (account.automatic.entry.wizard) records. This operation is allowed for the following groups: - Show Fu"
+  ]
+}
