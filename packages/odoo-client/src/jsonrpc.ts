@@ -168,6 +168,7 @@ export class JsonRpcTransport implements OrmTransport {
       throw new TwoFactorRequiredError("Two-factor authentication required");
     }
     if (info.user_context) this.setContext(info.user_context);
+    this.csrf = undefined;
     return info;
   }
 
@@ -201,10 +202,85 @@ export class JsonRpcTransport implements OrmTransport {
       form,
       retry: false,
     });
-    const info = await this.getSessionInfo();
+    // A wrong code leaves the session in its pre-login state: get_session_info then fails
+    // ("user is not connected") or returns no uid. Both mean the verification failed.
+    let info: SessionInfo;
+    try {
+      info = await this.getSessionInfo({ retry: false });
+    } catch (cause) {
+      throw new AccessDenied("Two-factor verification failed", { cause });
+    }
     if (!info.uid) throw new AccessDenied("Two-factor verification failed");
     if (info.user_context) this.setContext(info.user_context);
+    this.csrf = undefined;
     return info;
+  }
+
+  // ── CSRF-protected http routes (upload, export, get_definitions, logout) ─────
+
+  private csrf: { token: string; expires: number } | undefined;
+
+  /**
+   * CSRF token for `type="http"` POST routes. Odoo 20 only exposes it in the web client page
+   * (`/odoo` → `csrf_token: "<hmac>o<expiry>"`), so we read it from there once and cache it
+   * until shortly before the expiry encoded in the token.
+   */
+  async getCsrfToken(opts: CallOptions = {}): Promise<string> {
+    const now = Math.floor(Date.now() / 1000);
+    if (this.csrf && this.csrf.expires - 300 > now) return this.csrf.token;
+    const res = await this.http.send({
+      url: "/odoo",
+      method: "GET",
+      headers: { Accept: "text/html" },
+      signal: opts.signal,
+      retry: true,
+    });
+    if (res.status >= 300 && res.status < 400) {
+      throw new SessionExpiredError("Not logged in (redirected while fetching the CSRF token)", {
+        status: res.status,
+      });
+    }
+    const html = await res.text();
+    const token = html.match(/csrf_token["']?\s*:\s*["']([0-9a-f]+o?(\d+)?)["']/)?.[1];
+    if (!token) throw new NetworkError("CSRF token not found in /odoo page", { status: res.status });
+    const expiry = Number(token.split("o")[1] ?? 0);
+    this.csrf = { token, expires: expiry || now + 3600 };
+    return token;
+  }
+
+  /** POST to a CSRF-protected `type="http"` route with form fields; returns the raw Response. */
+  async postForm(path: string, form: Record<string, string>, opts: CallOptions = {}): Promise<Response> {
+    const csrf_token = await this.getCsrfToken(opts);
+    const res = await this.http.send({
+      url: path,
+      method: "POST",
+      form: { ...form, csrf_token },
+      signal: opts.signal,
+      retry: false,
+    });
+    if (res.status >= 300 && res.status < 400) {
+      throw new SessionExpiredError(`Redirected to login from ${path}`, { status: res.status });
+    }
+    if (!res.ok) {
+      const text = await res.text();
+      throw new NetworkError(`HTTP ${res.status} from ${path}: ${text.slice(0, 160)}`, {
+        status: res.status,
+      });
+    }
+    return res;
+  }
+
+  /** Model definitions used by the web client (`/web/model/get_definitions`, CSRF-protected http route). */
+  async getModelDefinitions<T = Record<string, unknown>>(
+    modelNames: string[],
+    opts?: CallOptions,
+  ): Promise<T> {
+    const res = await this.postForm(
+      "/web/model/get_definitions",
+      { model_names: JSON.stringify(modelNames) },
+      opts,
+    );
+    return (await readJson(res, "/web/model/get_definitions")) as T;
   }
 
   getSessionInfo(opts?: CallOptions): Promise<SessionInfo> {
@@ -216,6 +292,7 @@ export class JsonRpcTransport implements OrmTransport {
       await this.route("/web/session/destroy");
     } finally {
       this.http.jar?.clear();
+      this.csrf = undefined;
     }
   }
 
