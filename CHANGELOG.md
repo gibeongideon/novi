@@ -7,6 +7,8 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P1.11.1] Launcher v3: icon-first gradient tiles in grouped islands that fit on one screen; descriptions moved to tooltips (and screen readers); subtle brand backdrop.
+- [P7.7.2] Performance pass (D-25): Lighthouse on the production build = Performance 96–100, Accessibility 100, Best Practices 100; lazy-loaded search palette and action screen; `sideEffects` for tree-shaking; favicon, meta description, robots noindex; shared dev/preview Odoo proxy.
 - [P1.13.1] Type-anywhere global search (D-24): palette opens on typing, ⌘K/Ctrl+K or the search icon; apps + all menus by path with word matching; launcher hero and search box removed for a cleaner home.
 - [P1.11.1] Launcher redesign: gradient app tiles from a new tokenised 8-colour app palette (contrast-tested), apps grouped by purpose (Sell, Finance, Operations, People, Workspace, Admin) with descriptions, time-of-day greeting over a brand wash, app search, NOVI brand mark, accessible card names; light and dark.
 - [P1.11.1] NOVI's own look (D-23): own app icons (Lucide set mapped per Odoo module, token colours), redesigned launcher (greeting + app cards), Odoo icon data removed from the engine; rule added to UI-RULES §4 and CLAUDE.md.

@@ -11,12 +11,15 @@ import {
   useT,
 } from "@novi/ui";
 import { LayoutGrid, LogOut, Menu as MenuIcon, Search } from "lucide-react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { AppIcon } from "./AppIcon";
-import { CommandPalette, isTypingTarget } from "./CommandPalette";
 import { Sidebar } from "./Sidebar";
+import { isTypingTarget } from "./typing";
+
+// Loaded on first use: most visits never open search (Lighthouse: unused JS)
+const CommandPalette = lazy(() => import("./CommandPalette").then((m) => ({ default: m.CommandPalette })));
 import { menuUrl } from "./urls";
 
 /** Top bar + current app's sidebar + content. The active menu comes from `?menu=` (deep-linkable). */
@@ -27,7 +30,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
   const menus = useMenus();
   const [params] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [search, setSearch] = useState({ open: false, query: "" });
+  const [search, setSearch] = useState({ open: false, used: false, query: "" });
 
   // Type anywhere to search; ⌘K / Ctrl+K also opens it (D-24)
   const openRef = useRef(false);
@@ -36,7 +39,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setSearch({ open: true, query: "" });
+        setSearch({ open: true, used: true, query: "" });
         return;
       }
       const printable = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
@@ -45,7 +48,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
       // Keys typed before the palette input has focus are appended, so nothing is lost
       e.preventDefault();
       openRef.current = true;
-      setSearch((s) => ({ open: true, query: s.open ? s.query + e.key : e.key }));
+      setSearch((s) => ({ open: true, used: true, query: s.open ? s.query + e.key : e.key }));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -101,7 +104,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
           size="icon"
           aria-label={t("search")}
           aria-keyshortcuts="Control+K Meta+K"
-          onClick={() => setSearch({ open: true, query: "" })}
+          onClick={() => setSearch({ open: true, used: true, query: "" })}
         >
           <Search aria-hidden />
         </Button>
@@ -134,12 +137,16 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
         ) : null}
         <main className="min-w-0 flex-1">{children}</main>
       </div>
-      <CommandPalette
-        open={search.open}
-        onOpenChange={(open) => setSearch((s) => ({ ...s, open }))}
-        query={search.query}
-        onQueryChange={(query) => setSearch((s) => ({ ...s, query }))}
-      />
+      {search.used ? (
+        <Suspense fallback={null}>
+          <CommandPalette
+            open={search.open}
+            onOpenChange={(open) => setSearch((s) => ({ ...s, open }))}
+            query={search.query}
+            onQueryChange={(query) => setSearch((s) => ({ ...s, query }))}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

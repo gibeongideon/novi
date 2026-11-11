@@ -69,3 +69,14 @@
     --tile-to: var(--novi-app-8-to);
   }
 }
+
+@layer components {
+  /* Subtle page backdrop (no banner): faint brand glow from the tenant-overridable tokens */
+  .novi-backdrop {
+    background: radial-gradient(
+      70% 55% at 50% -10%,
+      color-mix(in srgb, var(--novi-color-primary) 9%, transparent),
+      transparent 70%
+    );
+  }
+}

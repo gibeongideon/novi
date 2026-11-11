@@ -1,12 +1,14 @@
 import { useMenus, useSession } from "@novi/engine";
 import { Skeleton } from "@novi/ui";
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
 
-import { ActionPage } from "./ActionPage";
 import { AppLauncher } from "./AppLauncher";
 import { AppShell } from "./AppShell";
 import { LoginPage } from "./LoginPage";
 import { menuUrl } from "./urls";
+
+const ActionPage = lazy(() => import("./ActionPage").then((m) => ({ default: m.ActionPage })));
 
 /**
  * URL scheme (deep-linkable, survives reload):
@@ -23,7 +25,14 @@ export function ShellRoutes({ productName }: { productName?: string }) {
       <Routes>
         <Route path="/" element={<AppLauncher />} />
         <Route path="/apps/:appId" element={<OpenApp />} />
-        <Route path="/action/:actionId" element={<ActionPage />} />
+        <Route
+          path="/action/:actionId"
+          element={
+            <Suspense fallback={<Skeleton className="m-6 h-8 w-48" />}>
+              <ActionPage />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>

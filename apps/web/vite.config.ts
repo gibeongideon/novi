@@ -10,6 +10,14 @@ import { defineConfig } from "vite";
 const ODOO = process.env.ODOO_URL ?? "http://127.0.0.1:18069";
 const ODOO_WS = process.env.ODOO_WS_URL ?? "ws://127.0.0.1:18072";
 const toOdoo = { target: ODOO, changeOrigin: true };
+const proxy = {
+  "/web": toOdoo,
+  "/json": toOdoo,
+  "/mail": toOdoo,
+  "/report": toOdoo,
+  "/odoo": toOdoo,
+  "/websocket": { target: ODOO_WS, ws: true, changeOrigin: true },
+};
 
 export default defineConfig({
   plugins: [react()],
@@ -23,16 +31,11 @@ export default defineConfig({
       "@novi/odoo-client": fileURLToPath(new URL("../../packages/odoo-client/src/index.ts", import.meta.url)),
     },
   },
+  // production build served locally (pnpm --filter @novi/web preview) with the same Odoo proxy
+  preview: { port: 4173, strictPort: true, proxy },
   server: {
     port: 5173,
     strictPort: true,
-    proxy: {
-      "/web": toOdoo,
-      "/json": toOdoo,
-      "/mail": toOdoo,
-      "/report": toOdoo,
-      "/odoo": toOdoo,
-      "/websocket": { target: ODOO_WS, ws: true, changeOrigin: true },
-    },
+    proxy,
   },
 });

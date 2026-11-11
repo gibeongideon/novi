@@ -7,6 +7,7 @@ const sizes = {
   sm: "size-7 rounded-lg [&_svg]:size-4",
   md: "size-12 rounded-xl [&_svg]:size-6",
   lg: "size-14 rounded-2xl [&_svg]:size-7",
+  xl: "size-16 rounded-[22px] [&_svg]:size-8",
 } as const;
 
 /** NOVI app tile: white glyph on a palette gradient (D-23: not Odoo's artwork). */

@@ -97,9 +97,3 @@ export function wordFilter(value: string, search: string): number {
   const startsWord = words.every((w) => text.startsWith(w) || text.includes(` ${w}`));
   return (startsWord ? 2 : 1) - text.length / 1000;
 }
-
-/** True when typing should go to the focused control, not open the palette. */
-export function isTypingTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
-}
