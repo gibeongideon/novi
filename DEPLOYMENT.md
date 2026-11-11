@@ -10,7 +10,7 @@ GitHub push to main ──▶ Actions builds dashboard ──SSH as user "novi"�
 ```
 
 - The deploy key logs in as **`novi`**, an unprivileged user with no sudo who owns only `/opt/novi`. It can't touch the trading bots or other apps.
-- The workflow pins the server's host key (`VPS_FINGERPRINT`), so it will never deploy to an impostor.
+- The workflow only connects if the server presents one of the verified host keys committed in [`deploy/staging/known_hosts`](deploy/staging/known_hosts) (strict OpenSSH checking), so it can never deploy to an impostor. No fingerprint secret is needed; if the server is rebuilt, update that file.
 - The **staging Odoo, gateway and web app (P0.3 / P1) will NOT go on this server**, which is already at its memory limit. They need another server (≥ 8 GB) before then.
 
 ---
@@ -41,7 +41,6 @@ In the NOVI repo, go to **Settings → Secrets and variables → Actions**:
 | `VPS_HOST` | `68.183.91.240` |
 | `VPS_USER` | `novi` |
 | `VPS_SSH_KEY` | Full output of `cat ~/.ssh/novi_deploy` (including the BEGIN/END lines) |
-| `VPS_FINGERPRINT` | `SHA256:1VFVb1wOC0ktRdcCmMu62D49VWd4aiwJ+8SqqmmfC/8` (the **ECDSA** host key: the Go SSH client used by the deploy actions negotiates ECDSA before ED25519) |
 
 ### 3. DNS (Cloudflare, `dafeapp.com` zone)
 Add `A` record `novi` → `68.183.91.240`, using the **same proxy setting as `braelaspin`**.
@@ -63,7 +62,7 @@ Then delete the DNS record and update the GitHub secrets for the new server.
 | Symptom | Check |
 |---|---|
 | `Missing GitHub secret …` / key or fingerprint format error | Step 2 |
-| `ssh: handshake failed` | `VPS_USER` must be `novi`; re-run step 1 (it re-installs the key) |
-| Host key mismatch | Server was rebuilt: get the new fingerprint from the provider console, then update `VPS_FINGERPRINT` |
+| `Permission denied (publickey)` | Step 1 not run yet, or `VPS_USER` is not `novi`. Re-run step 1 (it re-installs the key) |
+| `Host key verification failed` / `no verified host key` | `VPS_HOST` must be `68.183.91.240`; if the server was rebuilt, refresh `deploy/staging/known_hosts` from the provider console |
 | Certificate / site not reachable | DNS record (step 3); on the server: `sudo journalctl -u caddy -n 50` |
 | Login keeps asking | Re-run step 1 with a new password (it won't duplicate the block; to change the password, edit the hash in `/etc/caddy/Caddyfile` and `sudo systemctl reload caddy`) |

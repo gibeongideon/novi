@@ -84,5 +84,5 @@ EOF
   fi
 fi
 
-echo "==> done. Host key fingerprint (ECDSA) for the GitHub secret VPS_FINGERPRINT:"
-ssh-keygen -lf /etc/ssh/ssh_host_ecdsa_key.pub | awk '{print $2}'   # ECDSA: what the deploy action checks
+echo "==> done. Host keys (compare with deploy/staging/known_hosts in the repo):"
+for k in /etc/ssh/ssh_host_*_key.pub; do ssh-keygen -lf "$k"; done

@@ -36,45 +36,43 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_FINGERPRINT: ${{ secrets.VPS_FINGERPRINT }}
         run: |
-          for v in VPS_HOST VPS_USER VPS_SSH_KEY VPS_FINGERPRINT; do
+          for v in VPS_HOST VPS_USER VPS_SSH_KEY; do
             [ -n "${!v}" ] || { echo "::error::Missing GitHub secret $v"; exit 1; }
           done
           case "$VPS_SSH_KEY" in
             *"BEGIN OPENSSH PRIVATE KEY"*) ;;
             *) echo "::error::VPS_SSH_KEY does not look like a private key (paste the full output of: cat ~/.ssh/novi_deploy)"; exit 1 ;;
           esac
-          case "$VPS_FINGERPRINT" in
-            SHA256:*) ;;
-            *) echo "::error::VPS_FINGERPRINT must look like SHA256:xxxx (server host key fingerprint)"; exit 1 ;;
-          esac
           [ "$VPS_USER" != "root" ] || { echo "::error::Deploy as the unprivileged 'novi' user, not root"; exit 1; }
+          grep -q "^$VPS_HOST " deploy/staging/known_hosts || {
+            echo "::error::VPS_HOST ($VPS_HOST) has no verified host key in deploy/staging/known_hosts (expected 68.183.91.240)"; exit 1; }
 
-      - name: Upload dashboard
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          fingerprint: ${{ secrets.VPS_FINGERPRINT }} # refuse to deploy to an unverified host
-          source: "deploy/staging/progress"
-          target: "/opt/novi/incoming"
-          strip_components: 3
-          rm: true
+      # Plain OpenSSH with strict host-key checking against the verified public keys committed in
+      # deploy/staging/known_hosts (all key types), so it never connects to an impostor server.
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          cp deploy/staging/known_hosts ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
 
-      - name: Publish (swap in new version)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          fingerprint: ${{ secrets.VPS_FINGERPRINT }}
-          script: |
-            set -euo pipefail
+      - name: Upload and publish
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes"
+          rsync -a --delete -e "$SSH" deploy/staging/progress/ "$VPS_USER@$VPS_HOST:/opt/novi/incoming/"
+          $SSH "$VPS_USER@$VPS_HOST" 'set -eu
             cd /opt/novi
             test -f incoming/index.html
             rm -rf progress.old
             if [ -d progress ]; then mv progress progress.old; fi
             mv incoming progress
-            echo "Published: https://novi.dafeapp.com/progress/"
+            echo "Published: https://novi.dafeapp.com/progress/"'
+
+      - name: Clean up key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
