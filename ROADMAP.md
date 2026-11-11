@@ -12,7 +12,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
 | **In progress** | — |
-| **Next task** | `P1.10` UI kit: Tailwind preset from tokens + only the primitives the shell needs first (Musk step 2), Storybook |
+| **Next task** | `P1.11` Shell navigation (app launcher + menus from `load_menus`, router, breadcrumbs) on the new UI kit; `P1.1` gateway foundation |
 | **Blockers** | — |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-11 |

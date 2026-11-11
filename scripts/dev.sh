@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One command to see everything locally, with live reload:
 #   web app   http://localhost:5173   (Vite HMR, Odoo proxied on the same origin)
+#   storybook http://localhost:6006   (UI components, light/dark, a11y checks)
 #   progress  http://localhost:4321   (rebuilds when TASKS/ROADMAP/CHANGELOG change)
 #   Odoo      http://localhost:18069  (admin / admin)
 set -euo pipefail
@@ -11,4 +12,4 @@ if docker image inspect "${ODOO_IMAGE:-novi/odoo20:stock}" >/dev/null 2>&1; then
 else
   echo "[odoo] image missing (pnpm odoo:build); starting without Odoo"
 fi
-exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/progress-dashboard "$@"
+exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/ui --filter=@novi/progress-dashboard "$@"

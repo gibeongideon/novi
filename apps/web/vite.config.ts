@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -11,6 +13,13 @@ const toOdoo = { target: ODOO, changeOrigin: true };
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    // use workspace sources directly so edits in packages hot-reload without a rebuild
+    alias: {
+      "@novi/ui/styles.css": fileURLToPath(new URL("../../packages/ui/src/styles.css", import.meta.url)),
+      "@novi/ui": fileURLToPath(new URL("../../packages/ui/src/index.ts", import.meta.url)),
+    },
+  },
   server: {
     port: 5173,
     strictPort: true,

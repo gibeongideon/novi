@@ -1,0 +1,27 @@
+/* NOVI base styles. Token variables are injected at runtime by <ThemeProvider> (themeStylesheet). */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: var(--novi-font-sans);
+    font-size: 15px;
+    background: var(--novi-color-bg);
+    color: var(--novi-color-text);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* visible focus everywhere (UI-RULES §6) */
+  :focus-visible {
+    outline: 2px solid var(--novi-color-focus);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

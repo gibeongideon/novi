@@ -4,5 +4,5 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["src", "test"]
+  "include": ["src", "test", ".storybook", "tailwind-preset.ts", "tailwind.config.ts", "vitest.config.ts"]
 }

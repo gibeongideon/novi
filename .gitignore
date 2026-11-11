@@ -18,3 +18,5 @@ deploy/staging/progress/
 
 # Odoo coverage reports are committed (P0.8)
 !docs/coverage/
+
+dist-storybook/

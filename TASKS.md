@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 1 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 2 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -288,13 +288,13 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** repeat view loads are served from cache, and invalidation is proven by a test.
 
 ### P1.10 `ui` package (component library)
-- [ ] P1.10.1 Tailwind preset from the tokens (P0.9), with dark mode
-- [ ] P1.10.2 shadcn/ui primitives: Button, Input, Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Dialog, Drawer, Popover, Tooltip, DropdownMenu, Tabs, Badge, Avatar, Toast, Skeleton, Table base, Card, Breadcrumb, Command
-- [ ] P1.10.3 Runtime tenant theming (CSS variables from the tenant config)
-- [ ] P1.10.4 Storybook with every component and its state variants
-- [ ] P1.10.5 Visual regression tests (Storybook snapshots)
-- [ ] P1.10.7 CI/lint check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx` (ex-P1.17.6)
-- [ ] P1.10.6 NOVI i18n catalogue for NOVI-owned strings (Save, Discard…), created with the first primitive that needs one
+- [x] P1.10.1 Tailwind preset from the tokens (P0.9), with dark mode (`packages/ui/tailwind-preset.ts`: every value is a token CSS variable; preflight grey/border routed to tokens, 0 hex in app CSS)
+- [x] P1.10.2 shadcn/ui primitives: Button, Input, Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Dialog, Drawer, Popover, Tooltip, DropdownMenu, Tabs, Badge, Avatar, Toast, Skeleton, Table base, Card, Breadcrumb, Command *(Musk step 2: 11 primitives the shell needs (Button, Input, Badge, Avatar, Skeleton, Breadcrumb, Tooltip, DropdownMenu, Dialog, Toast, Command); the other 14 moved to P2.13.14)*
+- [x] P1.10.3 Runtime tenant theming (CSS variables from the tenant config) (`ThemeProvider`: injects token variables, applies tenant colours only if `validateTheme()` passes, light/dark/system)
+- [x] P1.10.4 Storybook with every component and its state variants (26 stories incl. states; light/dark toolbar; a11y addon set to error; `pnpm dev` → :6006)
+- [-] P1.10.5 Visual regression tests (Storybook snapshots) *(moved to P2.16.4, Musk step 5 "automate last": snapshot once primitives and views stabilise)*
+- [-] P1.10.7 CI/lint check: every exported component in `ui`/`fields`/`views` has a `*.stories.tsx` (ex-P1.17.6) *(still deferred, automate last: add when stories start drifting from components)*
+- [x] P1.10.6 NOVI i18n catalogue for NOVI-owned strings (Save, Discard…), created with the first primitive that needs one (`I18nProvider`/`useT` with NOVI-owned strings only; Odoo text never goes here)
 
 **Done when:** Storybook is published and every primitive has stories and a11y checks.
 
@@ -500,6 +500,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
 - [ ] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner)
+- [ ] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2)
 - [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)
 
@@ -522,6 +523,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P2.16 Parity harness & engine docs
 - [ ] P2.16.1 Parity test: for 50 sampled actions, compare records, fields and buttons against Odoo for admin and a restricted user
 - [ ] P2.16.2 Performance budget: list open < 1 s, form open < 800 ms (p75, staging)
+- [ ] P2.16.4 Visual regression snapshots of Storybook (ex-P1.10.5)
 - [ ] P2.16.3 Engine developer docs: how to write an override and a widget
 
 **Done when:** the parity suite is green and the docs are published.
