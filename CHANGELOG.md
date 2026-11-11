@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-11
+- [P0.13] Staging live: https://novi.dafeapp.com serves the progress dashboard (MT5 server, `novi` user, Caddy basic auth); deploys on every push to `main`.
 - [P0.11] Template-based provisioning: frozen template DB per (plan, country) with localisation; sign-up clones it in **8–13 s** instead of 160 s, with per-tenant secrets, ownership reassignment and stronger DB isolation (D-18).
 - [P0.1–P0.11] **Phase 0 implementation.**
   - Monorepo (22 packages) with CI, Docker images, Changesets, Renovate and a licence policy.
