@@ -12,4 +12,13 @@ if docker image inspect "${ODOO_IMAGE:-novi/odoo20:stock}" >/dev/null 2>&1; then
 else
   echo "[odoo] image missing (pnpm odoo:build); starting without Odoo"
 fi
+cat <<'MSG'
+
+  NOVI dev servers (keep this terminal open; Ctrl+C stops them)
+    web app    http://localhost:5173
+    storybook  http://localhost:6006   (ready ~15 s after start)
+    progress   http://localhost:4321
+    odoo       http://localhost:18069  (admin / admin)
+
+MSG
 exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/ui --filter=@novi/progress-dashboard "$@"
