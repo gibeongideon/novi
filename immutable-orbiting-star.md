@@ -70,8 +70,8 @@ The workspace currently contains only `odoo_20.0+e.20261111.tar.gz`, which is us
 ## 2b. Tenant provisioning (self-service sign-up → own instance + own DB)
 
 ```
- Sign-up page ──▶ Gateway /signup ──▶ Provisioner (job queue) ──▶ Kubernetes
-                                         │                          • Namespace / pod: stock Odoo 20 image
+ Sign-up page ──▶ Gateway /signup ──▶ Provisioner (job queue) ──▶ Docker host (Compose)
+                                         │                          • Own compose project: stock Odoo 20 image
                                          │                          • Own database  (tenant_<id>) on PG cluster
                                          │                          • Own filestore volume
                                          ▼                          • Own Odoo config: dbfilter=^tenant_<id>$,
@@ -89,7 +89,7 @@ The workspace currently contains only `odoo_20.0+e.20261111.tar.gz`, which is us
 
 **Lifecycle operations** handled by the provisioner:
 - install or uninstall apps when the plan changes (module install via standard `button_immediate_install` RPC)
-- suspend or resume (scale the pod to 0)
+- suspend or resume (stop the tenant containers)
 - backups (per-DB `pg_dump` + filestore snapshot) and restore
 - Odoo version upgrades, applied per tenant in waves
 - delete with a GDPR export
@@ -128,10 +128,10 @@ novi/
       sales/ crm/ accounting/ inventory/ hr/  (dashboards, pipeline, invoice editor …)
   services/
     gateway/         Fastify BFF (section 2), tenant admin API, /signup
-    provisioner/     tenant lifecycle worker (BullMQ jobs → Kubernetes API + PostgreSQL admin):
+    provisioner/     tenant lifecycle worker (BullMQ jobs → Docker Engine API / compose + PostgreSQL admin):
                      create / install-apps / suspend / backup / restore / upgrade / delete
   infra/
-    helm/            charts: platform (web, gateway, provisioner) + odoo-tenant (per-tenant release)
+    compose/         platform stack (web, gateway, provisioner) + odoo-tenant template (one compose project per tenant)
     images/          stock Odoo 20 image build (from tarball, no code changes)
   apps/
     web/             Vite SPA that composes packages + tenant theme
@@ -142,7 +142,7 @@ novi/
     contract-tests/    API contract suite against stock Odoo 20 (docker)
 ```
 
-Each package is versioned and published to a private npm registry with changesets, so the engine can be reused by other products such as a mobile shell. Deployment is a Docker image for `web` (static) plus an image for `gateway`, delivered with a Helm chart.
+Each package is versioned and published to a private npm registry with changesets, so the engine can be reused by other products such as a mobile shell. Deployment is a Docker image for `web` (static) plus an image for `gateway`, deployed with Docker Compose (no Kubernetes until scale requires it, D-13).
 
 **State and data:**
 
@@ -188,16 +188,16 @@ The task breakdown and live status are in **ROADMAP.md**. Each phase starts only
 - **Enterprise client actions** (accounting reports, reconciliation, spreadsheets). Rebuild them natively in priority order, using the iframe fallback until then.
 - **Security of the session vault.** Encrypt at rest, scope sessions per tenant and user, use short-lived JWTs, and keep an audit log. The gateway never widens permissions, because Odoo checks every call.
 - **Licensing.** Odoo Enterprise UI code is proprietary, so we write all UI code from scratch and copy no OWL/SCSS assets. We only call HTTP APIs. **Hosting Enterprise instances for customers needs a valid Odoo Enterprise subscription per tenant database and a hosting/partner agreement with Odoo S.A.** Confirm this with Odoo before GA, or offer Community-only plans.
-- **Cost and density of one instance per tenant.** Each Odoo pod needs roughly 0.5–1 GB RAM. Mitigations: scale idle trial tenants to zero, the shared-instance density tier for trials, and per-plan resource limits.
+- **Cost and density of one instance per tenant.** Each Odoo container needs roughly 0.5–1 GB RAM. Mitigations: scale idle trial tenants to zero, the shared-instance density tier for trials, and per-plan resource limits.
 - **Provisioning failures.** Each provisioner step is idempotent with compensation (rollback). Tenants stuck in `provisioning` raise an alert, and a retry is available from the admin console.
-- **Tenant isolation.** Each tenant has its own DB role (no cross-DB access), a network policy per namespace, `list_db=False`, a strict `dbfilter`, and the database manager disabled.
+- **Tenant isolation.** Each tenant has its own DB role (no cross-DB access), a separate docker network per tenant, `list_db=False`, a strict `dbfilter`, and the database manager disabled.
 
 ## 7. Verification
 
 - **Contract tests** (`tools/contract-tests`, Vitest) against dockerised stock Odoo 20 (from the tarball) with demo data. They cover every endpoint in section 1, both auth modes and the error shapes.
 - **Engine unit tests:** arch → ViewSchema snapshots for all views in the demo DB; `odoo-expr` evaluates the same results as Odoo for the harvested expressions.
 - **Parity tests:** for N sampled actions, compare the records, visible fields and button sets the engine produces with what `web_search_read` / `get_views` return for the same user. Run them as admin and as a restricted user to prove access rules hold.
-- **Provisioning tests:** sign up two tenants in staging and confirm each gets its own pod, DB and filestore. Check that tenant A's session can't read tenant B's data, that deleting a tenant removes all of its resources, and that a backup restores to an identical state.
+- **Provisioning tests:** sign up two tenants in staging and confirm each gets its own containers, DB and filestore. Check that tenant A's session can't read tenant B's data, that deleting a tenant removes all of its resources, and that a backup restores to an identical state.
 - **E2E** (Playwright) for business flows: lead → quote → confirm → deliver → invoice → pay → reconcile; time-off request → approve.
 - **Coverage scanner** after each sprint, tracking the "% natively rendered" KPI.
 - **Pilot tenant UAT** per phase. Watch gateway latency (p95 < 150 ms overhead) and use Lighthouse/a11y (WCAG 2.1 AA) checks.

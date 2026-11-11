@@ -10,8 +10,8 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 
 | | |
 |---|---|
-| **Current phase** | Phase 0 — Foundations (not started) |
-| **In progress** | — |
+| **Current phase** | Phase 0 — Foundations (in progress) |
+| **In progress** | `P0.13` Live staging & CI/CD (waiting on GitHub repo, secrets, DNS) |
 | **Next task** | `P0.1` Monorepo setup → first subtask `P0.1.1` |
 | **Blockers** | — |
 | **Open business items** | `P0.12` Odoo Enterprise hosting licence |
@@ -23,7 +23,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 
 | # | Phase | Weeks (sequential) | Est. | Goal | Status | Started | Completed |
 |---|---|---|---|---|---|---|---|
-| 0 | Foundations | 1–3 | 3 w | Repo, local Odoo 20, client library, 2FA and provisioning spikes | ⬜ Not started | | |
+| 0 | Foundations | 1–3 | 3 w | Repo, local Odoo 20, client library, 2FA and provisioning spikes, live staging | 🟦 In progress | 2026-11-11 | |
 | 1 | Gateway, tenant provisioning & shell | 4–9 | 6 w | Sign-up → own Odoo + own DB; login; browse menus | 🔒 Locked | | |
 | 2 | Engine core | 10–17 | 8 w | Any list/form/kanban opens, edits and saves | 🔒 Locked | | |
 | 3 | Breadth | 18–23 | 6 w | ≥ 90% views native; chatter, reports, realtime | 🔒 Locked | | |

@@ -29,7 +29,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
-| 0 Foundations | 12 | 0 | ⬜ |
+| 0 Foundations | 13 | 0 | 🟦 |
 | 1 Gateway, provisioning & shell | 16 | 0 | ⬜ |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
@@ -54,7 +54,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P0.1.5 Add Vitest config (workspace mode) and coverage reporting
 - [ ] P0.1.6 Create empty package skeletons: `odoo-client`, `odoo-expr`, `odoo-meta`, `engine`, `ui`, `fields`, `views`, `chatter`, `realtime`, `shell`, `apps/*`
 - [ ] P0.1.7 Create service and app skeletons: `services/gateway`, `services/provisioner`, `apps/web` (Vite + React), `apps/admin`
-- [ ] P0.1.8 Create tool skeletons: `tools/contract-tests`, `tools/coverage-scanner`; add `infra/helm`, `infra/images`
+- [ ] P0.1.8 Create tool skeletons: `tools/contract-tests`, `tools/coverage-scanner`; add `infra/compose`, `infra/images`
 - [ ] P0.1.9 Write the root README: repo layout, prerequisites, `pnpm dev` quick start
 - [ ] P0.1.10 Add Husky + lint-staged pre-commit hook, and a commitlint rule requiring the task-ID prefix
 
@@ -170,6 +170,22 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 **Done when:** a licensing decision and a cost model per tenant are recorded.
 
+### P0.13 Live staging & CI/CD (temporary home on the dafeapp server)
+- [x] P0.13.1 Progress dashboard generator (`tools/progress-dashboard/build.mjs`) from TASKS/ROADMAP/CHANGELOG + git log
+- [x] P0.13.2 Staging stack `deploy/staging` (Caddy, basic auth, no host ports, memory limits, `edge` network)
+- [x] P0.13.3 GitHub Actions workflow `deploy-staging.yml` (push to `main` → build dashboard → deploy over SSH)
+- [x] P0.13.4 dafeapp side: `novi.dafeapp.com` block in its Caddyfile, caddy joins `edge`, deploy script creates `edge` (uncommitted in the dafeapp repo, waiting for review)
+- [ ] P0.13.5 Create the private GitHub repo, add the remote and push `main`
+- [ ] P0.13.6 Add GitHub secrets `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`
+- [ ] P0.13.7 DNS: `novi.dafeapp.com` A record → dafeapp server IP (Cloudflare)
+- [ ] P0.13.8 Server: create `/opt/novi/.env` (basic-auth user + hash) and the `edge` network
+- [ ] P0.13.9 Commit and deploy the dafeapp change, then confirm dafeapp.com is unaffected
+- [ ] P0.13.10 First NOVI deploy green; https://novi.dafeapp.com/progress/ loads behind the login
+- [ ] P0.13.11 Add staging Odoo 20 (`odoo.novi.dafeapp.com`, `mem_limit`) once P0.3 is done
+- [ ] P0.13.12 Add web + gateway services to staging once they exist (P1)
+
+**Done when:** every push to `main` updates https://novi.dafeapp.com within ~2 min, and dafeapp is unaffected.
+
 ### Phase 0 Gate
 - [ ] Contract suite green in CI against Odoo 20
 - [ ] Coverage report for the demo DB committed
@@ -216,7 +232,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P1.4.2 Step: create the DB role and database (`tenant_<id>`) with least-privilege grants
 - [ ] P1.4.3 Step: create the filestore volume
 - [ ] P1.4.4 Step: run the module-init job (Odoo CLI) for the plan's modules, language and country
-- [ ] P1.4.5 Step: deploy the tenant Odoo release (Helm `odoo-tenant`)
+- [ ] P1.4.5 Step: start the tenant Odoo compose project (`odoo-tenant` template)
 - [ ] P1.4.6 Step: wait for health, then bootstrap the admin user and company via RPC
 - [ ] P1.4.7 Step: store the encrypted service credentials, register the URL, set status `active`
 - [ ] P1.4.8 Idempotency: every step is safe to re-run
@@ -225,14 +241,14 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 **Done when:** sign-up results in an active tenant in < 5 min, and a forced failure rolls back cleanly.
 
-### P1.5 Tenant infrastructure (Helm / Kubernetes)
-- [ ] P1.5.1 `odoo-tenant` chart: deployment, service, PVC (filestore), configmap (`odoo.conf`), secret
+### P1.5 Tenant infrastructure (Docker Compose)
+- [ ] P1.5.1 `odoo-tenant` compose template: Odoo service, filestore volume, `odoo.conf`, secrets file, restart policy
 - [ ] P1.5.2 Odoo config hardening: `list_db=False`, `dbfilter=^tenant_<id>$`, random `admin_passwd`, `proxy_mode`
 - [ ] P1.5.3 Separate HTTP and websocket (gevent) ports routed correctly
-- [ ] P1.5.4 NetworkPolicy: a tenant pod can reach only its DB and the gateway
-- [ ] P1.5.5 Resource requests/limits per plan tier
-- [ ] P1.5.6 Ingress / wildcard TLS for `*.novi.app`
-- [ ] P1.5.7 `platform` chart: web, gateway, provisioner, Redis, gateway Postgres
+- [ ] P1.5.4 Separate docker network per tenant: a tenant container can reach only its DB and the gateway
+- [ ] P1.5.5 Memory/CPU limits per plan tier (`mem_limit`, `cpus`)
+- [ ] P1.5.6 Caddy routing + wildcard TLS for tenant subdomains (DNS challenge)
+- [ ] P1.5.7 `platform` compose stack: web, gateway, provisioner, Redis, gateway Postgres
 
 **Done when:** two tenants run side by side in staging with no network path between them.
 
@@ -327,7 +343,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** all of the above are green in CI/staging.
 
 ### Phase 1 Gate
-- [ ] New sign-up gets an isolated instance (own pod, DB, filestore) in < 5 min
+- [ ] New sign-up gets an isolated instance (own containers, DB, filestore) in < 5 min
 - [ ] Isolation verified between two tenants
 - [ ] Login works in both modes (incl. 2FA)
 - [ ] All menus of installed apps browsable
@@ -827,7 +843,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P7.1.2 Tenant detail: logs link, provisioning history, retry, suspend, delete
 - [ ] P7.1.3 Operator roles and audited actions
 
-**Done when:** operators can manage all tenants without kubectl.
+**Done when:** operators can manage all tenants without SSH-ing into servers.
 
 ### P7.2 Tenant self-service settings
 - [ ] P7.2.1 Branding: logo, colours, favicon, email sender name
@@ -845,7 +861,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** a trial converts to paid and a non-payment suspends automatically.
 
 ### P7.4 Tenant lifecycle
-- [ ] P7.4.1 Suspend/resume (scale to 0, friendly suspended page)
+- [ ] P7.4.1 Suspend/resume (stop containers, friendly suspended page)
 - [ ] P7.4.2 Scheduled backups: per-DB `pg_dump` + filestore snapshot, retention policy, offsite copy
 - [ ] P7.4.3 Restore to the same tenant or a new one; restore drill documented
 - [ ] P7.4.4 Delete: grace period, GDPR data export, full resource removal
