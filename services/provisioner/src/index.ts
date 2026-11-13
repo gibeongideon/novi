@@ -3,4 +3,4 @@ export * from "./config.js";
 export * from "./mailer.js";
 export * from "./secretBox.js";
 export * from "./signups.js";
-export { freePort, provision, type ScriptRunner, tick, type WorkerDeps } from "./worker.js";
+export { freePort, provision, type ScriptRunner, shellRunner, tick, type WorkerDeps } from "./worker.js";

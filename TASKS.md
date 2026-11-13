@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 8 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 9 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -336,9 +336,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** ⌘K opens any menu or record in ≤ 3 keystrokes after typing.
 
 ### P1.14 SSO
-- [ ] P1.14.1 OAuth providers via Odoo `auth_oauth` redirect flow, then session capture
-- [ ] P1.14.2 Google and Microsoft tested
-- [ ] P1.14.3 Option for enterprise customers: Keycloak (or similar) as the identity provider through Odoo's stock `auth_oauth`; only if a customer needs corporate SSO (extra server, Musk step 2)
+- [x] P1.14.1 OAuth providers via Odoo `auth_oauth` redirect flow, then session capture *(D-31: "Continue with …" from the provider list Odoo renders; the return leg `/auth_oauth/` is proxied so Odoo sets its own session on the tenant host (nothing to capture); refused sign-ins come back to NOVI's login with a message; an identity is linked by choosing the provider on the emailed reset/invitation page. Verified live with a stand-in identity provider (`tools/contract-tests/fixtures/fake-idp.py`))*
+- [!] P1.14.2 Google and Microsoft tested *(blocked: needs the platform's own Google Cloud / Microsoft Entra OAuth app (client ID) from the product owner. Google accepts only exact redirect URIs, so one client for all tenant hosts needs P1.14.4 first)*
+- [ ] P1.14.4 Platform SSO callback: one redirect URI (`https://<platform>/sso/callback`) that forwards the provider's answer to the right tenant's `/auth_oauth/signin` (tenant from the state's database), and each tenant's provider record filled from platform config; build together with P1.14.2
+- [-] P1.14.3 Option for enterprise customers: Keycloak (or similar) as the identity provider through Odoo's stock `auth_oauth`; only if a customer needs corporate SSO (extra server, Musk step 2) *(dropped until a customer asks: the same stock provider record works for any OAuth2 implicit-flow IdP, as the stand-in proves)*
 
 **Done when:** a user can log in with Google into a tenant.
 
@@ -350,18 +351,18 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** a plan upgrade installs the new apps and their menus appear.
 
 ### P1.16 Phase 1 testing
-- [ ] P1.16.1 E2E: sign-up → verify → provision → auto-login → browse menus
-- [ ] P1.16.2 Isolation test: tenant A session/credentials can't access tenant B
-- [ ] P1.16.3 E2E for both session modes
-- [ ] P1.16.4 Load test: 20 concurrent sign-ups
+- [x] P1.16.1 E2E: sign-up → verify → provision → sign in → browse menus *(`tools/contract-tests/test/platform.contract.test.ts`, live, ~16 s; auto-login was deleted by D-28)*
+- [x] P1.16.2 Isolation test: tenant A session/credentials can't access tenant B *(same suite; network isolation verified in P1.5.4)*
+- [-] P1.16.3 E2E for both session modes *(dropped: one mode since D-27)*
+- [-] P1.16.4 Load test: 20 concurrent sign-ups *(deferred to staging, D-24: 20 tenants need ~4 GB RAM. Note for that test: one worker provisions one at a time (~11–16 s each), so the 20th customer waits ≈ 4–5 min, at the < 5 min target; add workers before marketing pushes)*
 
-**Done when:** all of the above are green in CI/staging.
+**Done when:** all of the above are green in CI/staging. *(green in `pnpm verify` locally, D-24)*
 
 ### Phase 1 Gate
-- [ ] New sign-up gets an isolated instance (own containers, DB, filestore) in < 5 min
-- [ ] Isolation verified between two tenants
-- [ ] Login works in both modes (incl. 2FA)
-- [ ] All menus of installed apps browsable
+- [x] New sign-up gets an isolated instance (own containers, DB, filestore) in < 5 min *(11–16 s from the template; platform e2e)*
+- [x] Isolation verified between two tenants *(sessions, credentials, network, database roles: P1.5.4, P1.16.2)*
+- [x] Login works in both modes (incl. 2FA) *(one mode since D-27; password, 2FA + trusted device, reset, SSO: gateway and platform contract tests)*
+- [x] All menus of installed apps browsable *(launcher, sidebar, breadcrumbs, palette; each screen opens in Odoo until the Phase 2 engine renders it)*
 
 ---
 

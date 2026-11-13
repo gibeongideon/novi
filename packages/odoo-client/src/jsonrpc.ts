@@ -295,6 +295,29 @@ export class JsonRpcTransport implements OrmTransport {
     await this.submitForm(url, { token, password, confirm_password: password, csrf_token: page.csrf });
   }
 
+  /**
+   * The tenant's enabled OAuth providers (stock `auth_oauth`, P1.14) as Odoo itself would link them
+   * on its login page: each URL goes to the identity provider and comes back to this Odoo's
+   * `/auth_oauth/signin`, then to `redirect`. With a reset/invitation `token`, the first sign-in
+   * links that identity to the invited user.
+   */
+  async oauthProviders(opts: { redirect: string; token?: string }): Promise<{ name: string; url: string }[]> {
+    const q = new URLSearchParams({ redirect: opts.redirect, ...(opts.token ? { token: opts.token } : {}) });
+    const { html } = await this.formPage(`/web/login?${q}`);
+    const unescape = (s: string) =>
+      s
+        .replace(/&amp;/g, "&")
+        .replace(/&#34;|&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">");
+    const links = html.matchAll(/<a\b[^>]*href="([^"]*response_type=token[^"]*)"[^>]*>([\s\S]*?)<\/a>/g);
+    return [...links].map((m) => ({
+      url: unescape(m[1]!),
+      name: unescape(m[2]!.replace(/<[^>]+>/g, "").trim()),
+    }));
+  }
+
   private async submitForm(url: string, form: Record<string, string>): Promise<void> {
     const res = await this.http.send({
       url,

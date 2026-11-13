@@ -486,3 +486,36 @@ describe("password reset and lockout (P1.6)", () => {
     expect(calls).toEqual(["confirm:t0k:short", "confirm:t0k:Long-Enough-2026"]);
   });
 });
+
+describe("single sign-on (P1.14)", () => {
+  const ssoAuth = (seen: (string | undefined)[]): AuthClient => ({
+    async login() {
+      return { status: "ok" };
+    },
+    async verifyCode() {},
+    async providers(token) {
+      seen.push(token);
+      return [{ name: "Google", url: `https://idp.test/auth${token ? `?t=${token}` : ""}` }];
+    },
+    reset: { async request() {}, async confirm() {} },
+  });
+
+  it("offers the workspace's providers on the login page", async () => {
+    renderShell(fakeOdoo(), "/", ssoAuth([]));
+    const link = await screen.findByRole("link", { name: "Continue with Google" });
+    expect(link.getAttribute("href")).toBe("https://idp.test/auth");
+  });
+
+  it("explains a refused provider sign-in", async () => {
+    renderShell(fakeOdoo(), "/?ssoError=3", ssoAuth([]));
+    expect((await screen.findByRole("alert")).textContent).toMatch(/isn't linked to an account/);
+  });
+
+  it("links the provider through the emailed link (token passed on)", async () => {
+    const seen: (string | undefined)[] = [];
+    renderShell(fakeOdoo(), "/reset-password?token=t0k", ssoAuth(seen));
+    const link = await screen.findByRole("link", { name: "Continue with Google" });
+    expect(link.getAttribute("href")).toBe("https://idp.test/auth?t=t0k");
+    expect(seen).toContain("t0k");
+  });
+});

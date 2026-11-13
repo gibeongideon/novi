@@ -11,9 +11,10 @@
     "lint": "eslint test"
   },
   "dependencies": {
-    "@novi/odoo-client": "workspace:*",
     "@novi/engine": "workspace:*",
-    "@novi/gateway": "workspace:*"
+    "@novi/gateway": "workspace:*",
+    "@novi/odoo-client": "workspace:*",
+    "@novi/provisioner": "workspace:*"
   },
   "devDependencies": {
     "@types/ws": "^8.5.13",

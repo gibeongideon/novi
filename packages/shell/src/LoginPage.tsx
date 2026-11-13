@@ -1,9 +1,10 @@
 import { type LoginFailure, useSession, useSignupConfig } from "@novi/engine";
 import { Button, Input, type MessageKey, useT } from "@novi/ui";
 import { type FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { publicCard, PublicPage } from "./PublicPage";
+import { SsoButtons } from "./SsoButtons";
 
 const MESSAGES: Record<LoginFailure, MessageKey> = {
   credentials: "wrongCredentials",
@@ -20,6 +21,8 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
   const t = useT();
   const { login, verifyCode, pending, loginError, resetLogin, passwordReset } = useSession();
   const signup = useSignupConfig();
+  // a provider sign-in Odoo refused (not linked / no invitation), sent back here by the gateway
+  const ssoError = useSearchParams()[0].get("ssoError");
   const [form, setForm] = useState({ login: "", password: "", code: "", remember: true });
   const [challenge, setChallenge] = useState<string | null>(null);
 
@@ -48,6 +51,10 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
   const error = loginError ? (
     <p role="alert" className="text-sm text-danger">
       {t(MESSAGES[loginError.reason])}
+    </p>
+  ) : ssoError ? (
+    <p role="alert" className="text-sm text-danger">
+      {t("ssoNotLinked")}
     </p>
   ) : null;
 
@@ -127,6 +134,7 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
           <Button type="submit" variant="primary" loading={pending}>
             {t("signIn")}
           </Button>
+          <SsoButtons />
           {signup.data?.enabled ? (
             <p className="text-center text-sm text-text-muted">
               {t("newHere")}{" "}

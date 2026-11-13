@@ -12,7 +12,16 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { Tenant } from "./tenants/registry.js";
 
 /** Route prefixes the NOVI web app uses (PLAN §1). Everything else stays unreachable. */
-export const PROXIED_PREFIXES = ["/web/", "/json/2/", "/mail/", "/report/", "/odoo", "/websocket"] as const;
+// /auth_oauth/: the SSO return leg (P1.14), so Odoo sets its session on the tenant's own host
+export const PROXIED_PREFIXES = [
+  "/web/",
+  "/json/2/",
+  "/mail/",
+  "/report/",
+  "/odoo",
+  "/websocket",
+  "/auth_oauth/",
+] as const;
 /** Never exposed, even under an allowed prefix. */
 export const BLOCKED_PREFIXES = ["/web/database"] as const;
 

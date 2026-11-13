@@ -45,6 +45,20 @@ await orm.call("ir.config_parameter", "set_int", undefined, {
   value: MIN_PASSWORD_LENGTH,
 });
 
+// workspaces are invitation-only (D-31): no public portal sign-up, and an SSO identity without an
+// invitation can't create itself an account
+await orm.call("ir.config_parameter", "set_str", undefined, {
+  key: "auth_signup.invitation_scope",
+  value: "b2b",
+});
+
+// SSO (P1.14): Odoo ships its own "Odoo.com Accounts" provider enabled; a NOVI workspace offers
+// only providers its admin sets up (and never Odoo branding, D-23)
+const odooCom = await orm.call<number[]>("auth.oauth.provider", "search", undefined, {
+  domain: [["auth_endpoint", "like", "accounts.odoo.com"]],
+});
+if (odooCom.length) await orm.call("auth.oauth.provider", "write", odooCom, { vals: { enabled: false } });
+
 const session = await t.getSessionInfo();
 await orm.call("res.users", "write", [session.uid as number], {
   vals: { name: `${company} Admin`, login: email, email, password },

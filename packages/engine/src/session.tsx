@@ -156,6 +156,16 @@ export function useSession() {
   };
 }
 
+/** SSO buttons for the sign-in and reset pages (empty without the gateway or providers). */
+export function useSsoProviders(token?: string | null) {
+  const { auth } = useEngine();
+  return useQuery({
+    queryKey: ["sso-providers", token ?? ""],
+    queryFn: () => auth?.providers?.(token ?? undefined) ?? Promise.resolve([]),
+    staleTime: 5 * 60_000,
+  });
+}
+
 /** Menu tree of the logged-in user (cached per user + language). */
 export function useMenus() {
   const { transport } = useEngine();

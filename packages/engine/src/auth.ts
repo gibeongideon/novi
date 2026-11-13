@@ -21,10 +21,18 @@ export class LoginError extends Error {
   }
 }
 
+/** A single-sign-on option (P1.14): `url` starts the provider's sign-in in the browser. */
+export interface SsoProvider {
+  name: string;
+  url: string;
+}
+
 export interface AuthClient {
   login(login: string, password: string): Promise<LoginResult>;
   verifyCode(challenge: string, code: string, remember: boolean): Promise<void>;
   /** Password reset by email (P1.6.5); only through the gateway (Odoo's reset is an HTML form). */
+  /** The workspace's SSO providers; with a reset/invitation token, signing in links that account. */
+  providers?(token?: string): Promise<SsoProvider[]>;
   reset?: {
     request(login: string): Promise<void>;
     /** Throws LoginError("other", Odoo's reason) when the link is expired or the password refused. */
@@ -58,6 +66,15 @@ export function gatewayAuth(base = "", fetchImpl: typeof fetch = (...a) => fetch
     },
     async verifyCode(challenge, code, remember) {
       await post("/api/auth/totp", { challenge, code, remember });
+    },
+    async providers(token) {
+      const res = await fetchImpl(
+        `${base}/api/auth/providers${token ? `?token=${encodeURIComponent(token)}` : ""}`,
+        {
+          credentials: "include",
+        },
+      );
+      return res.ok ? ((await res.json()) as SsoProvider[]) : [];
     },
     reset: {
       async request(login) {

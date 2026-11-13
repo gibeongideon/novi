@@ -8,6 +8,10 @@
  *   POST /api/auth/reset/confirm { token, password }   → 200 ok | 400 { reason: "tooShort", minLength }
  *                                                        | 400 { reason: "reset", message } (Odoo's reason)
  *   GET  /web/reset_password?token=…                   → 302 to NOVI's own reset page (P1.6.5)
+ *   GET  /web/signup?token=…  (Odoo invitation link)   → 302 to the same page: an invitation token
+ *                                                        sets the first password the same way
+ *   GET  /api/auth/providers[?token=]                  → [{ name, url }] SSO providers (P1.14)
+ *   GET  /web/login?oauth_error=…                      → 302 /?ssoError=… (Odoo's SSO failure → NOVI)
  */
 import {
   AccessDenied,
@@ -42,6 +46,8 @@ export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig):
       headers: {
         "X-Forwarded-For": req.ip,
         "X-Forwarded-Host": req.headers.host ?? "",
+        // so links Odoo builds (reset, SSO return) use https behind Caddy
+        "X-Forwarded-Proto": req.protocol,
         "User-Agent": req.headers["user-agent"] ?? "NOVI-Gateway",
       },
     });
@@ -150,10 +156,24 @@ export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig):
     }
   });
 
-  // the link in Odoo's reset email points at Odoo's page: send the browser to NOVI's instead
-  app.get<{ Querystring: { token?: string } }>("/web/reset_password", async (req, reply) =>
+  // links in Odoo's emails point at Odoo's pages: send the browser to NOVI's instead.
+  // Odoo's own public sign-up page is never shown (workspaces are invitation-only, D-31).
+  const toResetPage = async (req: FastifyRequest<{ Querystring: { token?: string } }>, reply: FastifyReply) =>
     reply.redirect(
       req.query.token ? `/reset-password?token=${encodeURIComponent(req.query.token)}` : "/reset-password",
-    ),
+    );
+  app.get("/web/reset_password", toResetPage);
+  app.get("/web/signup", toResetPage);
+
+  // ── SSO (P1.14): Odoo's stock auth_oauth; the browser goes to the provider and back to
+  // /auth_oauth/signin on this host (proxied), where Odoo sets its own session cookie
+  app.get<{ Querystring: { token?: string } }>("/api/auth/providers", async (req) =>
+    transportFor(req).oauthProviders({ redirect: "/", token: req.query.token || undefined }),
   );
+  // a failed SSO sign-in lands on Odoo's login page: show NOVI's with the reason instead
+  app.addHook("onRequest", async (req, reply) => {
+    if (req.method !== "GET" || !req.url.startsWith("/web/login?")) return;
+    const err = new URL(req.url, "http://x").searchParams.get("oauth_error");
+    if (err) return reply.redirect(`/?ssoError=${encodeURIComponent(err)}`);
+  });
 }

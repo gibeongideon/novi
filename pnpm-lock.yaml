@@ -461,6 +461,9 @@ importers:
       '@novi/odoo-client':
         specifier: workspace:*
         version: link:../../packages/odoo-client
+      '@novi/provisioner':
+        specifier: workspace:*
+        version: link:../../services/provisioner
     devDependencies:
       '@types/ws':
         specifier: ^8.5.13

@@ -46,6 +46,13 @@ describe("password reset link (P1.6.5)", () => {
     const res = await app.inject({ url: "/web/reset_password?db=t&token=a%2Bb" });
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe("/reset-password?token=a%2Bb");
+    // invitation links use the same token; Odoo's public sign-up page is never shown
+    expect((await app.inject({ url: "/web/signup?token=inv" })).headers.location).toBe(
+      "/reset-password?token=inv",
+    );
+    expect((await app.inject({ url: "/web/signup" })).headers.location).toBe("/reset-password");
+    // a refused SSO sign-in comes back to NOVI's login with the reason
+    expect((await app.inject({ url: "/web/login?oauth_error=3" })).headers.location).toBe("/?ssoError=3");
     await app.close();
   });
 });

@@ -12,8 +12,8 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
 | **In progress** | — |
-| **Next task** | `P1.14` SSO, then `P1.16` Phase 1 tests (P1.6 sign-in done, D-30); open Phase 1 items: P1.1, P1.2, P1.8.3/4, P1.9, P1.12, P1.13, P1.15 |
-| **Blockers** | — |
+| **Next task** | Phase 1 gate checks all verified; decide the remaining Phase 1 items (P1.1, P1.2, P1.8.3/4, P1.9, P1.12, P1.13.3, P1.15) before closing Phase 1. Blocked: P1.14.2 (Google/Microsoft OAuth apps) |
+| **Blockers** | P1.14.2 needs the platform's Google Cloud / Microsoft Entra OAuth client IDs |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-13 |
 

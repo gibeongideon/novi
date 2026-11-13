@@ -19,7 +19,7 @@ IMAGE="${ODOO_IMAGE:-novi/odoo20:stock}"
 NET="novi-dev_default"
 DBC="novi-dev-db-1"
 PLAN="${NOVI_PLAN:-starter}"
-MODULES="${NOVI_TENANT_MODULES:-base,web,mail,auth_password_policy,sale_management,crm,account,stock,hr}"
+MODULES="${NOVI_TENANT_MODULES:-base,web,mail,auth_password_policy,auth_oauth,sale_management,crm,account,stock,hr}"
 TPL_ROLE="novi_tpl"
 # Platform admin role (the superuser this script runs psql as). Owns the template *databases*,
 # so REASSIGN OWNED BY novi_tpl (which also moves shared objects such as databases!) can never

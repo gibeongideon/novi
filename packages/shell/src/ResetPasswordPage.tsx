@@ -4,6 +4,7 @@ import { type FormEvent, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import { publicCard, PublicPage } from "./PublicPage";
+import { SsoButtons } from "./SsoButtons";
 
 /**
  * Password reset (P1.6.5). Without a token: ask for the email (Odoo sends the link). With the
@@ -80,6 +81,7 @@ export function ResetPasswordPage({ productName = "NOVI" }: { productName?: stri
         <Button type="submit" variant="primary" loading={busy} disabled={!passwordReset}>
           {t(token ? "setPassword" : "sendResetLink")}
         </Button>
+        {token ? <SsoButtons token={token} /> : null}
         {back}
       </form>
     </PublicPage>

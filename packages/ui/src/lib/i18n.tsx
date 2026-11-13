@@ -115,6 +115,10 @@ export const en = {
   setPassword: "Set password",
   passwordChanged: "Your password has been changed. Sign in with your new password.",
   backToSignIn: "Back to sign in",
+  or: "or",
+  continueWith: "Continue with {name}",
+  ssoNotLinked:
+    "That sign-in isn't linked to an account in this workspace. Ask your administrator for an invitation, or open your invitation or password-reset email and choose it there.",
 } as const;
 
 export type MessageKey = keyof typeof en;
