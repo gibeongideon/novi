@@ -6,6 +6,9 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 
 ## Unreleased
 
+### 2026-11-13
+- [P1.2.2] Multi-tenant gateway (D-27): tenant registry (host → each customer's own Odoo), same-origin reverse proxy with route allow-list and websocket, sign-in per tenant; session vault deleted. The provisioning spike registers/removes tenants; `pnpm serve` runs the production build on :8080 (`<tenant>.localhost:8080`); dev now goes through the gateway too. Verified with two isolated tenants (acme, beta).
+
 ### 2026-11-12
 - [P1.6.2] Gateway first slice (D-26): two-factor sign-in in the browser (password → authenticator code, "don't ask again on this device"), Odoo session handed to the browser, real user IP/User-Agent forwarded to Odoo; login screen with friendly translated messages; `pnpm dev` now also starts the gateway; live tests for login, wrong password, 2FA, trusted device and single-use challenges.
 

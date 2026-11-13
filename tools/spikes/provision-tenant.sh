@@ -132,6 +132,7 @@ if [ "$cmd" = destroy ]; then
   psql -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE);" >/dev/null
   psql -c "DROP ROLE IF EXISTS \"$ROLE\";" >/dev/null
   rm -rf "$DIR"
+  (cd "$ROOT" && pnpm exec tsx services/gateway/src/tenants/cli.ts remove "$id" >/dev/null) || true
   echo "destroyed $id"; exit 0
 fi
 [ "$cmd" = create ] || { echo "usage: $0 template|create|destroy|destroy-template ..." >&2; exit 2; }
@@ -189,6 +190,11 @@ step start_instance
 
 (cd "$ROOT/tools/spikes" && pnpm exec tsx src/bootstrap-admin.ts "http://127.0.0.1:$PORT" "$DB" "$COMPANY" "$COUNTRY" "$EMAIL" "$PASS")
 step bootstrap_admin
+
+# register with the gateway (P1.2): <id>.localhost now reaches this tenant's own Odoo
+(cd "$ROOT" && pnpm exec tsx services/gateway/src/tenants/cli.ts add "$id" --host "$id.localhost" \
+  --odoo "http://127.0.0.1:$PORT" --db "$DB")
+step register_gateway
 
 total=$(( $(date +%s%3N) - t0 ))
 MEM=$(docker stats --no-stream --format '{{.MemUsage}}' "$CT")

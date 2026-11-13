@@ -39,6 +39,8 @@ pnpm dev                         # local server with live reload (see below)
 
 Stop with Ctrl+C. Odoo keeps running in Docker (`pnpm odoo:down` to stop it).
 
+**Multi-tenant (production-like) run:** create customers with `bash tools/spikes/provision-tenant.sh create acme "Acme Ltd" KE owner@acme.test 'Pass…'` (≈10 s each, registers itself with the gateway), then `pnpm serve` and open `http://acme.localhost:8080`. Each customer has its own Odoo, database and users.
+
 Local services: Odoo http://localhost:18069 (admin / admin) · Mailpit http://localhost:8025
 
 `pnpm odoo:seed` writes the test users, the 2FA user's TOTP secret and an **admin API key** to `.cache/dev-credentials.json` (git-ignored). To create an API key by hand for JSON-2 testing: log in to Odoo → avatar → **My Profile** → **Account Security** → **New API Key** (scope: RPC). Then call `POST /json/2/<model>/<method>` with `Authorization: bearer <key>` and `X-Odoo-Database: novi_demo`.

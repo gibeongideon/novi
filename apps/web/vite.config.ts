@@ -1,25 +1,20 @@
 import { fileURLToPath } from "node:url";
 
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type ProxyOptions } from "vite";
 
 /**
- * Local Odoo (pnpm odoo:up) is served through the Vite dev server on the same origin, the same
- * "same-domain" mode NOVI uses in production (D-03), so Odoo's session cookie just works.
+ * Everything Odoo-related goes through the NOVI gateway, in dev exactly as in production (D-27):
+ * the gateway resolves the tenant (localhost → the local demo Odoo), signs in (incl. 2FA) and
+ * reverse-proxies Odoo routes and the websocket. Host is kept so tenant lookup and Odoo's
+ * websocket Origin check work.
  */
-const ODOO = process.env.ODOO_URL ?? "http://127.0.0.1:18069";
-const ODOO_WS = process.env.ODOO_WS_URL ?? "ws://127.0.0.1:18072";
-const toOdoo = { target: ODOO, changeOrigin: true };
 const GATEWAY = process.env.GATEWAY_URL ?? "http://127.0.0.1:4000";
-const proxy = {
-  "/api": { target: GATEWAY, changeOrigin: false },
-  "/web": toOdoo,
-  "/json": toOdoo,
-  "/mail": toOdoo,
-  "/report": toOdoo,
-  "/odoo": toOdoo,
-  "/websocket": { target: ODOO_WS, ws: true, changeOrigin: true },
-};
+const toGateway = { target: GATEWAY, changeOrigin: false };
+const proxy: Record<string, ProxyOptions> = Object.fromEntries(
+  ["/api", "/web", "/json", "/mail", "/report", "/odoo"].map((p) => [p, toGateway]),
+);
+proxy["/websocket"] = { target: GATEWAY.replace(/^http/, "ws"), ws: true, changeOrigin: false };
 
 export default defineConfig({
   plugins: [react()],

@@ -1,14 +1,32 @@
 import { buildServer } from "@novi/gateway";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { freshTotp, ODOO_DB, ODOO_URL, odooUp, user } from "./helpers.js";
 
 /** P1.1 first slice: the gateway's auth bridge against real Odoo (same-domain mode). */
 describe.runIf(odooUp)("P1.6 gateway auth bridge", () => {
-  const app = buildServer({ port: 0, odooUrl: ODOO_URL, odooDb: ODOO_DB, pendingTtlMs: 60_000 });
+  const defaultTenant = {
+    slug: "local",
+    hosts: [],
+    odooUrl: ODOO_URL,
+    db: ODOO_DB,
+    status: "active" as const,
+  };
+  const appP = buildServer({
+    port: 0,
+    host: "127.0.0.1",
+    tenantsFile: "/nonexistent.json",
+    defaultTenant,
+    pendingTtlMs: 60_000,
+  });
+  let app: Awaited<typeof appP>;
+  beforeAll(async () => {
+    app = await appP;
+  });
   afterAll(() => app.close());
 
-  const login = (login: string, password: string, cookie?: string) =>
+  type InjectRes = Awaited<ReturnType<typeof app.inject>>;
+  const login = (login: string, password: string, cookie?: string): Promise<InjectRes> =>
     app.inject({
       method: "POST",
       url: "/api/auth/login",
@@ -18,8 +36,7 @@ describe.runIf(odooUp)("P1.6 gateway auth bridge", () => {
         ...(cookie ? { cookie } : {}),
       },
     });
-  const cookiesOf = (res: Awaited<ReturnType<typeof login>>) =>
-    ([] as string[]).concat(res.headers["set-cookie"] ?? []);
+  const cookiesOf = (res: InjectRes) => ([] as string[]).concat(res.headers["set-cookie"] ?? []);
   const sessionWorks = async (setCookies: string[]) => {
     const sid = setCookies.find((c) => c.startsWith("session_id="))!.split(";")[0]!;
     const r = await fetch(`${ODOO_URL}/web/session/get_session_info`, {
@@ -82,5 +99,25 @@ describe.runIf(odooUp)("P1.6 gateway auth bridge", () => {
       payload: { challenge, code: "123456" },
     });
     expect(reuse.json().reason).toBe("expired");
+  });
+
+  it("proxies Odoo through the tenant's own origin and blocks the database manager", async () => {
+    const version = await app.inject({ url: "/web/version" });
+    expect(version.json().version_info[0]).toBe(20);
+    expect((await app.inject({ url: "/web/database/manager" })).statusCode).toBe(404);
+    expect((await app.inject({ url: "/jsonrpc", method: "POST", payload: {} })).statusCode).toBe(404);
+
+    // sign in through the gateway, then use the session through the gateway proxy
+    const res = await login("admin", user("admin").password);
+    const sid = cookiesOf(res)
+      .find((c) => c.startsWith("session_id="))!
+      .split(";")[0]!;
+    const info = await app.inject({
+      method: "POST",
+      url: "/web/session/get_session_info",
+      headers: { cookie: sid, "content-type": "application/json" },
+      payload: { jsonrpc: "2.0", method: "call", params: {} },
+    });
+    expect(info.json().result.uid).toBe(user("admin").id);
   });
 });

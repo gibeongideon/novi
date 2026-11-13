@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 3 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 4 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -209,10 +209,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** the gateway runs in compose, migrations apply, and health checks pass.
 
 ### P1.2 Tenant registry
-- [ ] P1.2.1 Tenant model: id, slug, status (`provisioning|active|suspended|deleting|failed`), tier, plan, odoo_url, db_name, version, branding, created_at
-- [ ] P1.2.2 Resolve the tenant by hostname (`<slug>.novi.app` and custom domains)
+- [~] P1.2.1 Tenant model: id, slug, status (`provisioning|active|suspended|deleting|failed`), tier, plan, odoo_url, db_name, version, branding, created_at *(partly: slug, hosts, odooUrl/wsUrl, db, status `active|suspended`, createdAt; tier/plan and the provisioning states come with the provisioner P1.4)*
+- [x] P1.2.2 Resolve the tenant by hostname (`<slug>.novi.app` and custom domains) (gateway resolves `request.tenant` from the Host header; unknown → 404, suspended → 503; verified with acme/beta)
 - [ ] P1.2.3 "Bring your own Odoo" registration: URL + DB + connection test
-- [ ] P1.2.4 Internal admin API: list, get, update, change status
+- [~] P1.2.4 Internal admin API: list, get, update, change status *(partly: CLI `services/gateway/src/tenants/cli.ts add|remove|list`, used by the provisioner; an HTTP admin API comes with the admin console P7.1)*
 
 **Done when:** requests are routed to the correct tenant context by hostname.
 
@@ -263,20 +263,20 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** normal and 2FA users can log in and out, and expired sessions recover.
 
 ### P1.7 Session vault & both modes
-- [ ] P1.7.1 Encrypted storage of the Odoo `session_id` per (tenant, user) using envelope encryption
-- [ ] P1.7.2 `sessionStrategy=vault`: the gateway attaches the Odoo cookie on outbound calls
-- [ ] P1.7.3 `sessionStrategy=passthrough`: same-domain mode, the browser's own cookie is forwarded
-- [ ] P1.7.4 Config per tenant; both modes covered by e2e tests
+- [-] P1.7.1 Encrypted storage of the Odoo `session_id` per (tenant, user) using envelope encryption *(deleted by D-27: the gateway is a same-origin proxy, so Odoo's own HttpOnly cookie stays in the browser per tenant host; nothing to vault)*
+- [-] P1.7.2 `sessionStrategy=vault`: the gateway attaches the Odoo cookie on outbound calls *(deleted by D-27)*
+- [x] P1.7.3 `sessionStrategy=passthrough`: same-domain mode, the browser's own cookie is forwarded (the only mode now: the gateway passes the browser's Odoo cookie through, in same-domain and separate-domain hosting alike)
+- [-] P1.7.4 Config per tenant; both modes covered by e2e tests *(deleted by D-27: one mode, covered by gateway live tests and the acme/beta isolation run)*
 
 **Done when:** the same UI build works in both modes.
 
 ### P1.8 RPC proxy
-- [ ] P1.8.1 Proxy `/api/rpc/*` → Odoo `/web/dataset/*`, `/web/action/*`, `/mail/*`, file routes
-- [ ] P1.8.2 Allow-list of routes and methods (block `/web/database/*`, private methods)
+- [x] P1.8.1 Proxy `/api/rpc/*` → Odoo `/web/dataset/*`, `/web/action/*`, `/mail/*`, file routes (same-origin reverse proxy of the Odoo routes the app uses (`/web`, `/json/2`, `/mail`, `/report`, `/odoo`, `/websocket`) to each tenant's own Odoo; Host kept, X-Forwarded-* set)
+- [x] P1.8.2 Allow-list of routes and methods (block `/web/database/*`, private methods) (allow-list by route prefix; `/web/database/*`, `/jsonrpc`, `/xmlrpc` unreachable; Odoo still enforces method access)
 - [ ] P1.8.3 Rate limiting per user and per tenant
 - [ ] P1.8.4 Audit log for writes (model, method, ids, user, timestamp)
-- [ ] P1.8.5 Streaming for file downloads/uploads (no buffering in memory)
-- [ ] P1.8.6 Websocket relay for `/websocket` (vault mode)
+- [x] P1.8.5 Streaming for file downloads/uploads (no buffering in memory) (bodies streamed through untouched by reply-from: no JSON re-parsing, uploads not buffered)
+- [x] P1.8.6 Websocket relay for `/websocket` (vault mode) (websocket upgrade piped to the tenant's Odoo with Host/Origin kept (D-17); verified: live notification through the gateway for acme, and in dev via Vite)
 
 **Done when:** all contract tests also pass when run **through** the gateway.
 

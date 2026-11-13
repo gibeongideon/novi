@@ -23,13 +23,14 @@ interface Pending {
 export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig): void {
   const pending = new PendingLogins<Pending>(config.pendingTtlMs);
 
-  /** A transport that speaks to Odoo on behalf of this browser (its IP and User-Agent). */
+  /** A transport to *this tenant's* Odoo, on behalf of this browser (its IP and User-Agent). */
   const transportFor = (req: FastifyRequest) =>
     new JsonRpcTransport({
-      baseUrl: config.odooUrl,
-      db: config.odooDb,
+      baseUrl: req.tenant!.odooUrl,
+      db: req.tenant!.db,
       headers: {
         "X-Forwarded-For": req.ip,
+        "X-Forwarded-Host": req.headers.host ?? "",
         "User-Agent": req.headers["user-agent"] ?? "NOVI-Gateway",
       },
     });

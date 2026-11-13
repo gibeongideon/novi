@@ -5,8 +5,11 @@
   "description": "NOVI gateway (BFF): tenant routing, auth bridge, RPC proxy",
   "type": "module",
   "dependencies": {
-    "fastify": "^5.2.0",
-    "@novi/odoo-client": "workspace:*"
+    "@fastify/http-proxy": "^11.0.0",
+    "@fastify/reply-from": "^12.0.0",
+    "@fastify/static": "^8.0.0",
+    "@novi/odoo-client": "workspace:*",
+    "fastify": "^5.2.0"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

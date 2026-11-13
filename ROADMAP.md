@@ -12,7 +12,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
 | **In progress** | — |
-| **Next task** | `P1.2` tenant registry + `P1.7` session vault (separate-domain mode) → `P1.3/P1.4` sign-up + provisioner from the spike |
+| **Next task** | `P1.3` sign-up flow + `P1.4` provisioner service (from the spike: template clone, register tenant), then `P1.5` per-tenant Caddy routing/TLS |
 | **Blockers** | — |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-11 |

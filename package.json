@@ -27,7 +27,8 @@
     "scan": "pnpm --filter @novi/coverage-scanner scan",
     "changeset": "changeset",
     "prepare": "husky",
-    "verify": "bash scripts/verify-local.sh"
+    "verify": "bash scripts/verify-local.sh",
+    "serve": "bash scripts/serve.sh"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",
