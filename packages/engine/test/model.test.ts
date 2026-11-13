@@ -67,6 +67,9 @@ function fakeRpc(replies: Record<string, unknown> = {}) {
   return { rpc, calls };
 }
 
+/** A new line's CREATE carries its virtual id (as Odoo's client sends it). */
+const V = expect.stringMatching(/^virtual_/);
+
 const config = { model: "x.order", models, spec };
 const record = () => new OdooRecord(fakeRpc().rpc, config, row());
 
@@ -144,7 +147,7 @@ describe("OdooRecord (P2.5.1)", () => {
     await r.save();
     expect(calls[0]).toMatchObject({
       ids: [],
-      kwargs: { vals: { name: "New", qty: 1, line_ids: [[0, 0, { product: "X", qty: 3 }]] } },
+      kwargs: { vals: { name: "New", qty: 1, line_ids: [[0, V, { product: "X", qty: 3 }]] } },
     });
     expect(r.id).toBe(50);
   });
@@ -159,7 +162,7 @@ describe("x2many commands (P2.5.4): every combination", () => {
   it("one2many: create, update, delete, link", () => {
     let { o2m } = lines();
     o2m.add({ product: "C" });
-    expect(o2m.commands()).toEqual([[0, 0, { product: "C" }]]);
+    expect(o2m.commands()).toEqual([[0, V, { product: "C" }]]);
 
     ({ o2m } = lines());
     o2m.records[0]!.update({ qty: 5 });
@@ -179,7 +182,7 @@ describe("x2many commands (P2.5.4): every combination", () => {
     const c = o2m.add({ product: "C" });
     c.update({ qty: 2 });
     c.update({ product: "C2" });
-    expect(o2m.commands()).toEqual([[0, 0, { product: "C2", qty: 2 }]]); // one create, final values
+    expect(o2m.commands()).toEqual([[0, V, { product: "C2", qty: 2 }]]); // one create, final values
 
     ({ o2m } = lines());
     const n = o2m.add({ product: "tmp" });
@@ -219,7 +222,7 @@ describe("x2many commands (P2.5.4): every combination", () => {
       [2, 1],
       [4, 77],
       [1, 2, { qty: 7 }],
-      [0, 0, { product: "N" }],
+      [0, V, { product: "N" }],
     ]);
   });
 
@@ -250,7 +253,7 @@ describe("x2many commands (P2.5.4): every combination", () => {
     m2m.clear();
     m2m.link({ id: 11, display_name: "red" });
     m2m.add({ display_name: "new tag" });
-    expect(m2m.commands()).toEqual([[5], [4, 11], [0, 0, { display_name: "new tag" }]]);
+    expect(m2m.commands()).toEqual([[5], [4, 11], [0, V, { display_name: "new tag" }]]);
 
     ({ m2m } = lines());
     m2m.replaceWith([
@@ -266,7 +269,7 @@ describe("x2many commands (P2.5.4): every combination", () => {
     expect(m2m.commands()).toEqual([
       [6, 0, [12]],
       [1, 12, { display_name: "navy" }],
-      [0, 0, { display_name: "fresh" }],
+      [0, V, { display_name: "fresh" }],
     ]);
   });
 
@@ -281,8 +284,8 @@ describe("x2many commands (P2.5.4): every combination", () => {
     expect(notified).toBeGreaterThan(0);
     expect(r.serializedChanges()).toEqual({
       line_ids: [
-        [1, 1, { sub_ids: [[0, 0, { label: "extra" }]] }],
-        [0, 0, { product: "Kit", sub_ids: [[0, 0, { label: "part 1" }]] }],
+        [1, 1, { sub_ids: [[0, V, { label: "extra" }]] }],
+        [0, V, { product: "Kit", sub_ids: [[0, V, { label: "part 1" }]] }],
       ],
     });
     expect(line.evalContext()).toMatchObject({ parent: { id: 9, partner_id: 7 } });

@@ -1,17 +1,31 @@
 /**
- * One Odoo record in the engine (P2.5.1): values as `web_read` returns them, the user's changes on
- * top (dirty tracking), modifiers evaluated live with odoo-expr, the required check, and the
- * values `web_save` expects (x2many as commands, P2.5.4). Headless: React subscribes (P2.5.5).
- * Onchange (P2.6) and buttons/actions (P2.7–P2.8) build on this.
+ * One Odoo record in the engine (P2.5.1, P2.6): values as `web_read` returns them, the user's
+ * changes on top (dirty tracking), modifiers evaluated live with odoo-expr, the required check,
+ * the values `web_save` expects (x2many as commands, P2.5.4), and onchange the way Odoo's own
+ * client does it (observed in its sources, not copied):
+ *  - a new record asks `onchange(values, [], spec)` for its defaults; a new line asks its own model,
+ *    with the parent's changes under the inverse field (`order_id`);
+ *  - changing a field marked `on_change` asks `onchange(changes, [field], spec)`; a line's change
+ *    asks the line model, then the parent's onchange on the x2many field;
+ *  - onchanges run one at a time; names arriving meanwhile go into one follow-up call; an answer
+ *    never overwrites a value the user changed after the request left (P2.6.4).
+ * Headless: React subscribes (P2.5.5).
  */
 import type { FieldInfo, OdooContext, Specification } from "@novi/odoo-client";
 import { type EvalContext, safeEvaluate, truthy } from "@novi/odoo-expr";
 import { type FieldNode, type ModelsInfo, type Modifier, viewFields, type ViewSchema } from "@novi/odoo-meta";
 
 import { Observable, type Rpc } from "./observable.js";
-import { X2ManyList } from "./x2many.js";
+import { type Command, X2ManyList } from "./x2many.js";
 
 export type Values = Record<string, unknown>;
+
+/** Odoo's onchange warning (`type`: "dialog" or "notification"). */
+export interface OnchangeWarning {
+  title: string;
+  message: string;
+  type?: string;
+}
 
 export interface RecordConfig {
   model: string;
@@ -19,12 +33,17 @@ export interface RecordConfig {
   models: ModelsInfo;
   /** What to read and to read back after saving (from odoo-meta's buildSpec). */
   spec: Specification;
-  /** The view showing the record: its field nodes carry the modifiers and drive validation. */
+  /** The view showing the record: its field nodes carry modifiers, `on_change` flags, validation. */
   schema?: ViewSchema;
   /** Context sent with every call (user + action). */
   context?: OdooContext;
   /** Base of the expression context (uid, allowed companies…); `context` is added. */
   evalContext?: EvalContext;
+  /** x2many lines: the parent's x2many field and the line model's inverse field (`order_id`). */
+  parentField?: string;
+  relationField?: string;
+  /** Onchange warnings, for the UI to show as a dialog or a notification (P2.6.3). */
+  onWarning?(warning: OnchangeWarning): void;
 }
 
 let virtualSeq = 0;
@@ -32,11 +51,18 @@ let virtualSeq = 0;
 export class OdooRecord extends Observable {
   /** Database id; undefined until a new record is saved. */
   id: number | undefined;
-  /** Stable key for new records (lists, x2many lines). */
+  /** Stable key for new records (lists, x2many lines, onchange commands). */
   readonly virtualId: string;
   private data: Values = {};
   private changes: Values = {};
   private x2many = new Map<string, X2ManyList>();
+  /** Onchange serialisation: the running call, the names waiting for the next one. */
+  private running: Promise<void> = Promise.resolve();
+  private queued = new Set<string>();
+  private busy = false;
+  /** Per field: the edit counter value of the user's last change (race guard). */
+  private editedAt = new Map<string, number>();
+  private edits = 0;
 
   constructor(
     readonly rpc: Rpc,
@@ -60,11 +86,28 @@ export class OdooRecord extends Observable {
     return new OdooRecord(rpc, config, row);
   }
 
-  /** A new, unsaved record; `values` count as changes (defaults come from onchange, P2.6). */
+  /** A new, unsaved record without asking Odoo; `values` count as changes. */
   static create(rpc: Rpc, config: RecordConfig, values: Values = {}, parent?: OdooRecord): OdooRecord {
     const r = new OdooRecord(rpc, config, undefined, parent);
     r.hydrate({});
-    r.update(values);
+    r.applyServerValues(values);
+    return r;
+  }
+
+  /** A new record with Odoo's defaults (`onchange` with no field names, P2.6.1). */
+  static async createWithDefaults(rpc: Rpc, config: RecordConfig, parent?: OdooRecord): Promise<OdooRecord> {
+    const r = OdooRecord.create(rpc, config, {}, parent);
+    const result = await rpc<{ value?: Values; warning?: OnchangeWarning }>(config.model, "onchange", {
+      ids: [],
+      kwargs: {
+        values: r.onchangeValues(),
+        field_names: [],
+        fields_spec: config.spec,
+        context: config.context ?? {},
+      },
+    });
+    if (result.warning) config.onWarning?.(result.warning);
+    r.applyServerValues(result.value ?? {});
     return r;
   }
 
@@ -76,7 +119,7 @@ export class OdooRecord extends Observable {
     return this.id === undefined;
   }
 
-  /** Current values: what was read, with the user's changes on top. */
+  /** Current values: what was read, with the changes on top. */
   get values(): Values {
     return { ...this.data, ...this.changes, ...Object.fromEntries(this.x2many) };
   }
@@ -88,14 +131,33 @@ export class OdooRecord extends Observable {
     return l;
   }
 
-  /** Sets values; many2one as `{ id, display_name }` or false. Setting a value back clears it. */
+  /**
+   * The user sets values (many2one as `{ id, display_name }` or false). Setting a value back
+   * clears it. Fields marked `on_change` in the view then ask Odoo for their consequences.
+   */
   update(changes: Values): void {
-    for (const [name, value] of Object.entries(changes)) {
-      if (this.x2many.has(name)) throw new Error(`use record.list("${name}") to change x2many lines`);
-      if (same(value, this.data[name]) && name in this.data) delete this.changes[name];
-      else this.changes[name] = value;
-    }
+    for (const name of Object.keys(changes)) this.editedAt.set(name, ++this.edits);
+    this.setValues(changes);
     this.notify();
+    const names = Object.keys(changes).filter((n) => this.triggersOnchange(n));
+    if (names.length) this.scheduleOnchange(names);
+    if (this.parent && this.config.parentField) this.parent.linesChanged(this.config.parentField);
+  }
+
+  /** A line of one of this record's x2many fields was added, edited or removed. */
+  linesChanged(field: string): void {
+    this.editedAt.set(field, ++this.edits);
+    this.notify();
+    if (this.triggersOnchange(field)) this.scheduleOnchange([field]);
+    if (this.parent && this.config.parentField) this.parent.linesChanged(this.config.parentField);
+  }
+
+  /** Resolves when no onchange is running or waiting, here or in any line. */
+  async idle(): Promise<void> {
+    do await this.running;
+    while (this.busy || this.queued.size);
+    for (const l of this.x2many.values()) for (const r of l.records) await r.idle();
+    if (this.busy || this.queued.size) await this.idle();
   }
 
   get dirty(): boolean {
@@ -169,23 +231,48 @@ export class OdooRecord extends Observable {
     return [...out];
   }
 
-  /** The changed values in `web_save` form (all values for a new record). */
-  serializedChanges(): Values {
+  /**
+   * The changed values in `web_save` form (all values for a new record). For saving, read-only
+   * fields are left out unless the view forces them (`force_save`), as Odoo's client does;
+   * onchange calls get them all.
+   */
+  serializedChanges(purpose: "save" | "onchange" = "save"): Values {
     const out: Values = {};
-    for (const [name, v] of Object.entries(this.changes)) out[name] = serialize(v, this.fields[name]?.type);
+    const nodes = purpose === "save" && this.config.schema ? this.nodes() : [];
+    const skip = (name: string) => {
+      if (purpose !== "save" || !this.config.schema) return false;
+      const own = nodes.filter((n) => n.name === name);
+      return own.length > 0 && own.every((n) => this.isReadonly(n) && !n.forceSave);
+    };
+    for (const [name, v] of Object.entries(this.changes))
+      if (!skip(name)) out[name] = serialize(v, this.fields[name]?.type);
     for (const [name, list] of this.x2many)
-      if (list.dirty || (this.isNew && list.records.length)) out[name] = list.commands();
+      if ((list.dirty || (this.isNew && list.records.length)) && !skip(name))
+        out[name] = list.commands(purpose);
     return out;
+  }
+
+  /** What an onchange call sends: this record's changes, and for a line its parent's under the inverse field. */
+  onchangeValues(): Values {
+    const values = this.serializedChanges("onchange");
+    if (this.parent && this.config.relationField) {
+      values[this.config.relationField] = {
+        ...this.parent.onchangeValues(),
+        ...(this.parent.id ? { id: this.parent.id } : {}),
+      };
+    }
+    return values;
   }
 
   /** Saves through `web_save` and reloads the saved values. False when required values are missing. */
   async save(): Promise<boolean> {
+    await this.idle();
     if (this.invalidFields().length) return false;
     if (!this.dirty && !this.isNew) return true;
     const [row] = await this.rpc<Values[]>(this.config.model, "web_save", {
       ids: this.id ? [this.id] : [],
       kwargs: {
-        vals: this.serializedChanges(),
+        vals: this.serializedChanges("save"),
         specification: this.config.spec,
         context: this.config.context ?? {},
       },
@@ -200,6 +287,83 @@ export class OdooRecord extends Observable {
     this.changes = {};
     for (const l of this.x2many.values()) l.discard();
     this.notify();
+  }
+
+  /**
+   * Values from Odoo (defaults, onchange results) in `web_read` form; x2many as commands.
+   * They become changes (they are saved with the record) but trigger no further onchange.
+   */
+  applyServerValues(values: Values, skipEditedAfter?: number): void {
+    const plain: Values = {};
+    for (const [name, v] of Object.entries(values)) {
+      if (skipEditedAfter !== undefined && (this.editedAt.get(name) ?? 0) > skipEditedAfter) continue; // the user changed it since
+      const list = this.x2many.get(name);
+      if (list) list.applyCommands(v as Command[]);
+      else plain[name] = v;
+    }
+    this.setValues(plain);
+    this.notify();
+  }
+
+  private setValues(changes: Values): void {
+    for (const [name, value] of Object.entries(changes)) {
+      if (this.x2many.has(name)) throw new Error(`use record.list("${name}") to change x2many lines`);
+      if (!this.isNew && name in this.data && same(value, this.data[name])) delete this.changes[name];
+      else this.changes[name] = value;
+    }
+  }
+
+  private triggersOnchange(name: string): boolean {
+    return this.nodes().some((n) => n.name === name && n.onChange);
+  }
+
+  /** Queues an onchange; names arriving while one runs are merged into the next call. */
+  private scheduleOnchange(names: string[]): void {
+    names.forEach((n) => this.queued.add(n));
+    if (this.busy) return;
+    this.busy = true;
+    this.running = (async () => {
+      try {
+        while (this.queued.size) {
+          const fieldNames = [...this.queued];
+          this.queued.clear();
+          await this.runOnchange(fieldNames);
+        }
+      } finally {
+        this.busy = false;
+      }
+    })();
+  }
+
+  private async runOnchange(fieldNames: string[]): Promise<void> {
+    const sentAt = this.edits;
+    const result = await this.rpc<{ value?: Values; warning?: OnchangeWarning }>(
+      this.config.model,
+      "onchange",
+      {
+        ids: this.id ? [this.id] : [],
+        kwargs: {
+          values: this.onchangeValues(),
+          field_names: fieldNames,
+          fields_spec: this.config.spec,
+          context: this.onchangeContext(fieldNames),
+        },
+      },
+    );
+    if (result.warning) this.config.onWarning?.(result.warning);
+    this.applyServerValues(result.value ?? {}, sentAt);
+  }
+
+  /** A single-field onchange also gets that field's own context (as Odoo's client sends it). */
+  private onchangeContext(fieldNames: string[]): OdooContext {
+    const base = this.config.context ?? {};
+    if (fieldNames.length !== 1) return base;
+    const node = this.nodes().find((n) => n.name === fieldNames[0] && n.context);
+    if (!node?.context) return base;
+    const extra = safeEvaluate(node.context, this.evalContext(), {}, () => undefined);
+    return extra && typeof extra === "object" && !Array.isArray(extra)
+      ? { ...base, ...(extra as OdooContext) }
+      : base;
   }
 
   /** Makes `row` the saved state: plain values, and x2many lists built from their rows. */
@@ -239,7 +403,7 @@ export function isEmpty(v: unknown, type?: string): boolean {
   return v === false || v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
 }
 
-/** A value in the form `web_save` expects. */
+/** A value in the form `web_save` / `onchange` expect. */
 function serialize(v: unknown, type?: string): unknown {
   if (type === "many2one") return v && typeof v === "object" ? (v as { id: number }).id : false;
   if (type === "reference" && v && typeof v === "object") {

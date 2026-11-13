@@ -90,7 +90,7 @@ describe.runIf(odooUp)("P2.5 record model, live", () => {
       child_ids: [
         [2, removedChild],
         [1, expect.any(Number), { name: "C1b" }],
-        [0, 0, { name: "C3" }],
+        [0, expect.stringMatching(/^virtual_/), { name: "C3" }],
       ],
       category_id: [
         [3, t1],

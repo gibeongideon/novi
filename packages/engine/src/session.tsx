@@ -4,7 +4,7 @@
  * session cookie is Odoo's own. Gateway mode later swaps the transport, not these hooks.
  */
 import { SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
-import { Domain, evaluate, type PyValue } from "@novi/odoo-expr";
+import { Domain, type EvalContext, evaluate, type PyValue } from "@novi/odoo-expr";
 import { buildSpec, type ListSchema, type ModelsInfo, parseView } from "@novi/odoo-meta";
 import {
   MutationCache,
@@ -353,10 +353,9 @@ export function useListView(actionId: number | undefined, limit = 80) {
       const listView = a!.views?.find(([, type]) => type === "list");
       if (!a!.res_model || !listView) return null;
       const model = a!.res_model;
-      const userContext = session.data?.user_context ?? {};
-      const base = { uid: session.data?.uid ?? 0, context: userContext as Record<string, never> };
+      const base = baseEvalContext(session.data ?? null);
       const actionContext = toDict(a!.context, base);
-      const context = { ...userContext, ...actionContext };
+      const context = { ...(base.context as Record<string, unknown>), ...actionContext };
       const views = await transport.call<{ views: { list: { arch: string } }; models: ModelsInfo }>(
         model,
         "get_views",
@@ -365,7 +364,11 @@ export function useListView(actionId: number | undefined, limit = 80) {
         },
       );
       const schema = parseView({ arch: views.views.list.arch, model, models: views.models }) as ListSchema;
-      const evalContext = { ...base, context: context as Record<string, never> };
+      // actions opened from a record carry it in their context (Odoo offers these names too)
+      const active = Object.fromEntries(
+        ["active_id", "active_ids", "active_model"].filter((k) => k in context).map((k) => [k, context[k]]),
+      );
+      const evalContext = { ...base, ...active, context: context as Record<string, never> } as EvalContext;
       const domain = Domain.parse(
         ((a!.domain as string | PyValue[] | undefined) || []) as string | PyValue[],
         evalContext,
@@ -448,4 +451,23 @@ export function useRecordList(config: ListConfig | undefined) {
     list?.load().catch(setError);
   }, [list]);
   return { list: useModel(list), error };
+}
+
+/**
+ * The names Odoo's client offers to action domains/contexts and arch expressions besides the
+ * record: uid, the user context, the active companies (`allowed_company_ids`,
+ * `current_company_id`). One source for every evaluation the engine does.
+ */
+export function baseEvalContext(info: SessionInfo | null): EvalContext {
+  const companies = activeCompanyIds(info, readCidsCookie());
+  const userContext = { ...(info?.user_context ?? {}), allowed_company_ids: companies } as unknown as Record<
+    string,
+    never
+  >;
+  return {
+    uid: info?.uid ?? 0,
+    context: userContext,
+    allowed_company_ids: companies,
+    current_company_id: companies[0] ?? false,
+  };
 }
