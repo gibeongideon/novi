@@ -20,6 +20,6 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
     "test": "vitest run --passWithNoTests",
-    "corpus": "bash corpus/harvest.sh"
+    "corpus": "bash ../../scripts/odoo-harvest.sh packages/odoo-expr/corpus/harvest.py expr-corpus"
   }
 }

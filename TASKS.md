@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 2 | 🟦 |
+| 2 Engine core | 16 | 3 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -388,14 +388,14 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** domain tests cover every operator Odoo supports.
 
 ### P2.3 `odoo-meta`: arch parser
-- [ ] P2.3.1 XML parsing (works in both browser and Node)
-- [ ] P2.3.2 ViewSchema types (JSON) for form, list, kanban, search
-- [ ] P2.3.3 Form: `sheet`, `header`, `group` (col/colspan), `notebook/page`, `field`, `button`, `div`, `label`, `separator`, `widget`, `oe_*` semantic classes → semantic hints
-- [ ] P2.3.4 List: columns, `editable`, `decoration-*`, `sum/avg`, `optional`, `handle`, buttons in rows
-- [ ] P2.3.5 Kanban: `templates` → card schema (title, subtitle, tags, avatar, priority, footer); `default_group_by`, `progressbar`, `quick_create`
-- [ ] P2.3.6 Search: filters, separators/groups, group-bys, fields (`filter_domain`), search panel
-- [ ] P2.3.7 Merge field metadata from `get_views().models` into the schema
-- [ ] P2.3.8 Snapshot tests of the schema for every view in the demo DB
+- [x] P2.3.1 XML parsing (works in both browser and Node) *(NOVI's own small reader, no dependency)*
+- [x] P2.3.2 ViewSchema types (JSON) for form, list, kanban, search *(meaning only, no Odoo CSS/DOM; modifiers stay expressions for odoo-expr, constants folded to booleans; D-35)*
+- [x] P2.3.3 Form: header/sheet/footer, group (col/colspan), notebook/page, field, button (smart buttons with stat fields), label, separator, widget, chatter, settings app/block/setting, x2many inline sub-views; other markup kept with semantic hints (`buttonBox`, `title`, `avatar`, `alert`, `row`, …)
+- [x] P2.3.4 List: columns (incl. `<column>` groups), `editable`, `decoration-*`, `sum/avg`, `optional`, widgets, row buttons, header (bulk) buttons, group rows read against the grouped record's model
+- [x] P2.3.5 Kanban: card by section (main/aside/footer) with a role per value (title, subtitle, avatar, image, tags, priority, status, activity, favorite, color, amount, date, body), no QWeb interpretation; `default_group_by`, `progressbar`, `quick_create`, colour field, menu *(118/130 cards get a title; 5 are dashboard-style)*
+- [x] P2.3.6 Search: fields (`filter_domain`, operator), filter groups by Odoo's separator rule, date filters, group-bys (from `context`), search panel
+- [x] P2.3.7 Merge field metadata from `get_views().models` into the schema (main and related models; x2many sub-views and group rows use the related model)
+- [x] P2.3.8 Every view in the demo DB: 1,305 primary form/list/kanban/search views parse; lossless for fields; every field resolves to get_views metadata *(invariant tests on a live corpus in `.cache` instead of snapshots, which would be Odoo-derived files, D-35)*
 
 **Done when:** every view in the demo DB parses into a schema without errors.
 
