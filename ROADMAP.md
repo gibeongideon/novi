@@ -12,7 +12,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
 | **In progress** | — |
-| **Next task** | `P1.6` auth bridge (remaining), then `P1.14` SSO and `P1.16` Phase 1 tests (P1.3–P1.5 done: sign-up, provisioner, tenant isolation + TLS, D-28/D-29) |
+| **Next task** | `P1.14` SSO, then `P1.16` Phase 1 tests (P1.6 sign-in done, D-30); open Phase 1 items: P1.1, P1.2, P1.8.3/4, P1.9, P1.12, P1.13, P1.15 |
 | **Blockers** | — |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-13 |

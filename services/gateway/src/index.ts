@@ -25,8 +25,11 @@ export { FileTenantRegistry, normalizeHost, type Tenant } from "./tenants/regist
  *   everything else       the built web app (when WEB_DIST is set), SPA fallback
  */
 export async function buildServer(config: GatewayConfig = loadConfig(), deps: { mailer?: Mailer } = {}) {
-  // trustProxy: behind Caddy/Vite, req.ip is the end user's IP (forwarded to Odoo)
-  const app = Fastify({ logger: process.env.NODE_ENV !== "test", trustProxy: true });
+  // behind Caddy/Vite (trusted proxies only), req.ip is the end user's IP (forwarded to Odoo)
+  const app = Fastify({
+    logger: process.env.NODE_ENV !== "test",
+    trustProxy: config.trustProxy ?? "loopback",
+  });
   const resolve = tenantResolver(config);
   const registry = new FileTenantRegistry(config.tenantsFile);
 

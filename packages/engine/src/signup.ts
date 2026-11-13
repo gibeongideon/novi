@@ -7,6 +7,7 @@ export interface SignupConfig {
   enabled: boolean;
   workspaceUrl: string;
   countries: string[];
+  minPasswordLength: number;
 }
 export type SignupState = "verify" | "queued" | "provisioning" | "active" | "failed";
 export interface SignupProgress {

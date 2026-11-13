@@ -77,7 +77,7 @@ export const en = {
   haveAccount: "Already have a workspace? Sign in",
   companyName: "Company name",
   workEmail: "Work email",
-  choosePassword: "Choose a password (at least 10 characters)",
+  choosePassword: "Choose a password (at least {n} characters)",
   country: "Country",
   workspaceAddress: "Workspace address",
   addressTaken: "This address is taken.",
@@ -85,7 +85,7 @@ export const en = {
   getStarted: "Create workspace",
   invalidCompany: "Enter your company name.",
   invalidEmail: "Enter a valid email address.",
-  invalidPassword: "Use at least 10 characters.",
+  invalidPassword: "Use at least {n} characters.",
   invalidCountry: "Choose a country.",
   tooManySignups: "Too many attempts. Please try again later.",
   checkEmailTitle: "Check your email",
@@ -105,6 +105,16 @@ export const en = {
   openWorkspace: "Open workspace",
   setupFailed: "Something went wrong while setting up your workspace. Our team has been notified.",
   noAction: "This menu has no screen of its own.",
+  tooManyAttempts: "Too many failed attempts. Wait a minute, then try again.",
+  forgotPassword: "Forgot password?",
+  resetTitle: "Reset your password",
+  resetHelp: "Enter the email you sign in with and we'll send you a link to choose a new password.",
+  sendResetLink: "Send reset link",
+  resetSent: "If an account exists for that email, a reset link is on its way. Check your inbox.",
+  newPassword: "New password",
+  setPassword: "Set password",
+  passwordChanged: "Your password has been changed. Sign in with your new password.",
+  backToSignIn: "Back to sign in",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -118,7 +128,9 @@ export function I18nProvider({ messages, children }: { messages?: Partial<Messag
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
-export function useT(): (key: MessageKey) => string {
+/** `t(key)`, or `t(key, { n: 10 })` to fill `{n}` placeholders. */
+export function useT(): (key: MessageKey, vars?: Record<string, string | number>) => string {
   const messages = useContext(I18nContext);
-  return (key) => messages[key];
+  return (key, vars) =>
+    vars ? messages[key].replace(/\{(\w+)\}/g, (m, k: string) => String(vars[k] ?? m)) : messages[key];
 }

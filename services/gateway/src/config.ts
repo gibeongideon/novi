@@ -19,6 +19,12 @@ export interface GatewayConfig {
   pendingTtlMs: number;
   /** Hosts that serve the sign-up pages (the platform, not a workspace). */
   platformHosts?: string[];
+  /**
+   * Proxies whose X-Forwarded-For is believed (proxy-addr syntax). Default: loopback only, i.e. the
+   * local Caddy / Vite. Anything wider lets clients pick their own IP and dodge Odoo's per-IP
+   * login cooldown (P1.6.6).
+   */
+  trustProxy?: string;
 }
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -42,6 +48,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
           },
     webDist: env.WEB_DIST,
     pendingTtlMs: Number(env.PENDING_2FA_TTL_MS ?? 5 * 60_000),
+    trustProxy: env.TRUST_PROXY ?? "loopback",
     platformHosts: (env.PLATFORM_HOSTS ?? "localhost").split(",").map((h) => h.trim()),
   };
 }

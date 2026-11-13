@@ -3,10 +3,14 @@ import { Button, Input, type MessageKey, useT } from "@novi/ui";
 import { type FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { publicCard, PublicPage } from "./PublicPage";
+
 const MESSAGES: Record<LoginFailure, MessageKey> = {
   credentials: "wrongCredentials",
   code: "wrongCode",
   expired: "signInExpired",
+  cooldown: "tooManyAttempts",
+  tooShort: "signInFailed", // reset-only; never returned by sign-in
   twoFactorUnsupported: "twoFactorUnsupported",
   other: "signInFailed",
 };
@@ -14,7 +18,7 @@ const MESSAGES: Record<LoginFailure, MessageKey> = {
 /** Two steps when the account uses 2FA: password, then the authenticator code (P1.6.2). */
 export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
   const t = useT();
-  const { login, verifyCode, pending, loginError, resetLogin } = useSession();
+  const { login, verifyCode, pending, loginError, resetLogin, passwordReset } = useSession();
   const signup = useSignupConfig();
   const [form, setForm] = useState({ login: "", password: "", code: "", remember: true });
   const [challenge, setChallenge] = useState<string | null>(null);
@@ -48,12 +52,9 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
   ) : null;
 
   return (
-    <main className="novi-backdrop grid min-h-screen place-items-center bg-bg p-4">
+    <PublicPage>
       {challenge ? (
-        <form
-          onSubmit={submitCode}
-          className="grid w-full max-w-sm gap-4 rounded-xl border border-border bg-surface p-6 shadow-md"
-        >
+        <form onSubmit={submitCode} className={publicCard()}>
           <h1 className="text-xl font-semibold">{productName}</h1>
           <p className="text-sm text-text-muted">{t("twoFactorHelp")}</p>
           <label className="grid gap-1 text-sm">
@@ -91,10 +92,7 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
           </div>
         </form>
       ) : (
-        <form
-          onSubmit={submitPassword}
-          className="grid w-full max-w-sm gap-4 rounded-xl border border-border bg-surface p-6 shadow-md"
-        >
+        <form onSubmit={submitPassword} className={publicCard()}>
           <h1 className="text-xl font-semibold">{productName}</h1>
           <label className="grid gap-1 text-sm">
             {t("login")}
@@ -106,9 +104,17 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
               onChange={(e) => setForm({ ...form, login: e.target.value })}
             />
           </label>
-          <label className="grid gap-1 text-sm">
-            {t("password")}
+          <div className="grid gap-1 text-sm">
+            <div className="flex items-baseline justify-between">
+              <label htmlFor="login-password">{t("password")}</label>
+              {passwordReset ? (
+                <Link to="/reset-password" className="text-xs text-text-muted hover:text-text">
+                  {t("forgotPassword")}
+                </Link>
+              ) : null}
+            </div>
             <Input
+              id="login-password"
               type="password"
               autoComplete="current-password"
               required
@@ -116,7 +122,7 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
               invalid={loginError?.reason === "credentials" ? t("wrongCredentials") : undefined}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
-          </label>
+          </div>
           {error}
           <Button type="submit" variant="primary" loading={pending}>
             {t("signIn")}
@@ -131,6 +137,6 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
           ) : null}
         </form>
       )}
-    </main>
+    </PublicPage>
   );
 }

@@ -9,6 +9,9 @@ import { LoginPage } from "./LoginPage";
 import { menuUrl } from "./urls";
 
 const SignupPage = lazy(() => import("./SignupPage").then((m) => ({ default: m.SignupPage })));
+const ResetPasswordPage = lazy(() =>
+  import("./ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage })),
+);
 const SignupStatusPage = lazy(() =>
   import("./SignupStatusPage").then((m) => ({ default: m.SignupStatusPage })),
 );
@@ -22,17 +25,19 @@ const RecordPage = lazy(() => import("./RecordPage").then((m) => ({ default: m.R
  *   /action/:actionId?menu=ID  an action, with the menu that opened it (sidebar + breadcrumbs)
  *   /record/:model/:id         one record (from search; native form view in P2)
  *   /signup, /signup/status/:id   self-service sign-up and provisioning progress (public)
+ *   /reset-password[?token=…]     password reset by email (public)
  */
 export function ShellRoutes({ productName }: { productName?: string }) {
   const { status } = useSession();
   const { pathname } = useLocation();
   // public platform pages: sign-up works without a session
-  if (pathname.startsWith("/signup")) {
+  if (pathname.startsWith("/signup") || pathname === "/reset-password") {
     return (
       <Suspense fallback={<Skeleton className="m-6 h-8 w-48" />}>
         <Routes>
           <Route path="/signup" element={<SignupPage productName={productName} />} />
           <Route path="/signup/status/:id" element={<SignupStatusPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage productName={productName} />} />
         </Routes>
       </Suspense>
     );

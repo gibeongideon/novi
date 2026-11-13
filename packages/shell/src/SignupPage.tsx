@@ -3,6 +3,7 @@ import { Button, Input, type MessageKey, useT } from "@novi/ui";
 import { type FormEvent, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
+import { publicCard, PublicPage } from "./PublicPage";
 import { useDebounced } from "./useDebounced";
 
 const FIELD_MESSAGES: Record<string, MessageKey> = {
@@ -48,22 +49,25 @@ export function SignupPage({ productName = "NOVI" }: { productName?: string }) {
     }
   };
 
-  const card = "grid w-full max-w-md gap-4 rounded-xl border border-border bg-surface p-6 shadow-md";
+  const card = publicCard("md");
   if (sentTo) {
     return (
-      <main className="novi-backdrop grid min-h-screen place-items-center bg-bg p-4">
+      <PublicPage>
         <section className={card} aria-live="polite">
           <h1 className="text-xl font-semibold">{t("checkEmailTitle")}</h1>
           <p className="text-text-muted">{t("checkEmailBody")}</p>
           <p className="font-medium">{sentTo}</p>
         </section>
-      </main>
+      </PublicPage>
     );
   }
 
-  const fieldError = (f: string) => (error?.field === f ? t(FIELD_MESSAGES[f]!) : undefined);
+  // the rule comes from the server (one source: MIN_PASSWORD_LENGTH)
+  const minLength = config.data?.minPasswordLength ?? "…";
+  const fieldError = (f: string) =>
+    error?.field === f ? t(FIELD_MESSAGES[f]!, { n: minLength }) : undefined;
   return (
-    <main className="novi-backdrop grid min-h-screen place-items-center bg-bg p-4">
+    <PublicPage>
       <form onSubmit={submit} className={card} noValidate>
         <div className="grid gap-1">
           <span className="text-sm font-semibold text-text-muted">{productName}</span>
@@ -129,11 +133,11 @@ export function SignupPage({ productName = "NOVI" }: { productName?: string }) {
           />
         </label>
         <label className="grid gap-1 text-sm">
-          {t("choosePassword")}
+          {t("choosePassword", { n: minLength })}
           <Input
             type="password"
             required
-            minLength={10}
+            minLength={config.data?.minPasswordLength}
             autoComplete="new-password"
             value={form.password}
             invalid={fieldError("password")}
@@ -166,6 +170,6 @@ export function SignupPage({ productName = "NOVI" }: { productName?: string }) {
           {t("haveAccount")}
         </Link>
       </form>
-    </main>
+    </PublicPage>
   );
 }

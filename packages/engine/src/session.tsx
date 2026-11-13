@@ -151,6 +151,8 @@ export function useSession() {
       verifyCode.reset();
     },
     logout: logout.mutate,
+    /** Password reset by email, when the sign-in path supports it (gateway). */
+    passwordReset: auth?.reset,
   };
 }
 

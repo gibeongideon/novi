@@ -3,6 +3,8 @@ import { Button, cn, type MessageKey, Skeleton, useT } from "@novi/ui";
 import { Check, Loader2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 
+import { publicCard, PublicPage } from "./PublicPage";
+
 /** Provisioning steps as the tenant script reports them (infra/provisioning/tenant.sh), in order. */
 const STEPS: { label: MessageKey; done: string[] }[] = [
   { label: "step.database", done: ["clone_db", "create_db"] },
@@ -19,20 +21,20 @@ export function SignupStatusPage() {
   const { id } = useParams();
   const progress = useSignupProgress(id);
   const p = progress.data;
-  const card = "grid w-full max-w-md gap-4 rounded-xl border border-border bg-surface p-6 shadow-md";
+  const card = publicCard("md");
 
   if (progress.isPending) return <Skeleton className="m-6 h-40 w-96" />;
   if (!p) {
     return (
-      <main className="grid min-h-screen place-items-center p-4">
+      <PublicPage>
         <p role="alert">{t("invalidLink")}</p>
-      </main>
+      </PublicPage>
     );
   }
   const done = new Set(p.steps);
   const ready = p.status === "active";
   return (
-    <main className="novi-backdrop grid min-h-screen place-items-center bg-bg p-4">
+    <PublicPage>
       <section className={card} aria-live="polite">
         <div className="grid gap-1">
           <span className="text-sm font-semibold text-text-muted">{p.company}</span>
@@ -75,6 +77,6 @@ export function SignupStatusPage() {
           </Button>
         ) : null}
       </section>
-    </main>
+    </PublicPage>
   );
 }

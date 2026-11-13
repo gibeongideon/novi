@@ -4,11 +4,22 @@
  * `session_id` cookie (same origin), exactly what a normal Odoo login would have set.
  *   POST /api/auth/login  { login, password }        → 200 ok | 200 { twoFactor, challenge } | 401
  *   POST /api/auth/totp   { challenge, code, remember } → 200 ok | 401
+ *   POST /api/auth/reset  { login }                    → 202 (always: no account probing)
+ *   POST /api/auth/reset/confirm { token, password }   → 200 ok | 400 { reason: "tooShort", minLength }
+ *                                                        | 400 { reason: "reset", message } (Odoo's reason)
+ *   GET  /web/reset_password?token=…                   → 302 to NOVI's own reset page (P1.6.5)
  */
-import { AccessDenied, JsonRpcTransport, TwoFactorRequiredError } from "@novi/odoo-client";
+import {
+  AccessDenied,
+  JsonRpcTransport,
+  PasswordTooShortError,
+  TwoFactorRequiredError,
+  UserError,
+} from "@novi/odoo-client";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 import type { GatewayConfig } from "../config.js";
+import { rateLimiter } from "../rateLimit.js";
 import { parseCookies, serializeCookie } from "./cookies.js";
 import { PendingLogins } from "./pending.js";
 
@@ -52,8 +63,18 @@ export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig):
   };
 
   /** `reason` lets the UI show its own translated message; `message` is Odoo's/diagnostic text. */
-  const denied = (reply: FastifyReply, reason: "credentials" | "code" | "expired", message: string) =>
-    reply.code(401).send({ status: "denied", reason, message });
+  const denied = (
+    reply: FastifyReply,
+    reason: "credentials" | "code" | "expired" | "cooldown",
+    message: string,
+  ) => reply.code(401).send({ status: "denied", reason, message });
+
+  /**
+   * Odoo's per-IP login cooldown (P1.6.6) is an AccessDenied too; only its text tells them apart.
+   * The gateway calls Odoo without a language, so the text is Odoo's English source string.
+   */
+  const loginDenied = (reply: FastifyReply, err: AccessDenied) =>
+    denied(reply, /too many login failures/i.test(err.message) ? "cooldown" : "credentials", err.message);
 
   app.post<{ Body: { login?: string; password?: string } }>("/api/auth/login", async (req, reply) => {
     const { login, password } = req.body ?? {};
@@ -73,7 +94,7 @@ export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig):
           return finish(req, reply, t);
         return reply.send({ status: "twoFactor", challenge: pending.add({ transport: t, userAgent: ua }) });
       }
-      if (err instanceof AccessDenied) return denied(reply, "credentials", err.message);
+      if (err instanceof AccessDenied) return loginDenied(reply, err);
       throw err;
     }
   });
@@ -96,5 +117,43 @@ export function registerAuthRoutes(app: FastifyInstance, config: GatewayConfig):
         throw err;
       }
     },
+  );
+
+  // ── password reset (P1.6.5): Odoo's stock auth_signup flow, relayed so users never see Odoo's UI
+  const resetAllowed = rateLimiter(5, 3600_000); // no mailbox flooding through us
+
+  app.post<{ Body: { login?: string } }>("/api/auth/reset", async (req, reply) => {
+    const login = (req.body?.login ?? "").trim();
+    if (!login) return reply.code(400).send({ status: "invalid", message: "login required" });
+    if (!resetAllowed(req.ip)) return reply.code(429).send({ status: "invalid", reason: "rate" });
+    // same answer whether or not the account exists; the reason stays in our logs only
+    await transportFor(req)
+      .requestPasswordReset(login)
+      .catch((err: unknown) => req.log.warn({ err: (err as Error).message }, "password reset not sent"));
+    return reply.code(202).send({ status: "sent" });
+  });
+
+  app.post<{ Body: { token?: string; password?: string } }>("/api/auth/reset/confirm", async (req, reply) => {
+    const { token, password } = req.body ?? {};
+    if (!token || !password)
+      return reply.code(400).send({ status: "invalid", message: "token and password required" });
+    try {
+      await transportFor(req).resetPassword(token, password);
+      return reply.send({ status: "ok" });
+    } catch (err) {
+      if (err instanceof PasswordTooShortError)
+        return reply.code(400).send({ status: "invalid", reason: "tooShort", minLength: err.minLength });
+      // Odoo's own (translated) reason: link expired or already used
+      if (err instanceof UserError)
+        return reply.code(400).send({ status: "invalid", reason: "reset", message: err.message });
+      throw err;
+    }
+  });
+
+  // the link in Odoo's reset email points at Odoo's page: send the browser to NOVI's instead
+  app.get<{ Querystring: { token?: string } }>("/web/reset_password", async (req, reply) =>
+    reply.redirect(
+      req.query.token ? `/reset-password?token=${encodeURIComponent(req.query.token)}` : "/reset-password",
+    ),
   );
 }

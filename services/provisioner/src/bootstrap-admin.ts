@@ -5,6 +5,8 @@
  */
 import { JsonRpcTransport, Orm } from "@novi/odoo-client";
 
+import { MIN_PASSWORD_LENGTH } from "./config.js";
+
 const [url, db, company, countryCode, email] = process.argv.slice(2);
 // from the environment, never argv (visible to every user via ps)
 const password = process.env.TENANT_ADMIN_PASSWORD;
@@ -35,6 +37,13 @@ if (country.currency_id) {
   companyVals.currency_id = country.currency_id[0];
 }
 await orm.call("res.company", "write", [1], { vals: companyVals });
+
+// Odoo enforces NOVI's password rule from now on (stock auth_password_policy)
+// (Odoo 20 replaced set_param with typed setters)
+await orm.call("ir.config_parameter", "set_int", undefined, {
+  key: "auth_password_policy.minlength",
+  value: MIN_PASSWORD_LENGTH,
+});
 
 const session = await t.getSessionInfo();
 await orm.call("res.users", "write", [session.uid as number], {

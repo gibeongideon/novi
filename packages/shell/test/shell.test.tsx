@@ -434,3 +434,55 @@ describe("sign-up (P1.3)", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("password reset and lockout (P1.6)", () => {
+  const resetAuth = (calls: string[]): AuthClient => ({
+    async login() {
+      throw new LoginError("cooldown", "Too many login failures, please wait a bit before trying again.");
+    },
+    async verifyCode() {},
+    reset: {
+      async request(login) {
+        calls.push(`request:${login}`);
+      },
+      async confirm(token, password) {
+        calls.push(`confirm:${token}:${password}`);
+        if (password.length < 10) throw new LoginError("tooShort", "too short", 10);
+      },
+    },
+  });
+
+  it("explains a lockout instead of blaming the password", async () => {
+    renderShell(fakeOdoo(), "/", resetAuth([]));
+    await userEvent.type(await screen.findByLabelText("Email or login"), "admin");
+    await userEvent.type(screen.getByLabelText("Password"), "pw");
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Too many failed attempts. Wait a minute, then try again.",
+    );
+  });
+
+  it("requests a reset link from the login page", async () => {
+    const calls: string[] = [];
+    renderShell(fakeOdoo(), "/", resetAuth(calls));
+    await userEvent.click(await screen.findByRole("link", { name: "Forgot password?" }));
+    await userEvent.type(await screen.findByLabelText("Email or login"), "owner@acme.test");
+    await userEvent.click(screen.getByRole("button", { name: "Send reset link" }));
+    expect(await screen.findByText(/a reset link is on its way/)).toBeTruthy();
+    expect(calls).toEqual(["request:owner@acme.test"]);
+  });
+
+  it("sets a new password from the emailed link and shows Odoo's reason when refused", async () => {
+    const calls: string[] = [];
+    renderShell(fakeOdoo(), "/reset-password?token=t0k", resetAuth(calls));
+    const field = await screen.findByLabelText("New password");
+    await userEvent.type(field, "short");
+    await userEvent.click(screen.getByRole("button", { name: "Set password" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Use at least 10 characters.");
+    await userEvent.clear(field);
+    await userEvent.type(field, "Long-Enough-2026");
+    await userEvent.click(screen.getByRole("button", { name: "Set password" }));
+    expect(await screen.findByText(/Your password has been changed/)).toBeTruthy();
+    expect(calls).toEqual(["confirm:t0k:short", "confirm:t0k:Long-Enough-2026"]);
+  });
+});

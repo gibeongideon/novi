@@ -8,8 +8,11 @@ import {
   errorFromOdoo,
   isOdooErrorData,
   NetworkError,
+  NotFoundError,
+  PasswordTooShortError,
   SessionExpiredError,
   TwoFactorRequiredError,
+  UserError,
 } from "./errors.js";
 import { Http, readJson } from "./http.js";
 import {
@@ -195,7 +198,7 @@ export class JsonRpcTransport implements OrmTransport {
     const page = await this.totpPage(ua);
     // A valid trusted-device cookie makes Odoo finalise the session without a code
     if (page.redirected) return this.finalizeTwoFactor();
-    const csrf = page.html.match(/name="csrf_token"[^>]*value="([^"]+)"/)?.[1];
+    const csrf = page.csrf;
     if (!csrf) {
       throw new AccessDenied("No pending 2FA login in this session (call authenticate() first)", {
         status: page.status,
@@ -234,16 +237,75 @@ export class JsonRpcTransport implements OrmTransport {
     if (key) this.http.jar.set(TRUSTED_DEVICE_COOKIE, key);
   }
 
-  private async totpPage(userAgent: string): Promise<{ status: number; redirected: boolean; html: string }> {
-    if (!this.http.jar) throw new Error("2FA relay is server-side only (gateway)");
+  private totpPage(userAgent: string) {
+    return this.formPage("/web/login/totp", { "User-Agent": userAgent });
+  }
+
+  /**
+   * One of Odoo's server-rendered form pages (2FA, password reset), fetched in this session so its
+   * CSRF token is valid for the POST that follows. Server-side only: it needs the cookie jar.
+   */
+  private async formPage(url: string, headers: Record<string, string> = {}) {
+    if (!this.http.jar) throw new Error("Odoo form relay is server-side only (gateway)");
     const res = await this.http.send({
-      url: "/web/login/totp",
+      url,
       method: "GET",
-      headers: { Accept: "text/html", "User-Agent": userAgent },
+      headers: { Accept: "text/html", ...headers },
       retry: false,
     });
     const redirected = res.status >= 300 && res.status < 400;
-    return { status: res.status, redirected, html: redirected ? "" : await res.text() };
+    const html = redirected ? "" : await res.text();
+    const csrf = html.match(/name="csrf_token"[^>]*value="([^"]+)"/)?.[1];
+    return { status: res.status, redirected, html, csrf };
+  }
+
+  /** Odoo's message in a rendered form page (`alert-danger` = error, `alert-success` = done). */
+  private static formOutcome(html: string): { error?: string; message?: string } {
+    const text = (cls: string) =>
+      html
+        .match(new RegExp(`class="alert ${cls}"[^>]*>([\\s\\S]*?)</p>`))?.[1]
+        ?.replace(/<[^>]+>/g, "")
+        .replace(/&#39;/g, "'")
+        .replace(/&quot;/g, '"')
+        .replace(/&amp;/g, "&")
+        .trim();
+    return { error: text("alert-danger"), message: text("alert-success") };
+  }
+
+  /**
+   * Ask Odoo to email a password-reset link (stock `auth_signup`, P1.6.5). Throws UserError with
+   * Odoo's message when Odoo refuses (unknown login, mail failure, reset disabled).
+   */
+  async requestPasswordReset(login: string): Promise<void> {
+    const page = await this.formPage("/web/reset_password");
+    if (!page.csrf) throw new NotFoundError("Password reset is disabled", { status: page.status });
+    await this.submitForm("/web/reset_password", { login, csrf_token: page.csrf });
+  }
+
+  /** Set a new password with the token from Odoo's reset email (the user then signs in normally). */
+  async resetPassword(token: string, password: string): Promise<void> {
+    const url = `/web/reset_password?token=${encodeURIComponent(token)}`;
+    const page = await this.formPage(url);
+    const before = JsonRpcTransport.formOutcome(page.html);
+    if (!page.csrf || before.error)
+      throw new UserError(before.error ?? "Invalid reset link", { status: page.status });
+    // Odoo invalidates the token even when it rejects the password, so check its rule first
+    const min = Number(page.html.match(/name="password"[^>]*minlength="(\d+)"/)?.[1] ?? 0);
+    if (password.length < min) throw new PasswordTooShortError(min);
+    await this.submitForm(url, { token, password, confirm_password: password, csrf_token: page.csrf });
+  }
+
+  private async submitForm(url: string, form: Record<string, string>): Promise<void> {
+    const res = await this.http.send({
+      url,
+      method: "POST",
+      headers: { Accept: "text/html" },
+      form,
+      retry: false,
+    });
+    const { error, message } = JsonRpcTransport.formOutcome(await res.text());
+    if (error || !message)
+      throw new UserError(error ?? `Unexpected response (HTTP ${res.status})`, { status: res.status });
   }
 
   /**

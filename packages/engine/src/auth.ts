@@ -6,12 +6,15 @@
 import { AccessDenied, type SessionInfo, TwoFactorRequiredError } from "@novi/odoo-client";
 
 export type LoginResult = { status: "ok" } | { status: "twoFactor"; challenge: string };
-export type LoginFailure = "credentials" | "code" | "expired" | "twoFactorUnsupported" | "other";
+export type LoginFailure =
+  "credentials" | "code" | "expired" | "cooldown" | "tooShort" | "twoFactorUnsupported" | "other";
 
 export class LoginError extends Error {
   constructor(
     readonly reason: LoginFailure,
     message: string,
+    /** For `tooShort`: the tenant's minimum password length. */
+    readonly minLength?: number,
   ) {
     super(message);
     this.name = "LoginError";
@@ -21,6 +24,12 @@ export class LoginError extends Error {
 export interface AuthClient {
   login(login: string, password: string): Promise<LoginResult>;
   verifyCode(challenge: string, code: string, remember: boolean): Promise<void>;
+  /** Password reset by email (P1.6.5); only through the gateway (Odoo's reset is an HTML form). */
+  reset?: {
+    request(login: string): Promise<void>;
+    /** Throws LoginError("other", Odoo's reason) when the link is expired or the password refused. */
+    confirm(token: string, password: string): Promise<void>;
+  };
 }
 
 export function gatewayAuth(base = "", fetchImpl: typeof fetch = (...a) => fetch(...a)): AuthClient {
@@ -36,8 +45,10 @@ export function gatewayAuth(base = "", fetchImpl: typeof fetch = (...a) => fetch
       challenge?: string;
       reason?: LoginFailure;
       message?: string;
+      minLength?: number;
     };
-    if (!res.ok) throw new LoginError(json.reason ?? "other", json.message ?? `HTTP ${res.status}`);
+    if (!res.ok)
+      throw new LoginError(json.reason ?? "other", json.message ?? `HTTP ${res.status}`, json.minLength);
     return json;
   };
   return {
@@ -47,6 +58,14 @@ export function gatewayAuth(base = "", fetchImpl: typeof fetch = (...a) => fetch
     },
     async verifyCode(challenge, code, remember) {
       await post("/api/auth/totp", { challenge, code, remember });
+    },
+    reset: {
+      async request(login) {
+        await post("/api/auth/reset", { login });
+      },
+      async confirm(token, password) {
+        await post("/api/auth/reset/confirm", { token, password });
+      },
     },
   };
 }

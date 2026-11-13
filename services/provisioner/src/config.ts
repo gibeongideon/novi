@@ -25,5 +25,12 @@ export function platformConfig(env: NodeJS.ProcessEnv = process.env): PlatformCo
   };
 }
 
+/**
+ * Minimum password length, the one rule for NOVI (P1.6.5): checked at sign-up before the tenant
+ * exists, then written to each tenant's Odoo (`auth_password_policy.minlength`), which enforces it
+ * on every later password change (reset, preferences, admin).
+ */
+export const MIN_PASSWORD_LENGTH = 10;
+
 /** Countries offered at sign-up (each gets its Odoo accounting localisation; KE has a fast template). */
 export const SUPPORTED_COUNTRIES = ["KE", "UG", "TZ", "RW", "NG", "GH", "ZA", "US", "GB"] as const;

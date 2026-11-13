@@ -91,6 +91,16 @@ export class NotFoundError extends OdooError {}
 export class BadRequestError extends OdooError {}
 /** Connection failure, DNS, TLS, timeout, or a non-JSON reply (proxy error page …). */
 export class NetworkError extends OdooError {}
+/**
+ * A new password shorter than the tenant's rule (`minlength` on Odoo's reset form). Raised before
+ * submitting, because Odoo spends the reset link even when it refuses the password.
+ */
+export class PasswordTooShortError extends UserError {
+  constructor(readonly minLength: number) {
+    super(`Password shorter than ${minLength} characters`);
+    this.name = "PasswordTooShortError";
+  }
+}
 /** The call was cancelled through an AbortSignal. */
 export class AbortError extends OdooError {}
 

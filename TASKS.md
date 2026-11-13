@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 7 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 8 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -255,10 +255,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P1.6 Auth bridge
 - [x] P1.6.1 Password login → Odoo `authenticate` → issue our own session (httpOnly JWT cookie + refresh) (same-domain mode: gateway checks the password with Odoo and hands the browser Odoo's own `session_id` cookie; NOVI's own JWT session arrives with the vault mode P1.7)
 - [x] P1.6.2 2FA login using the approach chosen in P0.10 (gateway relays Odoo's TOTP step; trusted devices via `td_id`; real browser User-Agent forwarded; verified in a browser and by live tests)
-- [ ] P1.6.3 Logout everywhere (our session + Odoo `destroy`)
-- [ ] P1.6.4 Session expiry and silent refresh; 401 → redirect to login
-- [ ] P1.6.5 Password reset (relay to Odoo's `auth_signup` reset flow)
-- [~] P1.6.6 Brute-force protection and lockout *(partly: the gateway forwards each user's real IP (`X-Forwarded-For`, Odoo `proxy_mode`) so Odoo's own per-IP login cooldown works; a gateway-side limit comes with P1.8.3)*
+- [x] P1.6.3 Logout (our session + Odoo `destroy`) *(no NOVI session since D-27: logout is Odoo's `destroy`; verified live that the old cookie is rejected afterwards. Odoo's "log out from all devices" belongs to the account-security screen with preferences)*
+- [x] P1.6.4 Session expiry and silent refresh; 401 → redirect to login *(no refresh token needed: Odoo re-issues its 7-day `session_id` cookie on every request (verified through the gateway), so the session slides with activity; an expired session returns to login (P1.12.5))*
+- [x] P1.6.5 Password reset (relay to Odoo's `auth_signup` reset flow) *(NOVI pages for request + new password; Odoo's emailed link redirects to NOVI's page; same answer for unknown accounts; 5 requests/IP/hour; tenants get outgoing mail (D-30); Odoo's password rule (stock `auth_password_policy`, min 10 from one constant) is checked before submitting because Odoo spends the link even when it refuses the password)*
+- [x] P1.6.6 Brute-force protection and lockout *(Odoo's own per-IP cooldown, verified through the gateway: 10 failures → 60 s; the screen says so instead of "wrong password". Fixed: the gateway trusted any client's X-Forwarded-For, so an attacker could dodge the cooldown with fake IPs; now only the local proxy (Caddy/Vite) is believed. Per-account limits for IP-rotating attacks → P1.8.3)*
 
 **Done when:** normal and 2FA users can log in and out, and expired sessions recover.
 
@@ -869,6 +869,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 ### P7.2 Tenant self-service settings
 - [ ] P7.2.1 Branding: logo, colours, favicon, email sender name
+- [ ] P7.2.4 White-label Odoo's outgoing emails (password reset, invitations): Odoo's email layout still shows "Powered by Odoo"; change through stock mail-template/layout records per tenant, no add-on (found in P1.6.5)
 - [ ] P7.2.2 Custom domain with automatic TLS (DNS verification)
 - [ ] P7.2.3 App selection within plan limits; user seat management
 

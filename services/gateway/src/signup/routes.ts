@@ -1,6 +1,6 @@
 /**
  * Self-service sign-up (P1.3), served on the platform host only (not on workspaces).
- *   GET  /api/signup/config        → { enabled, workspaceUrl, countries }
+ *   GET  /api/signup/config        → { enabled, workspaceUrl, countries, minPasswordLength }
  *   POST /api/signup               → 202 { id }  (sends the verification email)
  *   GET  /api/signup/verify?token  → 302 /signup/status/<id>  (queues provisioning)
  *   GET  /api/signup/:id           → progress for the status page
@@ -9,9 +9,18 @@
 import { randomBytes } from "node:crypto";
 
 import type { SignupStore } from "@novi/provisioner";
-import { type Mailer, platformConfig, seal, SLUG_RE, slugify, SUPPORTED_COUNTRIES } from "@novi/provisioner";
+import {
+  type Mailer,
+  MIN_PASSWORD_LENGTH,
+  platformConfig,
+  seal,
+  SLUG_RE,
+  slugify,
+  SUPPORTED_COUNTRIES,
+} from "@novi/provisioner";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
+import { rateLimiter } from "../rateLimit.js";
 import type { FileTenantRegistry } from "../tenants/registry.js";
 import { normalizeHost } from "../tenants/registry.js";
 
@@ -29,7 +38,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function registerSignupRoutes(app: FastifyInstance, d: SignupDeps): void {
   const cfg = platformConfig();
-  const attempts = new Map<string, number[]>();
+  const allow = rateLimiter(d.perIpPerHour ?? 5, 3600_000);
   const isPlatform = (req: FastifyRequest) => d.platformHosts.includes(normalizeHost(req.headers.host));
   const origin = (req: FastifyRequest) => `${req.protocol}://${req.headers.host}`;
   const slugFree = (slug: string) => !d.store.slugTaken(slug) && !d.registry.bySlug(slug);
@@ -38,6 +47,7 @@ export function registerSignupRoutes(app: FastifyInstance, d: SignupDeps): void 
     enabled: isPlatform(req),
     workspaceUrl: cfg.workspaceUrl,
     countries: SUPPORTED_COUNTRIES,
+    minPasswordLength: MIN_PASSWORD_LENGTH,
   }));
 
   /** The suggested workspace name for a company (one naming rule: the server's slugify). */
@@ -50,11 +60,7 @@ export function registerSignupRoutes(app: FastifyInstance, d: SignupDeps): void 
     Body: { company?: string; email?: string; password?: string; country?: string; slug?: string };
   }>("/api/signup", async (req, reply) => {
     if (!isPlatform(req)) return reply.code(404).send({ status: "not_found" });
-    const now = Date.now();
-    const recent = (attempts.get(req.ip) ?? []).filter((t) => now - t < 3600_000);
-    if (recent.length >= (d.perIpPerHour ?? 5))
-      return reply.code(429).send({ status: "invalid", field: "rate" });
-    attempts.set(req.ip, [...recent, now]);
+    if (!allow(req.ip)) return reply.code(429).send({ status: "invalid", field: "rate" });
 
     const b = req.body ?? {};
     const company = (b.company ?? "").trim();
@@ -63,7 +69,7 @@ export function registerSignupRoutes(app: FastifyInstance, d: SignupDeps): void 
     const invalid = (field: string) => reply.code(400).send({ status: "invalid", field });
     if (company.length < 2 || company.length > 80) return invalid("company");
     if (!EMAIL_RE.test(email)) return invalid("email");
-    if ((b.password ?? "").length < 10) return invalid("password");
+    if ((b.password ?? "").length < MIN_PASSWORD_LENGTH) return invalid("password");
     if (!SUPPORTED_COUNTRIES.includes(b.country as (typeof SUPPORTED_COUNTRIES)[number]))
       return invalid("country");
     if (!SLUG_RE.test(slug)) return invalid("slug");

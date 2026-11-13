@@ -19,12 +19,16 @@ IMAGE="${ODOO_IMAGE:-novi/odoo20:stock}"
 NET="novi-dev_default"
 DBC="novi-dev-db-1"
 PLAN="${NOVI_PLAN:-starter}"
-MODULES="${NOVI_TENANT_MODULES:-base,web,mail,sale_management,crm,account,stock,hr}"
+MODULES="${NOVI_TENANT_MODULES:-base,web,mail,auth_password_policy,sale_management,crm,account,stock,hr}"
 TPL_ROLE="novi_tpl"
 # Platform admin role (the superuser this script runs psql as). Owns the template *databases*,
 # so REASSIGN OWNED BY novi_tpl (which also moves shared objects such as databases!) can never
 # hand a template to a tenant.
 PLATFORM_ROLE="odoo"
+# Outgoing mail for tenants (password reset, invitations, documents). Production: an external relay
+# (TENANT_SMTP_HOST/PORT/USER/PASSWORD/SSL). Locally: Mailpit joins each tenant network as "smtp".
+SMTP_HOST="${TENANT_SMTP_HOST:-smtp}"; SMTP_PORT="${TENANT_SMTP_PORT:-1025}"
+MAILPIT="novi-dev-mailpit-1"
 
 psql() { docker exec -i "$DBC" psql -v ON_ERROR_STOP=1 -U odoo -d "${PGDB:-postgres}" -tA "$@"; }
 tpl_names() { # plan cc -> TPL_DB TPL_VOL
@@ -52,6 +56,11 @@ http_interface = 0.0.0.0
 workers = 0
 max_cron_threads = 1
 limit_memory_hard = 1610612736
+smtp_server = $SMTP_HOST
+smtp_port = $SMTP_PORT
+smtp_user = ${TENANT_SMTP_USER:-False}
+smtp_password = ${TENANT_SMTP_PASSWORD:-False}
+smtp_ssl = ${TENANT_SMTP_SSL:-False}
 CONF
   chmod 644 "$1"
 }
@@ -136,6 +145,7 @@ if [ "$cmd" = destroy ]; then
   docker rm -f "$CT" >/dev/null 2>&1 || true
   docker volume rm "$VOL" >/dev/null 2>&1 || true
   docker network disconnect -f "$TNET" "$DBC" >/dev/null 2>&1 || true
+  docker network disconnect -f "$TNET" "$MAILPIT" >/dev/null 2>&1 || true
   docker network rm "$TNET" >/dev/null 2>&1 || true
   psql -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE);" >/dev/null
   psql -c "DROP ROLE IF EXISTS \"$ROLE\";" >/dev/null
@@ -164,6 +174,9 @@ mkdir -p "$DIR"; chmod 700 "$DIR"
 psql -c "DO \$\$ DECLARE d text; BEGIN FOR d IN SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1') LOOP EXECUTE format('REVOKE CONNECT ON DATABASE %I FROM PUBLIC', d); END LOOP; END \$\$;" >/dev/null
 docker network create "$TNET" >/dev/null
 docker network connect --alias db "$TNET" "$DBC"
+if [ -z "${TENANT_SMTP_HOST:-}" ] && docker container inspect "$MAILPIT" >/dev/null 2>&1; then
+  docker network connect --alias smtp "$TNET" "$MAILPIT"  # local dev only
+fi
 export ODOO_NET="$TNET"
 clock_start
 echo "==> provisioning $id ($( $FAST && echo "fast path: clone $TPL_DB" || echo "slow path: no template for $PLAN/$COUNTRY" ))"
