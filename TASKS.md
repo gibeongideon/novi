@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 5 | 🟦 |
+| 2 Engine core | 16 | 6 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -416,13 +416,13 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** unit tests cover all x2many command combinations. *(every command alone, collapsing/cancelling pairs, clear/replace followed by edits, nested lines, discard; plus a live round-trip on the dev Odoo: what Odoo stores matches every edit)*
 
 ### P2.6 Engine: onchange & defaults
-- [ ] P2.6.1 New record: `onchange(values, [], spec)` → defaults
-- [ ] P2.6.2 Field change: `onchange` for the changed field, then apply the returned values
-- [ ] P2.6.3 Show onchange warnings (dialog / notification type)
-- [ ] P2.6.4 Debounce and serialise onchanges so race conditions can't happen
-- [ ] P2.6.5 Nested onchange inside x2many lines (parent values)
+- [x] P2.6.1 New record: `onchange(values, [], spec)` → defaults (`createWithDefaults`); new lines ask their own model with the parent's values under the inverse field (`addWithDefaults`), as Odoo's client does *(D-38)*
+- [x] P2.6.2 Field change: `onchange` for fields marked `on_change` (with the field's own context), answers applied (x2many as commands, new lines addressed by virtual id); save leaves out read-only values unless `force_save`
+- [-] P2.6.3 Show onchange warnings *(engine part done: warnings reach `onWarning` with Odoo's title, message and type; showing them as a dialog or notification moved to P2.10.10 with the form view)*
+- [x] P2.6.4 Serialised onchanges: one call at a time, names arriving meanwhile merged into one follow-up call, answers never overwrite a value the user changed after the request left; save waits for pending onchanges *(no timer debounce: merging makes it unnecessary)*
+- [x] P2.6.5 Nested onchange inside lines: the line model's onchange (parent values under the inverse field), then the parent's onchange on the x2many field once the line's answer is in; a line's link to its parent isn't required before the parent is saved
 
-**Done when:** the sale order line product change updates price/taxes exactly like Odoo.
+**Done when:** the sale order line product change updates price/taxes exactly like Odoo. *(live: NOVI's line price, taxes, description, quantity, subtotal and order total equal the same order created by Odoo itself, and what NOVI's save stores)*
 
 ### P2.7 Engine: save, delete, actions on records
 - [ ] P2.7.1 `web_save(vals, spec)` with only changed values
@@ -470,6 +470,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.10.7 Record pager (prev/next within the list)
 - [ ] P2.10.8 Chatter slot (drawer placeholder until P3.7)
 - [ ] P2.10.9 User preferences = Odoo's own preferences form (`res.users` preferences view: language, timezone, signature, API keys, "log out from all devices") opened from the user menu through the generic form view (ex-P1.12.1)
+- [ ] P2.10.10 Show onchange warnings from the engine (`onWarning`): `dialog` as a dialog, `notification` as a toast (ex-P2.6.3)
 
 **Done when:** the sale order, partner, product and employee forms render and save correctly.
 

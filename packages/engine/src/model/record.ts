@@ -141,7 +141,19 @@ export class OdooRecord extends Observable {
     this.notify();
     const names = Object.keys(changes).filter((n) => this.triggersOnchange(n));
     if (names.length) this.scheduleOnchange(names);
-    if (this.parent && this.config.parentField) this.parent.linesChanged(this.config.parentField);
+    this.tellParent();
+  }
+
+  /**
+   * A line tells its parent it changed, after its own onchange has answered (as Odoo's client
+   * does): the parent's onchange must see the line's new values (price, taxes), not the old ones.
+   */
+  private tellParent(): void {
+    if (!this.parent || !this.config.parentField) return;
+    const parent = this.parent;
+    const field = this.config.parentField;
+    if (this.busy) void this.idle().then(() => parent.linesChanged(field));
+    else parent.linesChanged(field);
   }
 
   /** A line of one of this record's x2many fields was added, edited or removed. */
@@ -149,7 +161,7 @@ export class OdooRecord extends Observable {
     this.editedAt.set(field, ++this.edits);
     this.notify();
     if (this.triggersOnchange(field)) this.scheduleOnchange([field]);
-    if (this.parent && this.config.parentField) this.parent.linesChanged(this.config.parentField);
+    this.tellParent();
   }
 
   /** Resolves when no onchange is running or waiting, here or in any line. */
@@ -224,6 +236,7 @@ export class OdooRecord extends Observable {
     const out = new Set<string>();
     for (const node of this.nodes()) {
       if (this.isInvisible(node) || !this.isRequired(node)) continue;
+      if (node.name === this.config.relationField) continue; // a line's link to its parent is set by saving the parent
       if (isEmpty(this.values[node.name], this.fields[node.name]?.type)) out.add(node.name);
     }
     for (const [name, list] of this.x2many)
