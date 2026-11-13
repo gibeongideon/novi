@@ -10,9 +10,9 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 
 | | |
 |---|---|
-| **Current phase** | Phase 1 — Gateway, tenant provisioning & shell |
-| **In progress** | — |
-| **Next task** | Phase 1 gate checks all verified; decide the remaining Phase 1 items (P1.1, P1.2, P1.8.3/4, P1.9, P1.12, P1.13.3, P1.15) before closing Phase 1. Blocked: P1.14.2 (Google/Microsoft OAuth apps) |
+| **Current phase** | Phase 2 — Engine core |
+| **In progress** | `P2.1` odoo-expr: Python expression evaluator for view arch |
+| **Next task** | `P2.2` domains, then `P2.3` arch parser (`odoo-meta`) |
 | **Blockers** | P1.14.2 needs the platform's Google Cloud / Microsoft Entra OAuth client IDs |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-13 |
@@ -24,8 +24,8 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 | # | Phase | Weeks (sequential) | Est. | Goal | Status | Started | Completed |
 |---|---|---|---|---|---|---|---|
 | 0 | Foundations | 1–3 | 3 w | Repo, local Odoo 20, client library, 2FA and provisioning spikes, live staging | ✅ Done | 2026-11-11 | 2026-11-11 |
-| 1 | Gateway, tenant provisioning & shell | 4–9 | 6 w | Sign-up → own Odoo + own DB; login; browse menus | 🟦 In progress | 2026-11-11 | |
-| 2 | Engine core | 10–17 | 8 w | Any list/form/kanban opens, edits and saves | 🔒 Locked | | |
+| 1 | Gateway, tenant provisioning & shell | 4–9 | 6 w | Sign-up → own Odoo + own DB; login; browse menus | ✅ Done (P1.14.2 carried, blocked) | 2026-11-11 | 2026-11-13 |
+| 2 | Engine core | 10–17 | 8 w | Any list/form/kanban opens, edits and saves | 🟦 In progress | 2026-11-13 | |
 | 3 | Breadth | 18–23 | 6 w | ≥ 90% views native; chatter, reports, realtime | 🔒 Locked | | |
 | 4 | Sales + CRM | 24–28 | 5 w | Bespoke pipeline, quotation editor, dashboards | 🔒 Locked | | |
 | 5 | Accounting | 29–35 | 7 w | Invoices, payments, reconciliation, reports to the cent | 🔒 Locked | | |

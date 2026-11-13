@@ -30,8 +30,8 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 9 | 🟦 |
-| 2 Engine core | 16 | 0 | ⬜ |
+| 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
+| 2 Engine core | 16 | 0 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -200,19 +200,19 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Goal:** a customer signs up, gets their own Odoo and database, logs in, and browses real menus in the new UI.
 
 ### P1.1 Gateway service foundation
-- [~] P1.1.1 Fastify app with structured logging (pino), request IDs, health/readiness endpoints *(partly: Fastify app, health/readiness, config, trusted proxy; structured logging defaults; request-id/OpenAPI when there are more endpoints)*
-- [~] P1.1.2 Config loading (env + schema validation), secrets from a vault or KMS *(partly: config from env; secrets vault when there are secrets to keep, i.e. the session vault P1.7)*
-- [ ] P1.1.3 Gateway Postgres schema and migrations (tenants, users, sessions, prefs, audit)
-- [ ] P1.1.4 Redis connection (cache, rate limits, job queue)
-- [ ] P1.1.5 OpenAPI spec for the gateway's own endpoints
+- [x] P1.1.1 Fastify app with structured logging (pino), request IDs, health/readiness endpoints *(Fastify's built-in pino logger with a request id on every log line; `/healthz`, `/readyz`)*
+- [x] P1.1.2 Config loading from the environment; secrets from the environment (`PLATFORM_SECRET`, SMTP) *(D-32: a vault/KMS → P7.8.3 secrets rotation)*
+- [-] P1.1.3 Gateway Postgres schema and migrations *(dropped, D-32: the gateway stores nothing that needs a database: tenants and sign-ups are files (D-27/D-28), sessions are Odoo's, preferences stay in Odoo (`ir.filters`, user settings). Add one when a feature needs shared state)*
+- [-] P1.1.4 Redis connection *(dropped, D-32: no queue (D-28), no gateway cache yet (P2.16.5), rate limits in memory)*
+- [-] P1.1.5 OpenAPI spec for the gateway's own endpoints *(deferred to P7.11, D-32: the only client is NOVI's own engine, typed in `@novi/engine`; endpoints are documented at the top of each route file)*
 
 **Done when:** the gateway runs in compose, migrations apply, and health checks pass.
 
 ### P1.2 Tenant registry
-- [~] P1.2.1 Tenant model: id, slug, status (`provisioning|active|suspended|deleting|failed`), tier, plan, odoo_url, db_name, version, branding, created_at *(partly: slug, hosts, odooUrl/wsUrl, db, status `active|suspended`, createdAt; tier/plan and the provisioning states come with the provisioner P1.4)*
+- [x] P1.2.1 Tenant model: slug, hosts, odooUrl, db, status (`active|suspended`), createdAt *(provisioning states live in the sign-up record (P1.4); tier/plan/branding arrive with P7.2/P7.3)*
 - [x] P1.2.2 Resolve the tenant by hostname (`<slug>.novi.app` and custom domains) (gateway resolves `request.tenant` from the Host header; unknown → 404, suspended → 503; verified with acme/beta)
-- [ ] P1.2.3 "Bring your own Odoo" registration: URL + DB + connection test
-- [~] P1.2.4 Internal admin API: list, get, update, change status *(partly: CLI `services/gateway/src/tenants/cli.ts add|remove|list`, used by the provisioner; an HTTP admin API comes with the admin console P7.1)*
+- [-] P1.2.3 "Bring your own Odoo" registration *(deferred to Phase 7, D-32: no customer has asked; the registry already accepts any Odoo URL via the CLI)*
+- [x] P1.2.4 Internal admin: list, add, remove tenants (`services/gateway/src/tenants/cli.ts`) and sign-ups (`services/provisioner/src/cli.ts`) *(an HTTP admin API comes with the admin console P7.1)*
 
 **Done when:** requests are routed to the correct tenant context by hostname.
 
@@ -273,17 +273,17 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P1.8 RPC proxy
 - [x] P1.8.1 Proxy `/api/rpc/*` → Odoo `/web/dataset/*`, `/web/action/*`, `/mail/*`, file routes (same-origin reverse proxy of the Odoo routes the app uses (`/web`, `/json/2`, `/mail`, `/report`, `/odoo`, `/websocket`) to each tenant's own Odoo; Host kept, X-Forwarded-* set)
 - [x] P1.8.2 Allow-list of routes and methods (block `/web/database/*`, private methods) (allow-list by route prefix; `/web/database/*`, `/jsonrpc`, `/xmlrpc` unreachable; Odoo still enforces method access)
-- [ ] P1.8.3 Rate limiting per user and per tenant
-- [ ] P1.8.4 Audit log for writes (model, method, ids, user, timestamp)
+- [-] P1.8.3 Rate limiting per user and per tenant *(deferred to P7.7/P7.8, D-32: sign-up and reset are limited per IP; login by Odoo's cooldown; per-account limits against IP-rotating attacks and per-tenant API quotas need load data first)*
+- [-] P1.8.4 Audit log for writes *(deferred to P7.9, D-32: Odoo already records who changed what (`write_uid`/`write_date`, chatter field tracking); a separate gateway log only if a compliance requirement asks for it)*
 - [x] P1.8.5 Streaming for file downloads/uploads (no buffering in memory) (bodies streamed through untouched by reply-from: no JSON re-parsing, uploads not buffered)
 - [x] P1.8.6 Websocket relay for `/websocket` (vault mode) (websocket upgrade piped to the tenant's Odoo with Host/Origin kept (D-17); verified: live notification through the gateway for acme, and in dev via Vite)
 
 **Done when:** all contract tests also pass when run **through** the gateway.
 
 ### P1.9 Metadata cache
-- [ ] P1.9.1 Cache `get_views`, `load_menus` and translations keyed by tenant + uid + lang + company + Odoo version
-- [ ] P1.9.2 Invalidate on module install/upgrade (version bump) and on a manual purge
-- [ ] P1.9.3 Measure: target a cache-hit view load in < 50 ms
+- [-] P1.9.1 Cache `get_views`, `load_menus`, translations *(moved to P2.16.5, D-32: measure first (Musk step 3); the browser already caches them per session with TanStack Query)*
+- [-] P1.9.2 Invalidate on module install/upgrade and manual purge *(moved with P1.9.1 to P2.16.5)*
+- [-] P1.9.3 Measure: target a cache-hit view load in < 50 ms *(moved: the measurement is P2.16.2's performance budget)*
 
 **Done when:** repeat view loads are served from cache, and invalidation is proven by a test.
 
@@ -320,7 +320,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** every menu of every installed app is reachable and deep links survive a reload.
 
 ### P1.12 Shell: user context
-- [~] P1.12.1 User menu: profile, preferences (lang, tz), API key management link, logout *(partly: sign-out + theme toggle exist; profile/preferences/API-key screen deferred until a user needs it)*
+- [-] P1.12.1 User menu: profile, preferences (lang, tz), API keys, logout *(sign-out done; preferences moved to P2.10.9, D-32: they are Odoo's own user-preferences form, which the generic form view will render, so no bespoke screen)*
 - [x] P1.12.2 Multi-company switcher (`allowed_company_ids` in context) (top-bar switcher, shown only with >1 company; `allowed_company_ids` on every call + Odoo's `cids` cookie; verified live: Odoo returns only the active company's records)
 - [-] P1.12.3 Translations loaded and applied, with a language switcher *(deferred: only English is installed; build the switcher when a second language exists)*
 - [-] P1.12.4 Notifications/toast centre *(deferred to P3.8/P3.9: nothing sends notifications until the live-update bus exists)*
@@ -331,7 +331,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 ### P1.13 Command palette (⌘K)
 - [x] P1.13.1 Search menus and actions (type anywhere, ⌘K/Ctrl+K or the top-bar search button; apps + every menu by full path; word matching instead of fuzzy; D-24)
 - [x] P1.13.2 Search records (global `web_name_search` across key models) (Odoo `web_name_search` over contacts, sales/purchase orders, invoices, leads, products, employees; Odoo's model names as headings; skips models not installed or not readable; 250 ms debounce; opens `/record/:model/:id`; verified live)
-- [ ] P1.13.3 Recent items and quick commands (new invoice, new lead…)
+- [-] P1.13.3 Recent items and quick commands *(moved to P2.8.10, D-32: "new invoice" needs the form view)*
 
 **Done when:** ⌘K opens any menu or record in ≤ 3 keystrokes after typing.
 
@@ -344,9 +344,9 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** a user can log in with Google into a tenant.
 
 ### P1.15 Apps per plan
-- [ ] P1.15.1 Plan → module list mapping (config)
-- [ ] P1.15.2 Install/uninstall via `button_immediate_install` / `button_immediate_uninstall` RPC as a provisioner job
-- [ ] P1.15.3 Invalidate the metadata cache after module changes
+- [-] P1.15.1 Plan → module list mapping *(moved to P7.3.1, D-32: one plan exists until billing; its modules are `NOVI_TENANT_MODULES` in the template)*
+- [-] P1.15.2 Install/uninstall as a provisioner job *(moved to P7.3.4 with plan changes; workspace admins can already install apps through Odoo's Apps screen)*
+- [-] P1.15.3 Invalidate the metadata cache after module changes *(moved with the cache to P2.16.5)*
 
 **Done when:** a plan upgrade installs the new apps and their menus appear.
 
@@ -443,6 +443,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.8.7 Button execution: `type="object"` (call_button) and `type="action"`; handle `confirm=` attr
 - [ ] P2.8.8 Action stack / breadcrumbs, restored from the URL
 - [ ] P2.8.9 Odoo error dialog for user actions (UserError/ValidationError/AccessError text as sent by Odoo; RedirectWarning button opens its action) (ex-P1.12.5)
+- [ ] P2.8.10 Palette quick commands (new invoice, new lead…) and recent items (ex-P1.13.3)
 
 **Done when:** every button in the demo sales/accounting flows works.
 
@@ -467,6 +468,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.10.6 Edit-mode UX: always editable, save/discard bar when dirty, autosave on leave (configurable)
 - [ ] P2.10.7 Record pager (prev/next within the list)
 - [ ] P2.10.8 Chatter slot (drawer placeholder until P3.7)
+- [ ] P2.10.9 User preferences = Odoo's own preferences form (`res.users` preferences view: language, timezone, signature, API keys, "log out from all devices") opened from the user menu through the generic form view (ex-P1.12.1)
 
 **Done when:** the sale order, partner, product and employee forms render and save correctly.
 
@@ -529,6 +531,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.16.2 Performance budget: list open < 1 s, form open < 800 ms (p75, staging)
 - [ ] P2.16.4 Visual regression snapshots of Storybook (ex-P1.10.5)
 - [ ] P2.16.3 Engine developer docs: how to write an override and a widget
+- [ ] P2.16.5 Metadata cache (`get_views`, `load_menus`, translations) keyed by tenant + uid + lang + company + modules version, invalidated on module install/upgrade, only if P2.16.2 shows view loads missing the budget (ex-P1.9, P1.15.3)
 
 **Done when:** the parity suite is green and the docs are published.
 
