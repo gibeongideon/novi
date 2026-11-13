@@ -5,3 +5,4 @@ export * from "./format.js";
 export * from "./menus.js";
 export * from "./recordSearch.js";
 export * from "./session.js";
+export * from "./signup.js";

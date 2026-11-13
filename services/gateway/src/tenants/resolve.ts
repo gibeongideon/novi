@@ -15,14 +15,20 @@ export function tenantResolver(config: GatewayConfig) {
   return (host: string | undefined): Tenant | null => registry.byHost(host) ?? config.defaultTenant ?? null;
 }
 
-/** Attaches `request.tenant`; unknown or suspended tenants never reach Odoo. */
-export function registerTenancy(app: FastifyInstance, resolve: (host?: string) => Tenant | null): void {
+/**
+ * Attaches `request.tenant` (null on the platform host, e.g. the sign-up pages). Requests that
+ * reach Odoo (proxied routes, sign-in) require an active tenant: unknown → 404, suspended → 503.
+ */
+export function registerTenancy(
+  app: FastifyInstance,
+  resolve: (host?: string) => Tenant | null,
+  needsTenant: (url: string) => boolean,
+): void {
   app.decorateRequest("tenant", null);
   app.addHook("onRequest", async (req: FastifyRequest, reply) => {
-    if (req.url === "/healthz" || req.url === "/readyz") return;
-    const tenant = resolve(req.headers.host);
-    if (!tenant) return reply.code(404).send({ status: "unknown_tenant" });
-    if (tenant.status !== "active") return reply.code(503).send({ status: "suspended" });
-    req.tenant = tenant;
+    req.tenant = resolve(req.headers.host);
+    if (!needsTenant(req.url)) return;
+    if (!req.tenant) return reply.code(404).send({ status: "unknown_tenant" });
+    if (req.tenant.status !== "active") return reply.code(503).send({ status: "suspended" });
   });
 }

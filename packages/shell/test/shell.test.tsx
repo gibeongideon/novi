@@ -357,3 +357,80 @@ describe("NOVI app identity (D-23)", () => {
     expect(appIdentity(node("custom_module.root")).tone).toBe(a.tone);
   });
 });
+
+/** The gateway's platform API (P1.3) as the sign-up pages see it. */
+function fakePlatform(progress: Record<string, unknown> = {}) {
+  const posted: unknown[] = [];
+  const reply = (body: unknown, status = 200) =>
+    Promise.resolve(new Response(JSON.stringify(body), { status }));
+  vi.stubGlobal("fetch", (url: string, init?: RequestInit) => {
+    if (url === "/api/signup/config")
+      return reply({ enabled: true, workspaceUrl: "http://{slug}.localhost:8080", countries: ["KE", "UG"] });
+    if (url.startsWith("/api/signup/slug")) {
+      const q = new URLSearchParams(url.split("?")[1]);
+      const slug = q.get("slug") ?? (q.get("company") ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return reply({ slug, valid: true, available: slug !== "taken" });
+    }
+    if (url === "/api/signup" && init?.method === "POST") {
+      const body = JSON.parse(String(init.body)) as { slug?: string };
+      posted.push(body);
+      return body.slug === "taken"
+        ? reply({ status: "invalid", field: "slug_taken", suggestion: "taken42" }, 409)
+        : reply({ status: "verify", id: "s1" }, 202);
+    }
+    if (url === "/api/signup/s1") return reply({ company: "Acme", slug: "acme", steps: [], ...progress });
+    return reply({ status: "not_found" }, 404);
+  });
+  return posted;
+}
+
+describe("sign-up (P1.3)", () => {
+  it("links to sign-up from the login page when the platform allows it", async () => {
+    fakePlatform();
+    renderShell(fakeOdoo());
+    await userEvent.click(await screen.findByRole("link", { name: "Create your workspace" }));
+    expect(await screen.findByRole("heading", { name: "Create your workspace" })).toBeTruthy();
+    vi.unstubAllGlobals();
+  });
+
+  it("previews the address from the company name and asks to check email", async () => {
+    const posted = fakePlatform();
+    renderShell(fakeOdoo(), "/signup");
+    await userEvent.type(await screen.findByLabelText("Company name"), "Acme");
+    expect(await screen.findByText("acme.localhost:8080")).toBeTruthy();
+    await userEvent.type(screen.getByLabelText("Work email"), "owner@acme.test");
+    await userEvent.type(screen.getByLabelText(/Choose a password/), "Strong-Pass-2026");
+    await userEvent.click(screen.getByRole("button", { name: "Create workspace" }));
+    expect(await screen.findByRole("heading", { name: "Check your email" })).toBeTruthy();
+    expect(posted[0]).toMatchObject({
+      company: "Acme",
+      email: "owner@acme.test",
+      country: "KE",
+      slug: "acme",
+    });
+    vi.unstubAllGlobals();
+  });
+
+  it("offers the server's suggestion when the address is taken", async () => {
+    fakePlatform();
+    renderShell(fakeOdoo(), "/signup");
+    await userEvent.type(await screen.findByLabelText("Company name"), "Taken");
+    await screen.findByText(/taken\.localhost:8080/);
+    await userEvent.type(screen.getByLabelText("Work email"), "a@b.co");
+    await userEvent.type(screen.getByLabelText(/Choose a password/), "Strong-Pass-2026");
+    await userEvent.click(screen.getByRole("button", { name: "Create workspace" }));
+    await userEvent.click(await screen.findByRole("button", { name: "taken42" }));
+    expect(screen.getByLabelText("Workspace address")).toHaveProperty("value", "taken42");
+    vi.unstubAllGlobals();
+  });
+
+  it("shows provisioning progress, then the way into the new workspace", async () => {
+    fakePlatform({ status: "active", steps: ["clone_db"], url: "http://acme.localhost:8080" });
+    renderShell(fakeOdoo(), "/signup/status/s1");
+    expect(await screen.findByRole("heading", { name: "Your workspace is ready" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open workspace" }).getAttribute("href")).toBe(
+      "http://acme.localhost:8080",
+    );
+    vi.unstubAllGlobals();
+  });
+});

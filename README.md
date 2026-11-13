@@ -39,7 +39,7 @@ pnpm dev                         # local server with live reload (see below)
 
 Stop with Ctrl+C. Odoo keeps running in Docker (`pnpm odoo:down` to stop it).
 
-**Multi-tenant (production-like) run:** create customers with `bash tools/spikes/provision-tenant.sh create acme "Acme Ltd" KE owner@acme.test 'Pass…'` (≈10 s each, registers itself with the gateway), then `pnpm serve` and open `http://acme.localhost:8080`. Each customer has its own Odoo, database and users.
+**Multi-tenant (production-like) run:** create customers with `TENANT_ADMIN_PASSWORD='Pass…' bash infra/provisioning/tenant.sh create acme "Acme Ltd" KE owner@acme.test` (≈10 s each, registers itself with the gateway), then `pnpm serve` and open `http://acme.localhost:8080`. Each customer has its own Odoo, database and users.
 
 Local services: Odoo http://localhost:18069 (admin / admin) · Mailpit http://localhost:8025
 

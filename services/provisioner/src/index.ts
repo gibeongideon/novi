@@ -1,13 +1,6 @@
-/**
- * Provisioner worker skeleton. Real job steps arrive in P1.4; the P0.11 spike lives in tools/spikes.
- */
-export const PROVISIONER_STEPS = [
-  "create-db",
-  "create-filestore",
-  "init-modules",
-  "start-instance",
-  "bootstrap-admin",
-  "register",
-] as const;
-
-export type ProvisionerStep = (typeof PROVISIONER_STEPS)[number];
+/** @novi/provisioner: sign-up store, provisioning worker and platform mail (P1.3/P1.4). */
+export * from "./config.js";
+export * from "./mailer.js";
+export * from "./secretBox.js";
+export * from "./signups.js";
+export { freePort, provision, type ScriptRunner, tick, type WorkerDeps } from "./worker.js";

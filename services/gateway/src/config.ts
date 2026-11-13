@@ -17,6 +17,8 @@ export interface GatewayConfig {
   webDist?: string;
   /** How long a password-OK-but-needs-2FA login waits for its code. */
   pendingTtlMs: number;
+  /** Hosts that serve the sign-up pages (the platform, not a workspace). */
+  platformHosts?: string[];
 }
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
@@ -40,5 +42,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): GatewayConfig 
           },
     webDist: env.WEB_DIST,
     pendingTtlMs: Number(env.PENDING_2FA_TTL_MS ?? 5 * 60_000),
+    platformHosts: (env.PLATFORM_HOSTS ?? "localhost").split(",").map((h) => h.trim()),
   };
 }

@@ -19,6 +19,7 @@ cat <<'MSG'
     storybook  http://localhost:6006   (ready ~15 s after start)
     progress   http://localhost:4321
     odoo       http://localhost:18069  (admin / admin)
+    sign-up    http://localhost:5173/signup  (emails in Mailpit http://localhost:8025)
 
 MSG
-exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/ui --filter=@novi/gateway --filter=@novi/progress-dashboard "$@"
+exec pnpm exec turbo run dev --parallel --filter=@novi/web --filter=@novi/ui --filter=@novi/gateway --filter=@novi/provisioner --filter=@novi/progress-dashboard "$@"

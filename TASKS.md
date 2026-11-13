@@ -217,27 +217,27 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** requests are routed to the correct tenant context by hostname.
 
 ### P1.3 Sign-up flow
-- [ ] P1.3.1 Sign-up page: company name, admin name, email, password, country, language, plan/trial
-- [ ] P1.3.2 Slug generation and availability check
-- [ ] P1.3.3 Email verification (token link) before provisioning starts
-- [ ] P1.3.4 Bot protection (captcha / rate limit per IP)
-- [ ] P1.3.5 Progress screen that polls provisioning status
-- [ ] P1.3.6 Welcome email with the tenant URL and a one-time auto-login link
+- [x] P1.3.1 Sign-up page: company name, email, password, country, workspace address *(D-28: admin name, language and plan/trial deleted: Odoo's user name is the email until the owner edits it; English only until the language switcher; one starter plan until billing in P7)*
+- [x] P1.3.2 Slug generation and availability check *(server-side `slugify` is the one naming rule; live preview + 409 with a suggestion)*
+- [x] P1.3.3 Email verification (token link) before provisioning starts *(password sealed with AES-256-GCM until provisioning, then wiped)*
+- [x] P1.3.4 Bot protection: 5 sign-ups per IP per hour *(captcha deleted, D-28: email verification already gates provisioning; add one only if abuse appears)*
+- [x] P1.3.5 Progress screen that polls provisioning status *(no email or internal error exposed)*
+- [x] P1.3.6 Welcome email with the tenant URL *(one-time auto-login link deleted, D-28: the owner just chose the password; a login token would be a second credential to secure)*
 
 **Done when:** a new user goes from the sign-up form to a verified, queued tenant.
 
 ### P1.4 Provisioner worker
-- [ ] P1.4.1 Job queue (BullMQ) with a step-based state machine, persisted per tenant
-- [ ] P1.4.2 Step: create the DB role and database (`tenant_<id>`) with least-privilege grants
-- [ ] P1.4.3 Step: create the filestore volume
-- [ ] P1.4.4 Step: run the module-init job (Odoo CLI) for the plan's modules, language and country
-- [ ] P1.4.5 Step: start the tenant Odoo compose project (`odoo-tenant` template)
-- [ ] P1.4.6 Step: wait for health, then bootstrap the admin user and company via RPC
-- [ ] P1.4.7 Step: store the encrypted service credentials, register the URL, set status `active`
-- [ ] P1.4.8 Idempotency: every step is safe to re-run
-- [ ] P1.4.9 Compensation / rollback for each step on failure; status `failed` + alert
-- [ ] P1.4.10 Admin action: retry a failed provisioning from its last step
-- [ ] P1.4.11 Template DB per (plan, country) + clone fast path from `tools/spikes/provision-tenant.sh` (D-18): template DBs owned by the platform role, guard against `REASSIGN OWNED` moving shared objects; rebuild templates on image/plan change
+- [x] P1.4.1 Job queue with a step-based state machine, persisted per tenant *(D-28: one JSON record per sign-up on disk, polled by one worker; BullMQ/Redis deleted until there is more than one worker)*
+- [x] P1.4.2 Step: create the DB role and database (`tenant_<id>`) with least-privilege grants
+- [x] P1.4.3 Step: create the filestore volume
+- [x] P1.4.4 Step: run the module-init job (Odoo CLI) for the plan's modules and country *(fast path clones the template instead; slow path for countries without a template)*
+- [x] P1.4.5 Step: start the tenant Odoo container *(one `docker run` per tenant with memory/CPU limits; a compose template is P1.5.1 if still needed)*
+- [x] P1.4.6 Step: wait for health, then bootstrap the admin user and company via RPC
+- [x] P1.4.7 Step: register the URL, set status `active` *(no service credentials to store since the vault was deleted, D-27)*
+- [x] P1.4.8 Idempotency: a retry or a run interrupted by a restart first destroys its leftovers, then re-runs the whole job (~10 s) *(per-step resume deleted: the whole job is cheaper than tracking it)*
+- [x] P1.4.9 Rollback on failure (container, volume, DB, role, files, gateway entry); status `failed` with the reason for operators *(alerting → P7 observability)*
+- [x] P1.4.10 Operator action: `provisioner cli retry <id|slug>` *(admin console UI → P7)*
+- [~] P1.4.11 Template DB per (plan, country) + clone fast path from `infra/provisioning/tenant.sh` (D-18): template DBs owned by the platform role, guard against `REASSIGN OWNED` moving shared objects; rebuild templates on image/plan change *(done: template, ownership guard, clone; open: automatic rebuild on image change)*
 
 **Done when:** sign-up results in an active tenant in < 5 min, and a forced failure rolls back cleanly.
 

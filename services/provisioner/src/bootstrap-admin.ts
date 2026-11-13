@@ -1,11 +1,13 @@
 /**
  * P0.11 step "bootstrap admin": turns a freshly initialised tenant DB into the customer's own
  * account using stock ORM calls only (company name/country/currency, admin name/login/password).
- * Usage: tsx src/bootstrap-admin.ts <url> <db> <company> <country-code> <admin-email> <admin-password>
+ * Usage: TENANT_ADMIN_PASSWORD=… tsx src/bootstrap-admin.ts <url> <db> <company> <country-code> <admin-email>
  */
 import { JsonRpcTransport, Orm } from "@novi/odoo-client";
 
-const [url, db, company, countryCode, email, password] = process.argv.slice(2);
+const [url, db, company, countryCode, email] = process.argv.slice(2);
+// from the environment, never argv (visible to every user via ps)
+const password = process.env.TENANT_ADMIN_PASSWORD;
 if (!url || !db || !company || !countryCode || !email || !password) {
   console.error(
     "usage: bootstrap-admin.ts <url> <db> <company> <country-code> <admin-email> <admin-password>",

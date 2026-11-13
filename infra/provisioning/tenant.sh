@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# P0.11 spike: provision an isolated tenant (own DB role + database + filestore + Odoo container)
+# Tenant provisioning (P1.4; proven in the P0.11 spike): provision an isolated tenant (own DB role + database + filestore + Odoo container)
 # from the stock image, and time every step. Mirrors the provisioner state machine (PLAN §2b).
 #
 # Fast path (D-16): clone a pre-initialised template database per (plan, country) instead of
 # installing modules for every sign-up. Seconds instead of minutes.
 #
-#   bash tools/spikes/provision-tenant.sh template starter KE          # build/refresh template (once)
-#   bash tools/spikes/provision-tenant.sh create acme "Acme Ltd" KE owner@acme.test 'S3cret!pass' [port]
-#   bash tools/spikes/provision-tenant.sh destroy acme
-#   bash tools/spikes/provision-tenant.sh destroy-template starter KE
+#   bash infra/provisioning/tenant.sh template starter KE          # build/refresh template (once)
+#   TENANT_ADMIN_PASSWORD='S3cret!pass' bash infra/provisioning/tenant.sh create acme "Acme Ltd" KE owner@acme.test [port]
+#   bash infra/provisioning/tenant.sh destroy acme
+#   bash infra/provisioning/tenant.sh destroy-template starter KE
+# Normally driven by the provisioner service (P1.4), which runs sign-ups through it.
 #
 # Env: NOVI_PLAN (default starter), NOVI_TENANT_MODULES, ODOO_IMAGE.
 # Uses the dev Postgres from infra/compose (pnpm odoo:up). Results: .cache/tenants/<id>/timings.json
@@ -136,8 +137,10 @@ if [ "$cmd" = destroy ]; then
   echo "destroyed $id"; exit 0
 fi
 [ "$cmd" = create ] || { echo "usage: $0 template|create|destroy|destroy-template ..." >&2; exit 2; }
-COMPANY="${3:?company}"; COUNTRY="${4:?country code}"; EMAIL="${5:?admin email}"; PASS="${6:?admin password}"
-PORT="${7:-18169}"
+COMPANY="${3:?company}"; COUNTRY="${4:?country code}"; EMAIL="${5:?admin email}"
+# the admin password comes from the environment, never argv (argv is visible to every user via ps)
+: "${TENANT_ADMIN_PASSWORD:?set TENANT_ADMIN_PASSWORD}"
+PORT="${6:-18169}"
 tpl_names "$PLAN" "$COUNTRY"
 FAST=false; db_exists "$TPL_DB" && FAST=true
 
@@ -188,11 +191,11 @@ for _ in $(seq 1 120); do curl --noproxy '*' -fsS "http://127.0.0.1:$PORT/web/he
 curl --noproxy '*' -fsS "http://127.0.0.1:$PORT/web/health" >/dev/null
 step start_instance
 
-(cd "$ROOT/tools/spikes" && pnpm exec tsx src/bootstrap-admin.ts "http://127.0.0.1:$PORT" "$DB" "$COMPANY" "$COUNTRY" "$EMAIL" "$PASS")
+(cd "$ROOT/services/provisioner" && pnpm exec tsx src/bootstrap-admin.ts "http://127.0.0.1:$PORT" "$DB" "$COMPANY" "$COUNTRY" "$EMAIL")
 step bootstrap_admin
 
 # register with the gateway (P1.2): <id>.localhost now reaches this tenant's own Odoo
-(cd "$ROOT" && pnpm exec tsx services/gateway/src/tenants/cli.ts add "$id" --host "$id.localhost" \
+(cd "$ROOT" && pnpm exec tsx services/gateway/src/tenants/cli.ts add "$id" --host "${TENANT_HOST:-$id.localhost}" \
   --odoo "http://127.0.0.1:$PORT" --db "$DB")
 step register_gateway
 

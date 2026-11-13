@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-13
+- [P1.3][P1.4] Self-service sign-up and provisioner (D-28): sign-up page with live workspace-address preview, email confirmation, progress page and welcome email; a separate provisioner process turns confirmed sign-ups into their own Odoo instance and database (~10 s from the template), rolls back cleanly on failure and can be retried by an operator. Login page links to sign-up on the platform host only. `pnpm dev` and `pnpm serve` now run the provisioner; the provisioning script moved to `infra/provisioning/tenant.sh`.
 - [P1.2.2] Multi-tenant gateway (D-27): tenant registry (host → each customer's own Odoo), same-origin reverse proxy with route allow-list and websocket, sign-in per tenant; session vault deleted. The provisioning spike registers/removes tenants; `pnpm serve` runs the production build on :8080 (`<tenant>.localhost:8080`); dev now goes through the gateway too. Verified with two isolated tenants (acme, beta).
 
 ### 2026-11-12

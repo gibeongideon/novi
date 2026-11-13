@@ -2,11 +2,14 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import fastifyStatic from "@fastify/static";
+import { loadKey, type Mailer, platformConfig, SignupStore, smtpMailer } from "@novi/provisioner";
 import Fastify from "fastify";
 
 import { registerAuthRoutes } from "./auth/routes.js";
 import { type GatewayConfig, loadConfig } from "./config.js";
 import { isProxied, registerProxy, registerWebsocketProxy } from "./proxy.js";
+import { registerSignupRoutes } from "./signup/routes.js";
+import { FileTenantRegistry } from "./tenants/registry.js";
 import { registerTenancy, tenantResolver } from "./tenants/resolve.js";
 
 export { type GatewayConfig, loadConfig } from "./config.js";
@@ -16,18 +19,29 @@ export { FileTenantRegistry, normalizeHost, type Tenant } from "./tenants/regist
  * NOVI gateway: per-tenant same-origin entry point (D-26, D-27).
  *   /healthz /readyz      liveness
  *   /api/auth/*           sign-in incl. Odoo 2FA, against the tenant's own Odoo
+ *   /api/signup*          self-service sign-up (platform host only, P1.3)
  *   Odoo routes           reverse-proxied to the tenant's Odoo (allow-list), websocket included
  *   everything else       the built web app (when WEB_DIST is set), SPA fallback
  */
-export async function buildServer(config: GatewayConfig = loadConfig()) {
+export async function buildServer(config: GatewayConfig = loadConfig(), deps: { mailer?: Mailer } = {}) {
   // trustProxy: behind Caddy/Vite, req.ip is the end user's IP (forwarded to Odoo)
   const app = Fastify({ logger: process.env.NODE_ENV !== "test", trustProxy: true });
   const resolve = tenantResolver(config);
 
   app.get("/healthz", async () => ({ status: "ok" }));
   app.get("/readyz", async () => ({ status: "ready" }));
-  registerTenancy(app, resolve);
+  registerTenancy(app, resolve, (url) => isProxied(url) || url.startsWith("/api/auth/"));
   registerAuthRoutes(app, config);
+  if (config.platformHosts?.length) {
+    const pc = platformConfig();
+    registerSignupRoutes(app, {
+      store: new SignupStore(pc.signupsDir),
+      key: loadKey(process.env, pc.devKeyFile),
+      mailer: deps.mailer ?? smtpMailer(),
+      registry: new FileTenantRegistry(config.tenantsFile),
+      platformHosts: config.platformHosts,
+    });
+  }
   await registerProxy(app);
   registerWebsocketProxy(app, resolve);
 

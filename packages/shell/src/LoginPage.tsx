@@ -1,6 +1,7 @@
-import { type LoginFailure, useSession } from "@novi/engine";
+import { type LoginFailure, useSession, useSignupConfig } from "@novi/engine";
 import { Button, Input, type MessageKey, useT } from "@novi/ui";
 import { type FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
 
 const MESSAGES: Record<LoginFailure, MessageKey> = {
   credentials: "wrongCredentials",
@@ -14,6 +15,7 @@ const MESSAGES: Record<LoginFailure, MessageKey> = {
 export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
   const t = useT();
   const { login, verifyCode, pending, loginError, resetLogin } = useSession();
+  const signup = useSignupConfig();
   const [form, setForm] = useState({ login: "", password: "", code: "", remember: true });
   const [challenge, setChallenge] = useState<string | null>(null);
 
@@ -119,6 +121,14 @@ export function LoginPage({ productName = "NOVI" }: { productName?: string }) {
           <Button type="submit" variant="primary" loading={pending}>
             {t("signIn")}
           </Button>
+          {signup.data?.enabled ? (
+            <p className="text-center text-sm text-text-muted">
+              {t("newHere")}{" "}
+              <Link to="/signup" className="font-medium text-primary hover:underline">
+                {t("createWorkspace")}
+              </Link>
+            </p>
+          ) : null}
         </form>
       )}
     </main>
