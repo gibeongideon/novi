@@ -32,6 +32,7 @@ tpl_names() { # plan cc -> TPL_DB TPL_VOL
   [[ "$p" =~ ^[a-z][a-z0-9]{1,20}$ && "$c" =~ ^[a-z]{2}$ ]] || { echo "bad plan/country" >&2; exit 2; }
   TPL_DB="novi_tpl_${p}_${c}"; TPL_VOL="novi-tpl-${p}-${c}-filestore"
 }
+image_id() { docker image inspect --format '{{.Id}}' "$IMAGE"; }
 db_exists() { [ "$(psql -c "SELECT 1 FROM pg_database WHERE datname='$1'")" = 1 ]; }
 
 write_conf() { # file role password db
@@ -57,7 +58,7 @@ CONF
 
 odoo_once() { # conf volume args...   (one-off Odoo CLI run)
   local conf="$1" vol="$2"; shift 2
-  docker run --rm -i --network "$NET" -v "$conf":/etc/odoo/odoo.conf:ro -v "$vol":/var/lib/odoo "$IMAGE" "$@"
+  docker run --rm -i --network "${ODOO_NET:-$NET}" -v "$conf":/etc/odoo/odoo.conf:ro -v "$vol":/var/lib/odoo "$IMAGE" "$@"
 }
 
 declare -A T; t0=0; last=0
@@ -104,6 +105,7 @@ if [ "$cmd" = template ]; then
   psql -c "ALTER DATABASE \"$TPL_DB\" OWNER TO \"$PLATFORM_ROLE\";" >/dev/null
   psql -c "ALTER DATABASE \"$TPL_DB\" WITH IS_TEMPLATE true ALLOW_CONNECTIONS false;" >/dev/null
   step freeze
+  image_id > "$DIR/image"  # the template is only valid for the image that built it
   SIZE=$(psql -c "SELECT pg_size_pretty(pg_database_size('$TPL_DB'));")
   L10N=$(grep -oE "l10n_[a-z_]+" "$DIR/init.log" | sort -u | head -3 | tr '\n' ' ')
   echo "==> template $TPL_DB ready in $(( ($(date +%s%3N) - t0) / 1000 ))s (db $SIZE; localisation: ${L10N:-generic})"
@@ -125,11 +127,16 @@ fi
 id="${2:-}"
 [[ "$id" =~ ^[a-z][a-z0-9]{1,30}$ ]] || { echo "tenant id must match ^[a-z][a-z0-9]{1,30}$" >&2; exit 2; }
 DB="tenant_${id}"; ROLE="tenant_${id}"; CT="novi-tenant-${id}"; VOL="novi-tenant-${id}-filestore"
+# own network per tenant (P1.5.4): the only other member is Postgres (alias "db"), so tenants have
+# no network path to each other, to the platform services or to the dev Odoo
+TNET="novi-tenant-${id}"
 DIR="$ROOT/.cache/tenants/$id"
 
 if [ "$cmd" = destroy ]; then
   docker rm -f "$CT" >/dev/null 2>&1 || true
   docker volume rm "$VOL" >/dev/null 2>&1 || true
+  docker network disconnect -f "$TNET" "$DBC" >/dev/null 2>&1 || true
+  docker network rm "$TNET" >/dev/null 2>&1 || true
   psql -c "DROP DATABASE IF EXISTS \"$DB\" WITH (FORCE);" >/dev/null
   psql -c "DROP ROLE IF EXISTS \"$ROLE\";" >/dev/null
   rm -rf "$DIR"
@@ -143,8 +150,21 @@ COMPANY="${3:?company}"; COUNTRY="${4:?country code}"; EMAIL="${5:?admin email}"
 PORT="${6:-18169}"
 tpl_names "$PLAN" "$COUNTRY"
 FAST=false; db_exists "$TPL_DB" && FAST=true
+# a template built by another Odoo image would give the tenant modules that don't match the code:
+# take the slow path and say how to rebuild (P1.4.11)
+if $FAST && [ "$(cat "$ROOT/.cache/templates/$TPL_DB/image" 2>/dev/null)" != "$(image_id)" ]; then
+  echo "    template $TPL_DB was built by another image; rebuild: tenant.sh template $PLAN $COUNTRY" >&2
+  FAST=false
+fi
 
 mkdir -p "$DIR"; chmod 700 "$DIR"
+# a tenant role may connect only to its own database (plus the empty maintenance DB "postgres", which
+# Odoo's dbfilter lookup needs): Postgres grants CONNECT to PUBLIC by default; tenant DBs revoke it
+# below, this covers every other database on the cluster (e.g. a demo or platform DB)
+psql -c "DO \$\$ DECLARE d text; BEGIN FOR d IN SELECT datname FROM pg_database WHERE datname NOT IN ('postgres','template0','template1') LOOP EXECUTE format('REVOKE CONNECT ON DATABASE %I FROM PUBLIC', d); END LOOP; END \$\$;" >/dev/null
+docker network create "$TNET" >/dev/null
+docker network connect --alias db "$TNET" "$DBC"
+export ODOO_NET="$TNET"
 clock_start
 echo "==> provisioning $id ($( $FAST && echo "fast path: clone $TPL_DB" || echo "slow path: no template for $PLAN/$COUNTRY" ))"
 DBPASS="$(openssl rand -hex 16)"
@@ -185,7 +205,7 @@ else
   step init_modules
 fi
 
-docker run -d --name "$CT" --network "$NET" --memory 1g --cpus 1 --restart unless-stopped \
+docker run -d --name "$CT" --network "$TNET" --memory 1g --cpus 1 --restart unless-stopped \
   -p "127.0.0.1:$PORT:8069" -v "$DIR/odoo.conf":/etc/odoo/odoo.conf:ro -v "$VOL":/var/lib/odoo "$IMAGE" >/dev/null
 for _ in $(seq 1 120); do curl --noproxy '*' -fsS "http://127.0.0.1:$PORT/web/health" >/dev/null 2>&1 && break; sleep 0.5; done
 curl --noproxy '*' -fsS "http://127.0.0.1:$PORT/web/health" >/dev/null

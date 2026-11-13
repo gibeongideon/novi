@@ -30,7 +30,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 | Phase | Tasks | Done | Status |
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
-| 1 Gateway, provisioning & shell | 17 | 4 | 🟦 |
+| 1 Gateway, provisioning & shell | 17 | 7 | 🟦 |
 | 2 Engine core | 16 | 0 | ⬜ |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
@@ -237,20 +237,20 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P1.4.8 Idempotency: a retry or a run interrupted by a restart first destroys its leftovers, then re-runs the whole job (~10 s) *(per-step resume deleted: the whole job is cheaper than tracking it)*
 - [x] P1.4.9 Rollback on failure (container, volume, DB, role, files, gateway entry); status `failed` with the reason for operators *(alerting → P7 observability)*
 - [x] P1.4.10 Operator action: `provisioner cli retry <id|slug>` *(admin console UI → P7)*
-- [~] P1.4.11 Template DB per (plan, country) + clone fast path from `infra/provisioning/tenant.sh` (D-18): template DBs owned by the platform role, guard against `REASSIGN OWNED` moving shared objects; rebuild templates on image/plan change *(done: template, ownership guard, clone; open: automatic rebuild on image change)*
+- [x] P1.4.11 Template DB per (plan, country) + clone fast path from `infra/provisioning/tenant.sh` (D-18): template DBs owned by the platform role, guard against `REASSIGN OWNED` moving shared objects; rebuild templates on image/plan change *(the template records the image that built it; with another image `create` takes the slow path and prints the rebuild command, so a stale template is never cloned)*
 
 **Done when:** sign-up results in an active tenant in < 5 min, and a forced failure rolls back cleanly.
 
 ### P1.5 Tenant infrastructure (Docker Compose)
-- [ ] P1.5.1 `odoo-tenant` compose template: Odoo service, filestore volume, `odoo.conf`, secrets file, restart policy
-- [ ] P1.5.2 Odoo config hardening: `list_db=False`, `dbfilter=^tenant_<id>$`, random `admin_passwd`, `proxy_mode`
-- [ ] P1.5.3 Separate HTTP and websocket (gevent) ports routed correctly
-- [ ] P1.5.4 Separate docker network per tenant: a tenant container can reach only its DB and the gateway
-- [ ] P1.5.5 Memory/CPU limits per plan tier (`mem_limit`, `cpus`)
-- [ ] P1.5.6 Caddy routing + wildcard TLS for tenant subdomains (DNS challenge)
-- [ ] P1.5.7 `platform` compose stack: web, gateway, provisioner, Redis, gateway Postgres
+- [-] P1.5.1 `odoo-tenant` compose template *(dropped, D-29: `infra/provisioning/tenant.sh` already defines the tenant (container, filestore volume, `odoo.conf` mode 644 in a 700 dir, `--restart unless-stopped`); a compose file per tenant would be a second definition)*
+- [x] P1.5.2 Odoo config hardening: `list_db=False`, `dbfilter=^tenant_<id>$`, random `admin_passwd`, `proxy_mode` *(verified live: database manager disabled and database RPC refused on the tenant; the gateway also never proxies `/web/database`)*
+- [-] P1.5.3 Separate HTTP and websocket (gevent) ports *(dropped, D-29: tenants run threaded (`workers = 0`), so Odoo serves the websocket on the HTTP port; verified 101 through Caddy → gateway → tenant. Needed only if a plan gets `workers > 0`)*
+- [x] P1.5.4 Separate docker network per tenant: a tenant container can reach only Postgres (alias `db`) *(the gateway reaches it through its loopback port; verified: no path to other tenants, the dev Odoo, Mailpit or any host port; a tenant's DB role can connect only to its own database: CONNECT revoked from PUBLIC on every other database)*
+- [x] P1.5.5 Memory/CPU limits: 1 GB, 1 CPU per tenant (one plan exists; per-tier values arrive with plans in P7)
+- [x] P1.5.6 Caddy TLS for tenant hosts: stock Caddy with **on-demand TLS** instead of a wildcard DNS challenge (D-29: no DNS plugin or credentials, custom domains work the same way); the gateway's `/api/tls/allowed` approves only active tenants and the platform host; routing stays in the gateway. `pnpm edge` runs it locally (https://acme.localhost:8443)
+- [-] P1.5.7 `platform` compose stack *(deferred to the MVP deployment, D-24 local-first; Redis and gateway Postgres dropped by D-27/D-28: the stack is Caddy, gateway (serves the web app) and provisioner)*
 
-**Done when:** two tenants run side by side in staging with no network path between them.
+**Done when:** two tenants run side by side in staging with no network path between them. *(verified locally with four tenants, staging deploy waits for the MVP, D-24)*
 
 ### P1.6 Auth bridge
 - [x] P1.6.1 Password login → Odoo `authenticate` → issue our own session (httpOnly JWT cookie + refresh) (same-domain mode: gateway checks the password with Odoo and hands the browser Odoo's own `session_id` cookie; NOVI's own JWT session arrives with the vault mode P1.7)

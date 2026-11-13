@@ -77,4 +77,27 @@ describe("routing", () => {
     );
     await app.close();
   });
+
+  it("allows TLS certificates only for active tenants and the platform host, never via the default tenant", async () => {
+    const file = tmpFile();
+    const reg = new FileTenantRegistry(file);
+    reg.upsert({ ...acme, hosts: ["acme.novi.app"] });
+    reg.upsert({ ...acme, slug: "beta", hosts: ["beta.novi.app"], db: "tenant_beta", status: "suspended" });
+    const app = await buildServer({
+      port: 0,
+      host: "127.0.0.1",
+      tenantsFile: file,
+      pendingTtlMs: 1000,
+      platformHosts: ["novi.app"],
+      defaultTenant: { ...acme, slug: "demo", hosts: [] },
+    });
+    const ask = async (domain: string) =>
+      (await app.inject({ url: `/api/tls/allowed?domain=${domain}` })).statusCode;
+    expect(await ask("acme.novi.app")).toBe(200);
+    expect(await ask("ACME.novi.app")).toBe(200);
+    expect(await ask("novi.app")).toBe(200);
+    expect(await ask("beta.novi.app")).toBe(404); // suspended
+    expect(await ask("attacker.example")).toBe(404); // would otherwise fall back to the default tenant
+    await app.close();
+  });
 });

@@ -28,7 +28,8 @@
     "changeset": "changeset",
     "prepare": "husky",
     "verify": "bash scripts/verify-local.sh",
-    "serve": "bash scripts/serve.sh"
+    "serve": "bash scripts/serve.sh",
+    "edge": "bash scripts/edge.sh"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",
