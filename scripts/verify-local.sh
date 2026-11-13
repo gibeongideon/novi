@@ -17,6 +17,7 @@ if $LIVE; then
   curl --noproxy '*' -fsS "$URL/web/health" >/dev/null || { echo "Odoo not healthy at $URL (pnpm odoo:logs)"; exit 1; }
   [ -f .cache/dev-credentials.json ] || bash infra/compose/seed-dev.sh
   echo "Odoo up at $URL"
+  step "Expression corpus (odoo-expr)"; bash packages/odoo-expr/corpus/harvest.sh
 fi
 
 step "Lint";       pnpm -s lint

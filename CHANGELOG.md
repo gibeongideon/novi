@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-13
+- [P2.1] `@novi/odoo-expr`: NOVI's own evaluator for the Python expressions in Odoo views (show/hide, read-only, required, domains, contexts, options). Checked against every expression in the installed Odoo views: 100% parse and 100% the same results as Odoo's own Python on 18,597 test cases.
 - [Phase 1] Closed (D-32): gate verified; gateway database, Redis and other unused infrastructure dropped; preferences, quick commands and metadata cache moved into Phase 2; real Google/Microsoft sign-in carried (waiting for OAuth apps). Phase 2 (engine core) started.
 - [P1.14][P1.16] Single sign-on through Odoo's own OAuth ("Continue with …" on the login page; link an account from the emailed reset/invitation page); workspaces are now invitation-only (security fix: tenants allowed public portal sign-up) and Odoo's built-in "Odoo.com Accounts" login is switched off. New live end-to-end suite: sign-up → email → own Odoo → sign in → menus, tenant isolation, SSO with a stand-in identity provider. Phase 1 gate checks all verified.
 - [P1.6] Sign-in complete (D-30): "Forgot password?" with NOVI's own reset pages (Odoo's emailed link opens NOVI, not Odoo); a clear message when Odoo's login cooldown kicks in; security fix: the gateway no longer believes a client-supplied IP, which let attackers dodge the cooldown; password rule (min 10) now enforced by every tenant's Odoo; tenants can send email. Logout and sliding session expiry verified live.

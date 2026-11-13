@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vitest run --passWithNoTests"
+    "lint": "eslint src test",
+    "test": "vitest run --passWithNoTests",
+    "corpus": "bash corpus/harvest.sh"
   }
 }
