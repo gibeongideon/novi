@@ -12,7 +12,7 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 2 — Engine core |
 | **In progress** | — |
-| **Next task** | `P2.2` domains (parse, evaluate, build, match locally), then `P2.3` arch parser (`odoo-meta`) |
+| **Next task** | `P2.3` arch parser (`odoo-meta`: views → NOVI view schema), then `P2.4` specification builder |
 | **Blockers** | P1.14.2 needs the platform's Google Cloud / Microsoft Entra OAuth client IDs |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
 | **Last updated** | 2026-11-13 |

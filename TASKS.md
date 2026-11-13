@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 1 | 🟦 |
+| 2 Engine core | 16 | 2 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -380,10 +380,10 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** the corpus passes 100% parsing and ≥ 99% evaluation parity.
 
 ### P2.2 `odoo-expr`: domains
-- [ ] P2.2.1 Parse domain strings and arrays (prefix `&`, `|`, `!` notation)
-- [ ] P2.2.2 Evaluate dynamic domains with record/context values
-- [ ] P2.2.3 Domain builder API (combine, AND/OR, normalise)
-- [ ] P2.2.4 Client-side domain matching for local filtering (e.g. kanban fold)
+- [x] P2.2.1 Parse domain strings and arrays (prefix `&`, `|`, `!` notation) *(`Domain.parse/from`, read exactly like Odoo 20's `Domain` class: implicit AND, TRUE/FALSE leaves, `None` → `False`, same errors)*
+- [x] P2.2.2 Evaluate dynamic domains with record/context values (`Domain.parse(expr, ctx)` through odoo-expr)
+- [x] P2.2.3 Domain builder API: `Domain.and/or`, `.not()`, `.toList()` (RPC), `.toString()` (Python text for `ir.filters`) *(same flattening, TRUE/FALSE absorption, operator inversion and De Morgan as Odoo; whole floats print as `0` not `0.0`, same meaning)*
+- [-] P2.2.4 Client-side domain matching for local filtering *(deferred until a view needs it, D-34: Odoo filters on the server and nothing NOVI renders filters locally yet)*
 
 **Done when:** domain tests cover every operator Odoo supports.
 

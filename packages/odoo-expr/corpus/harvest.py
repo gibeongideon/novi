@@ -13,6 +13,7 @@ import re
 from types import SimpleNamespace
 
 from lxml import etree
+from odoo.orm.domains import Domain
 from odoo.tools.safe_eval import datetime as s_datetime
 from odoo.tools.safe_eval import dateutil as s_dateutil
 from odoo.tools.safe_eval import safe_eval
@@ -73,6 +74,18 @@ def names_in(expr):
     return names, parent_attrs
 
 
+DOMAIN_KINDS = {"domain", "filter_domain"}
+
+
+def domain_oracle(value):
+    """How Odoo's own Domain class reads, prints and negates a domain value (P2.2)."""
+    try:
+        d = Domain(value)
+        return {"list": jsonable(list(d)), "repr": repr(list(d)), "not": jsonable(list(~d))}
+    except Exception as e:
+        return {"error": type(e).__name__}
+
+
 def jsonable(v):
     if isinstance(v, (list, tuple)):
         return [jsonable(x) for x in v]
@@ -98,7 +111,7 @@ def expressions(arch):
                 yield name, el.text
 
 
-seen, entries, skipped = set(), [], 0
+seen, entries, skipped, raw_domains = set(), [], 0, []
 views = env["ir.ui.view"].with_context(active_test=False).search([])  # noqa: F821
 for view in views:
     try:
@@ -129,11 +142,46 @@ for view in views:
                 ctx = dict(values, context=dict(context), uid=2, parent=SimpleNamespace(**parent))
                 ctx.update(datetime=s_datetime, time=s_time, relativedelta=s_dateutil.relativedelta.relativedelta)
                 try:
-                    sample["result"] = jsonable(safe_eval(expr.strip(), ctx))
+                    value = safe_eval(expr.strip(), ctx)
+                    sample["result"] = jsonable(value)
+                    if kind in DOMAIN_KINDS:
+                        sample["domain"] = domain_oracle(value)
+                        if len(raw_domains) < 3000 and not any(value == d for d in raw_domains[-50:]):
+                            raw_domains.append(value)
                 except Exception as e:  # Python refuses: no reference result for this sample
                     sample["error"] = type(e).__name__
             samples.append(sample)
         entry["samples"] = samples
         entries.append(entry)
 
-print("@@CORPUS@@" + json.dumps({"views": len(views), "unparsableArch": skipped, "entries": entries}) + "@@END@@")
+# every operator Odoo registers, plus negation/nesting shapes, answered by Odoo itself
+from odoo.orm.domains import CONDITION_OPERATORS, INTERNAL_CONDITION_OPERATORS  # noqa: E402
+
+synthetic = []
+for op in sorted(CONDITION_OPERATORS - INTERNAL_CONDITION_OPERATORS):
+    value = [("name", "=", "x")] if "any" in op else ([1, 2] if op in ("in", "not in", "child_of", "parent_of") else "x")
+    for shape in (
+        [("name", op, value)],
+        ["!", ("name", op, value)],
+        ["!", ("partner_id.name", op, value)],
+        ["|", ("name", op, value), "!", ("id", ">", 3)],
+    ):
+        synthetic.append({"input": jsonable(shape), "odoo": domain_oracle(shape)})
+for shape in (
+    [], True, False, [(1, "=", 1)], [(0, "=", 1)], ["&", (1, "=", 1), ("a", "=", 1)], ["|", (1, "=", 1), ("a", "=", 1)],
+    ["!", "|", ("a", "=", 1), ("b", "<", 2)], ["!", "!", ("a", "=", 1)], [("a", "=", None)], [("a", "in", ("x", "y"))],
+    ["&", "&", ("a", "=", 1), ("b", "=", 2), ("c", "=", 3)], ["|", "&", ("a", "=", 1), ("b", "=", 2), ("c", "=", 3)],
+    [("a", "=", 1), ("b", "=", 2), "|", ("c", "=", 3), ("d", "=", 4)], ["&", ("a", "=", 1)], [("a", "nope", 1)],
+    [("", "=", 1)], [("a", "any!", [])], [("a", "=")], ["x"], "a", [(2, "=", 1)],
+):
+    synthetic.append({"input": jsonable(shape), "odoo": domain_oracle(shape)})
+
+# combining domains the way Odoo does (AND/OR of neighbours in the corpus)
+pairs = []
+for a, b in zip(raw_domains, raw_domains[1:]):
+    try:
+        pairs.append({"a": jsonable(a), "b": jsonable(b), "and": jsonable(list(Domain.AND([a, b]))), "or": jsonable(list(Domain.OR([a, b])))})
+    except Exception:
+        pass
+
+print("@@CORPUS@@" + json.dumps({"views": len(views), "unparsableArch": skipped, "entries": entries, "domainPairs": pairs, "domainSynthetic": synthetic}) + "@@END@@")

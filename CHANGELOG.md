@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-13
+- [P2.2] Domains (Odoo's record filters) in `@novi/odoo-expr`: read from views with live record values, combined (AND/OR), negated and written back exactly as Odoo 20 does, checked against Odoo on every domain in the installed views, all 22 operators and 1,048 real combinations.
 - [P2.1] `@novi/odoo-expr`: NOVI's own evaluator for the Python expressions in Odoo views (show/hide, read-only, required, domains, contexts, options). Checked against every expression in the installed Odoo views: 100% parse and 100% the same results as Odoo's own Python on 18,597 test cases.
 - [Phase 1] Closed (D-32): gate verified; gateway database, Redis and other unused infrastructure dropped; preferences, quick commands and metadata cache moved into Phase 2; real Google/Microsoft sign-in carried (waiting for OAuth apps). Phase 2 (engine core) started.
 - [P1.14][P1.16] Single sign-on through Odoo's own OAuth ("Continue with …" on the login page; link an account from the emailed reset/invitation page); workspaces are now invitation-only (security fix: tenants allowed public portal sign-up) and Odoo's built-in "Odoo.com Accounts" login is switched off. New live end-to-end suite: sign-up → email → own Odoo → sign in → menus, tenant isolation, SSO with a stand-in identity provider. Phase 1 gate checks all verified.

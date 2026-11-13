@@ -1,4 +1,5 @@
 /** @novi/odoo-expr: evaluator for the Python expressions and domains Odoo puts in view arch. */
+export { Domain, DOMAIN_OPERATORS, DomainError, pyRepr } from "./domain.js";
 export {
   compile,
   type EvalContext,
