@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 4 | 🟦 |
+| 2 Engine core | 16 | 5 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -407,13 +407,13 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** specs for the demo DB match what the official client requests (spot-checked on 20 views). *(17 screens captured live from Odoo's own client in headless Chromium: identical apart from fields Odoo's JS widgets add (122, P2.13 input) and 5 one-label cases; and all 1,049 readable views read live with every expression resolved)*
 
 ### P2.5 Engine: record model
-- [ ] P2.5.1 `Record`: values, field metadata, evaluated modifiers, dirty tracking, validity
-- [ ] P2.5.2 `RecordList`: pagination, sort, selection, count limit
-- [ ] P2.5.3 `GroupedList`: lazy groups via `web_read_group`, fold/unfold, aggregates
-- [ ] P2.5.4 x2many sub-lists with local create/update/delete → command list (0,1,2,3,4,5,6 / `Command.*`)
-- [ ] P2.5.5 Change notification for React (subscribe/selectors), TanStack Query integration
+- [x] P2.5.1 `OdooRecord`: values as read + changes on top (setting a value back clears it), modifiers evaluated live (the arch decides, else field metadata), Odoo's required check (visible fields; 0/false are values), `web_save` values, save/discard, new records *(D-37)*
+- [x] P2.5.2 `RecordList`: pages (wrapping like Odoo's pager), sort toggle per field, selection of the visible page, count limit ("10000+")
+- [x] P2.5.3 `GroupedList`: `web_read_group` groups with count, aggregates and their domain (odoo-expr `Domain.and`), lazy unfold into records or sub-groups, groups Odoo already unfolded (kanban)
+- [x] P2.5.4 x2many lines (`X2ManyList`, lines are records with `parent`): add, edit, remove, link, clear, replace → CREATE/UPDATE/DELETE/UNLINK/LINK/CLEAR/SET computed from the final state, nested lines included
+- [x] P2.5.5 Change notification: one observable base (`version` + `subscribe`), `useModel` over `useSyncExternalStore`; `useRecord` (TanStack Query load, save refreshes cached lists), `useRecordList`
 
-**Done when:** unit tests cover all x2many command combinations.
+**Done when:** unit tests cover all x2many command combinations. *(every command alone, collapsing/cancelling pairs, clear/replace followed by edits, nested lines, discard; plus a live round-trip on the dev Odoo: what Odoo stores matches every edit)*
 
 ### P2.6 Engine: onchange & defaults
 - [ ] P2.6.1 New record: `onchange(values, [], spec)` → defaults

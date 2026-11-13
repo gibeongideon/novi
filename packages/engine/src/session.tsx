@@ -15,12 +15,24 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { type AuthClient, directAuth, LoginError, type LoginResult } from "./auth.js";
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { createFormatter, type CurrencyInfo, type Formatter, type LangParameters } from "./format.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
+import { type ListConfig, RecordList } from "./model/lists.js";
+import type { Observable, Rpc } from "./model/observable.js";
+import { OdooRecord, type RecordConfig } from "./model/record.js";
 import { modelLabels, type RecordGroup, SEARCHABLE_MODELS, searchRecords } from "./recordSearch.js";
 
 /** What the hooks need from a transport (JsonRpcTransport satisfies it). */
@@ -385,4 +397,55 @@ function toDict(value: unknown, ctx: Record<string, unknown>): Record<string, un
   } catch {
     return {};
   }
+}
+
+const noSubscribe = () => () => undefined;
+
+/** Re-renders when an engine model changes (P2.5.5): records, x2many lines, lists. */
+export function useModel<T extends Observable>(model: T | undefined): T | undefined {
+  useSyncExternalStore(model?.subscribe ?? noSubscribe, () => model?.version ?? 0);
+  return model;
+}
+
+/** The engine's RPC for the headless models (the session transport, with its context). */
+function useRpc(): Rpc {
+  const { transport } = useEngine();
+  return useCallback<Rpc>((model, method, call) => transport.call(model, method, call), [transport]) as Rpc;
+}
+
+/**
+ * One record, loaded with the view's specification and kept live (edits re-render). `save`
+ * also refreshes cached lists, so a list shows the saved values when the user goes back.
+ */
+export function useRecord(config: RecordConfig | undefined, id: number | undefined) {
+  const rpc = useRpc();
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: ["record", config?.model, id, JSON.stringify(config?.spec ?? {})],
+    enabled: !!config && id !== undefined,
+    queryFn: () => OdooRecord.load(rpc, config!, id!),
+    staleTime: 0,
+    gcTime: 0, // a record being edited is never served stale from cache
+  });
+  const record = useModel(query.data);
+  const save = useCallback(async () => {
+    const ok = (await record?.save()) ?? false;
+    if (ok) await client.invalidateQueries({ queryKey: ["list-view"] });
+    return ok;
+  }, [record, client]);
+  return { record, save, isPending: query.isPending && !!config, error: query.error };
+}
+
+/** One page of records, live (paging, sorting and selection re-render). */
+export function useRecordList(config: ListConfig | undefined) {
+  const rpc = useRpc();
+  const key = JSON.stringify(config ?? null);
+  // a new list only when what it shows changes; paging/sorting happen inside it
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const list = useMemo(() => (config ? new RecordList(rpc, config) : undefined), [key, rpc]);
+  const [error, setError] = useState<unknown>(null);
+  useEffect(() => {
+    list?.load().catch(setError);
+  }, [list]);
+  return { list: useModel(list), error };
 }
