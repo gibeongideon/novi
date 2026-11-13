@@ -205,6 +205,11 @@ function builtins(opts: EvalOptions): Record<string, PyValue> {
       const d = opts.today ?? new Date();
       return new PyDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
     }),
+    // Odoo's evaluation context also offers today's date as a string
+    current_date: (() => {
+      const d = opts.today ?? new Date();
+      return new PyDate(d.getFullYear(), d.getMonth() + 1, d.getDate()).strftime("%Y-%m-%d");
+    })(),
     relativedelta: fn(
       "relativedelta",
       (_, kw) =>
@@ -267,6 +272,11 @@ export function compile(expr: string): Node {
 
 /** Evaluates an arch expression. Throws ExprSyntaxError / ExprError. */
 export function evaluate(expr: string, ctx: EvalContext = {}, opts: EvalOptions = {}): PyValue {
+  return evaluateNode(compile(expr), ctx, opts, expr);
+}
+
+/** Evaluates an already-parsed expression (or one part of it, e.g. one value of a dict). */
+export function evaluateNode(node: Node, ctx: EvalContext = {}, opts: EvalOptions = {}, expr = ""): PyValue {
   const base = builtins(opts);
   const run = (n: Node): PyValue => {
     switch (n.t) {
@@ -357,7 +367,7 @@ export function evaluate(expr: string, ctx: EvalContext = {}, opts: EvalOptions 
       }
     }
   };
-  return run(compile(expr));
+  return run(node);
 }
 
 /** Truthiness of an expression (`invisible`, `readonly`, `required`, `column_invisible`). */

@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-13
+- [P2.4] Specification builder: NOVI now asks Odoo for exactly the fields a screen needs, in one call, the same way Odoo's own client does (checked against the official client and on every view live). [P2.9.9] First visible engine screen: every menu with a list view shows its records through NOVI's own engine (Odoo's columns, labels, colours and show/hide rules, user's number and date formats); click a row to open it. [P2.13.15] `useFormat`. Fixed: rebuilding the web app no longer leaves a running `pnpm serve` showing a blank page.
 - [P2.3] `@novi/odoo-meta`: Odoo's form, list, kanban and search views are read into NOVI's own view schema (meaning, not Odoo's markup), with field details merged in. All 1,305 views of the dev Odoo parse without losing a field. Odoo test data is now refreshed only when the dev Odoo changes (verify stays fast).
 - [P2.2] Domains (Odoo's record filters) in `@novi/odoo-expr`: read from views with live record values, combined (AND/OR), negated and written back exactly as Odoo 20 does, checked against Odoo on every domain in the installed views, all 22 operators and 1,048 real combinations.
 - [P2.1] `@novi/odoo-expr`: NOVI's own evaluator for the Python expressions in Odoo views (show/hide, read-only, required, domains, contexts, options). Checked against every expression in the installed Odoo views: 100% parse and 100% the same results as Odoo's own Python on 18,597 test cases.

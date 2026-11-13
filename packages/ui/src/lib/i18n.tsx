@@ -116,6 +116,12 @@ export const en = {
   passwordChanged: "Your password has been changed. Sign in with your new password.",
   backToSignIn: "Back to sign in",
   or: "or",
+  yes: "Yes",
+  recordCount: "{n} records",
+  recordCountOne: "1 record",
+  noRecords: "Nothing here yet.",
+  previewNote:
+    "Read-only preview from NOVI's own engine. Sorting, editing and the other views arrive with Phase 2.",
   continueWith: "Continue with {name}",
   ssoNotLinked:
     "That sign-in isn't linked to an account in this workspace. Ask your administrator for an invitation, or open your invitation or password-reset email and choose it there.",

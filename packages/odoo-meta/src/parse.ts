@@ -437,6 +437,16 @@ function parseKanban(root: XmlElement, c: Ctx): KanbanSchema {
   };
   if (cardEl) walk(cardEl, "main", false);
 
+  // fields read by the templates' QWeb expressions (`record.<field>.value`), not by <field> tags
+  const refs = new Set<string>();
+  const scan = (el: XmlElement) => {
+    for (const [k, v] of Object.entries(el.attrs))
+      if (k.startsWith("t-")) for (const m of v.matchAll(/\brecord\.([A-Za-z_]\w*)/g)) refs.add(m[1]!);
+    elements(el).forEach(scan);
+  };
+  for (const el of elements(root)) if (el.tag === "templates" || el.tag === "card") scan(el);
+  const templateFields = [...refs].filter((f) => fieldsOf(c)[f] && !extraFields.includes(f));
+
   // roles: by widget, then by type; one title (first emphasised value, else name/display_name)
   const all = [...card.main, ...card.aside, ...card.footer].filter((n): n is FieldNode => n.type === "field");
   for (const f of all) {
@@ -476,6 +486,7 @@ function parseKanban(root: XmlElement, c: Ctx): KanbanSchema {
     archivable: flag(a.archivable),
     progressbar,
     extraFields,
+    templateFields,
     card,
     hasMenu,
   } as KanbanSchema);

@@ -250,6 +250,8 @@ export interface KanbanSchema extends ViewBase {
   progressbar?: { field: string; colors: Record<string, string>; sumField?: string };
   /** Fields the card needs loaded, declared outside the template. */
   extraFields: string[];
+  /** Fields the card templates read without a `<field>` tag (`record.street.value` in `t-out`/`t-if`). */
+  templateFields: string[];
   /** The card by section; field `role` says what each value is for. */
   card: Record<"main" | "aside" | "footer", (FieldNode | ButtonNode | WidgetNode)[]>;
   /** The card has an actions menu (`t-name="menu"`). */

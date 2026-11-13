@@ -58,10 +58,14 @@ export async function buildServer(config: GatewayConfig = loadConfig(), deps: { 
   registerWebsocketProxy(app, resolve);
 
   if (config.webDist && existsSync(join(config.webDist, "index.html"))) {
-    await app.register(fastifyStatic, { root: config.webDist, wildcard: false });
-    // client-side routes (/apps/…, /action/…) get the app shell
+    // files are looked up on each request, so rebuilding the web app never strands a running gateway
+    await app.register(fastifyStatic, { root: config.webDist, wildcard: true });
+    // client-side routes (/apps/…, /action/…) get the app shell; a missing asset is a real 404
     app.setNotFoundHandler((req, reply) =>
-      req.method === "GET" && !req.url.startsWith("/api/") && !isProxied(req.url)
+      req.method === "GET" &&
+      !req.url.startsWith("/api/") &&
+      !req.url.startsWith("/assets/") &&
+      !isProxied(req.url)
         ? reply.type("text/html").sendFile("index.html")
         : reply.code(404).send({ status: "not_found" }),
     );

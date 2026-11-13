@@ -265,6 +265,9 @@ importers:
       '@novi/ui':
         specifier: workspace:*
         version: link:../ui
+      '@novi/views':
+        specifier: workspace:*
+        version: link:../views
       lucide-react:
         specifier: ^0.468.0
         version: 0.468.0(react@18.3.1)
@@ -402,6 +405,9 @@ importers:
       '@novi/fields':
         specifier: workspace:*
         version: link:../fields
+      '@novi/odoo-expr':
+        specifier: workspace:*
+        version: link:../odoo-expr
       '@novi/odoo-meta':
         specifier: workspace:*
         version: link:../odoo-meta
@@ -461,6 +467,12 @@ importers:
       '@novi/odoo-client':
         specifier: workspace:*
         version: link:../../packages/odoo-client
+      '@novi/odoo-expr':
+        specifier: workspace:*
+        version: link:../../packages/odoo-expr
+      '@novi/odoo-meta':
+        specifier: workspace:*
+        version: link:../../packages/odoo-meta
       '@novi/provisioner':
         specifier: workspace:*
         version: link:../../services/provisioner

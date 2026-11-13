@@ -6,6 +6,7 @@ export {
   type EvalOptions,
   evaluate,
   evaluateBool,
+  evaluateNode,
   ExprError,
   isTuple,
   PyDate,
@@ -17,4 +18,5 @@ export {
   truthy,
   tuple,
 } from "./evaluate.js";
+export { type ReferencedNames, referencedNames } from "./names.js";
 export { type BinOp, type CmpOp, ExprSyntaxError, type Node, parse } from "./parse.js";

@@ -8,12 +8,15 @@
     "test": "vitest run",
     "test:update": "vitest run -u",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint test"
+    "lint": "eslint test",
+    "capture-specs": "node scripts/capture-client-specs.mjs"
   },
   "dependencies": {
     "@novi/engine": "workspace:*",
     "@novi/gateway": "workspace:*",
     "@novi/odoo-client": "workspace:*",
+    "@novi/odoo-expr": "workspace:*",
+    "@novi/odoo-meta": "workspace:*",
     "@novi/provisioner": "workspace:*"
   },
   "devDependencies": {

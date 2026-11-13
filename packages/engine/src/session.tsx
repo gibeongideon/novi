@@ -4,6 +4,8 @@
  * session cookie is Odoo's own. Gateway mode later swaps the transport, not these hooks.
  */
 import { SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
+import { Domain, evaluate, type PyValue } from "@novi/odoo-expr";
+import { buildSpec, type ListSchema, type ModelsInfo, parseView } from "@novi/odoo-meta";
 import {
   MutationCache,
   QueryCache,
@@ -13,10 +15,11 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { type AuthClient, directAuth, LoginError, type LoginResult } from "./auth.js";
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
+import { createFormatter, type CurrencyInfo, type Formatter, type LangParameters } from "./format.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
 import { modelLabels, type RecordGroup, SEARCHABLE_MODELS, searchRecords } from "./recordSearch.js";
 
@@ -28,6 +31,8 @@ export interface SessionTransport {
   loadMenus(lang?: string): Promise<Record<string, unknown>>;
   loadAction<T = Record<string, unknown>>(actionId: number | string): Promise<T>;
   setContext(patch: Record<string, unknown>): void;
+  /** `/web/webclient/translations` (lang_parameters for formatting); optional for test fakes. */
+  translations?<T = unknown>(lang?: string): Promise<T>;
   call<T = unknown>(
     model: string,
     method: string,
@@ -264,4 +269,120 @@ export function useRecordName(model: string | undefined, id: number | undefined)
       return rec?.display_name ?? null;
     },
   });
+}
+
+/** Odoo's own defaults, used until the user's language settings have loaded. */
+const DEFAULT_LANG: LangParameters = {
+  code: "en_US",
+  direction: "ltr",
+  date_format: "%m/%d/%Y",
+  time_format: "%H:%M:%S",
+  decimal_point: ".",
+  thousands_sep: ",",
+  grouping: "[3,0]",
+};
+
+/**
+ * The formatter for the signed-in user (P2.13.15): their language's separators and date format,
+ * their timezone and the companies' currencies, all from Odoo. Every widget formats through it.
+ */
+export function useFormat(): Formatter {
+  const { transport } = useEngine();
+  const session = useQuery({
+    queryKey: ["session"],
+    queryFn: () => transport.getSessionInfo(),
+    staleTime: Infinity,
+  });
+  const info = session.data;
+  const lang = (info?.user_context?.lang as string | undefined) ?? "en_US";
+  const translations = useQuery({
+    queryKey: ["lang-parameters", lang],
+    enabled: !!info && !!transport.translations,
+    queryFn: () => transport.translations!<{ lang_parameters?: LangParameters }>(lang),
+    staleTime: Infinity,
+  });
+  const params = translations.data?.lang_parameters;
+  const tz = info?.user_context?.tz as string | undefined;
+  const currencies = (info?.currencies ?? {}) as Record<string, CurrencyInfo>;
+  return useMemo(
+    () => createFormatter({ lang: params ?? DEFAULT_LANG, currencies, tz }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currencies is stable per session
+    [params, tz, info],
+  );
+}
+
+/** What the generic list renderer needs: the parsed view, the rows and the total count. */
+export interface ListViewData {
+  schema: ListSchema;
+  records: Record<string, unknown>[];
+  length: number;
+  /** User + action context and uid: what column-level expressions are evaluated with. */
+  evalContext: Record<string, unknown>;
+}
+
+/**
+ * An action's list view with its first page of records (P2.9 first slice): `get_views` →
+ * odoo-meta schema → specification → `web_search_read` with the action's domain and context.
+ * `null` when the action has no list view (kanban-only, client actions).
+ */
+export function useListView(actionId: number | undefined, limit = 80) {
+  const { transport } = useEngine();
+  const action = useAction(actionId);
+  const session = useQuery({
+    queryKey: ["session"],
+    queryFn: () => transport.getSessionInfo(),
+    staleTime: Infinity,
+  });
+  const a = action.data;
+  return useQuery({
+    queryKey: ["list-view", actionId, limit],
+    enabled: !!a && !!session.data,
+    queryFn: async (): Promise<ListViewData | null> => {
+      const listView = a!.views?.find(([, type]) => type === "list");
+      if (!a!.res_model || !listView) return null;
+      const model = a!.res_model;
+      const userContext = session.data?.user_context ?? {};
+      const base = { uid: session.data?.uid ?? 0, context: userContext as Record<string, never> };
+      const actionContext = toDict(a!.context, base);
+      const context = { ...userContext, ...actionContext };
+      const views = await transport.call<{ views: { list: { arch: string } }; models: ModelsInfo }>(
+        model,
+        "get_views",
+        {
+          kwargs: { views: [[listView[0], "list"]], options: { action_id: a!.id }, context },
+        },
+      );
+      const schema = parseView({ arch: views.views.list.arch, model, models: views.models }) as ListSchema;
+      const evalContext = { ...base, context: context as Record<string, never> };
+      const domain = Domain.parse(
+        ((a!.domain as string | PyValue[] | undefined) || []) as string | PyValue[],
+        evalContext,
+      ).toList();
+      const result = await transport.call<{ records: Record<string, unknown>[]; length: number }>(
+        model,
+        "web_search_read",
+        {
+          kwargs: {
+            domain,
+            specification: buildSpec(schema, { evalContext }),
+            limit,
+            context: { ...context, bin_size: true },
+          },
+        },
+      );
+      return { schema, records: result.records, length: result.length, evalContext };
+    },
+  });
+}
+
+/** An action's `context` (a Python dict as text, or already a dict) evaluated for the user. */
+function toDict(value: unknown, ctx: Record<string, unknown>): Record<string, unknown> {
+  if (value && typeof value === "object") return value as Record<string, unknown>;
+  if (typeof value !== "string" || !value.trim()) return {};
+  try {
+    const v = evaluate(value, ctx as never);
+    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+  } catch {
+    return {};
+  }
 }

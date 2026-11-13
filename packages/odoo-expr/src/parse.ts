@@ -131,7 +131,15 @@ function tokenize(src: string): Tok[] {
   return toks;
 }
 
-const KEYWORD_LITERALS: Record<string, null | boolean> = { None: null, True: true, False: false };
+// `true`/`false`/`null` are not Python, but Odoo's web client accepts them and widget options use them
+const KEYWORD_LITERALS: Record<string, null | boolean> = {
+  None: null,
+  True: true,
+  False: false,
+  true: true,
+  false: false,
+  null: null,
+};
 const RESERVED = new Set(["and", "or", "not", "in", "is", "if", "else", "lambda", "for"]);
 
 /** Parses one expression into an AST (cache it: arch expressions repeat). */

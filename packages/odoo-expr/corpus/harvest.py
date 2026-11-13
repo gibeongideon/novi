@@ -25,6 +25,7 @@ KNOWN = {
     "True", "False", "None", "context", "uid", "parent", "datetime", "relativedelta", "time",
     "context_today", "today", "now", "current_date", "len", "bool", "str", "int", "float", "abs",
     "min", "max", "any", "all", "set", "list", "dict", "tuple", "round", "sum", "sorted",
+    "true", "false", "null",  # web-client literals (widget options), not record fields
 }
 # results that depend on the clock can't be compared run to run: parse-only
 DYNAMIC = re.compile(r"\b(now|today|context_today|current_date|strftime|time\.|datetime\.)")

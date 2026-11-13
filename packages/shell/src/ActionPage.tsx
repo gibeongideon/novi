@@ -1,16 +1,20 @@
-import { useAction } from "@novi/engine";
+import { useAction, useListView } from "@novi/engine";
 import { Badge, Button, Skeleton, useT } from "@novi/ui";
+import { ListView } from "@novi/views";
 import { ExternalLink } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 /**
- * An Odoo action. Until the view renderers land (P2) this shows what the action is and offers
- * Odoo's own screen (the iframe fallback, P2.14, will embed it instead of linking).
+ * An Odoo action. Window actions with a list view render through NOVI's own engine (P2.9 first
+ * slice, read-only); everything else offers Odoo's own screen until its renderer exists (the
+ * iframe fallback, P2.14, will embed it instead of linking).
  */
 export function ActionPage() {
   const t = useT();
+  const navigate = useNavigate();
   const actionId = Number(useParams().actionId) || undefined;
   const action = useAction(actionId);
+  const list = useListView(actionId);
 
   if (action.isPending) {
     return (
@@ -28,23 +32,47 @@ export function ActionPage() {
     );
   }
   const a = action.data;
+  const openInOdoo = (
+    <Button asChild variant="secondary" size="sm">
+      <a href={`/odoo/action-${a.id}`} target="_blank" rel="noreferrer">
+        <ExternalLink aria-hidden />
+        {t("openInOdoo")}
+      </a>
+    </Button>
+  );
+  const data = list.data;
   return (
-    <div className="grid max-w-3xl gap-4 p-6">
+    <div className="grid gap-4 p-6">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-semibold">{a.name}</h1>
-        <Badge>{a.type}</Badge>
-        {a.res_model ? <Badge tone="info">{a.res_model}</Badge> : null}
-        {a.tag ? <Badge tone="info">{String(a.tag)}</Badge> : null}
+        {data ? (
+          <Badge>{data.length === 1 ? t("recordCountOne") : t("recordCount", { n: data.length })}</Badge>
+        ) : null}
+        <span className="ms-auto">{openInOdoo}</span>
       </div>
-      <p className="text-text-muted">{t("nativeViewSoon")}</p>
-      <div>
-        <Button asChild variant="secondary">
-          <a href={`/odoo/action-${a.id}`} target="_blank" rel="noreferrer">
-            <ExternalLink aria-hidden />
-            {t("openInOdoo")}
-          </a>
-        </Button>
-      </div>
+      {list.isPending ? (
+        <div className="grid gap-2">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-9 w-full" />
+          ))}
+        </div>
+      ) : list.isError ? (
+        <p role="alert" className="text-danger">
+          {(list.error as Error).message}
+        </p>
+      ) : data ? (
+        <>
+          <p className="text-sm text-text-muted">{t("previewNote")}</p>
+          <ListView
+            schema={data.schema}
+            records={data.records}
+            evalContext={data.evalContext}
+            onOpen={(id) => navigate(`/record/${data.schema.model}/${id}`)}
+          />
+        </>
+      ) : (
+        <p className="text-text-muted">{t("nativeViewSoon")}</p>
+      )}
     </div>
   );
 }

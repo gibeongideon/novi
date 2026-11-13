@@ -24,8 +24,9 @@
   "dependencies": {
     "@novi/engine": "workspace:*",
     "@novi/fields": "workspace:*",
-    "@novi/ui": "workspace:*",
-    "@novi/odoo-meta": "workspace:*"
+    "@novi/odoo-expr": "workspace:*",
+    "@novi/odoo-meta": "workspace:*",
+    "@novi/ui": "workspace:*"
   },
   "peerDependencies": {
     "react": "^18.3.1"

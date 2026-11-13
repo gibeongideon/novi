@@ -56,3 +56,28 @@ describe("password reset link (P1.6.5)", () => {
     await app.close();
   });
 });
+
+describe("web app files (production serving)", () => {
+  it("serves files added after startup (a rebuild), the shell for app routes, 404 for missing assets", async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { tmpdir } = await import("node:os");
+    const dist = mkdtempSync(join(tmpdir(), "novi-dist-"));
+    mkdirSync(join(dist, "assets"));
+    writeFileSync(join(dist, "index.html"), "<!doctype html><title>NOVI</title>");
+    const app = await buildServer({
+      port: 0,
+      host: "127.0.0.1",
+      tenantsFile: "/nonexistent",
+      pendingTtlMs: 1000,
+      webDist: dist,
+    });
+    writeFileSync(join(dist, "assets", "index-new.js"), "export {}"); // rebuilt after start
+    const js = await app.inject({ url: "/assets/index-new.js" });
+    expect(js.statusCode).toBe(200);
+    expect(js.headers["content-type"]).toMatch(/javascript/);
+    expect((await app.inject({ url: "/apps/3" })).body).toContain("<title>NOVI</title>");
+    expect((await app.inject({ url: "/assets/index-old.js" })).statusCode).toBe(404);
+    await app.close();
+  });
+});

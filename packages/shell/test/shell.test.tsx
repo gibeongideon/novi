@@ -519,3 +519,77 @@ describe("single sign-on (P1.14)", () => {
     expect(seen).toContain("t0k");
   });
 });
+
+describe("generic list (P2.9 first slice)", () => {
+  it("renders Odoo columns through the field registry with NOVI's decorations and Odoo's visibility rules", async () => {
+    const { ListView } = await import("@novi/views");
+    const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const schema = {
+      viewType: "list",
+      model: "x.order",
+      access: {},
+      fields: {
+        name: { type: "char", string: "Number" },
+        partner_id: { type: "many2one", string: "Customer" },
+        vendor_id: { type: "many2one", string: "Vendor" },
+        state: {
+          type: "selection",
+          string: "Status",
+          selection: [
+            ["draft", "Draft"],
+            ["posted", "Posted"],
+          ],
+        },
+        note: { type: "char", string: "Note" },
+      },
+      decorations: { info: "state == 'draft'" },
+      columns: [
+        { type: "field", name: "name" },
+        { type: "field", name: "partner_id" },
+        {
+          type: "field",
+          name: "vendor_id",
+          columnInvisible: "context.get('default_move_type') == 'out_invoice'",
+        },
+        { type: "field", name: "state" },
+        { type: "field", name: "note", invisible: "state == 'posted'" },
+      ],
+      headerButtons: [],
+      groupRows: {},
+    } as never;
+    const records = [
+      {
+        id: 1,
+        name: "INV/1",
+        partner_id: { id: 7, display_name: "Acme" },
+        vendor_id: false,
+        state: "draft",
+        note: "hello",
+      },
+      { id: 2, name: "INV/2", partner_id: false, vendor_id: false, state: "posted", note: "hidden" },
+    ];
+    const opened: number[] = [];
+    render(
+      <EngineProvider transport={fakeOdoo(true)} db="novi_demo">
+        <QueryClientProvider client={new QueryClient()}>
+          <I18nProvider>
+            <ListView
+              schema={schema}
+              records={records}
+              evalContext={{ context: { default_move_type: "out_invoice" } }}
+              onOpen={(id) => opened.push(id)}
+            />
+          </I18nProvider>
+        </QueryClientProvider>
+      </EngineProvider>,
+    );
+    const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
+    expect(headers).toEqual(["Number", "Customer", "Status", "Note"]); // vendor hidden for customer invoices
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows[0]!.textContent).toBe("INV/1AcmeDrafthello");
+    expect(rows[1]!.textContent).toBe("INV/2Posted"); // note invisible on posted rows
+    expect(rows[0]!.className).toContain("text-info");
+    await userEvent.click(rows[1]!);
+    expect(opened).toEqual([2]);
+  });
+});

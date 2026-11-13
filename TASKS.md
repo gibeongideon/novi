@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 3 | 🟦 |
+| 2 Engine core | 16 | 4 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -400,11 +400,11 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** every view in the demo DB parses into a schema without errors.
 
 ### P2.4 `odoo-meta`: specification builder
-- [ ] P2.4.1 Build the `specification` from a schema (fields shown + needed by modifiers)
-- [ ] P2.4.2 Nested specs for many2one (`display_name`), x2many (sub-view fields, limit/order)
-- [ ] P2.4.3 Context per field (`context` attr) in the spec
+- [x] P2.4.1 Build the `specification` from a schema: fields shown, kanban template fields (`record.x` in QWeb), fields named by expressions (incl. `parent.x` into the parent's spec) and by widget options (`currency_field`, date ranges); forms add `display_name` *(D-36)*
+- [x] P2.4.2 Nested specs: many2one/reference `display_name` (ids only when hidden); x2many in forms = inline list/kanban rows + the inline line form's fields, `limit` 40, `order` from `default_order` or the drag handle; ids/tag names outside forms
+- [x] P2.4.3 Context per field: the record-independent keys of the `context` attr (evaluated key by key), none for hidden fields, the first occurrence's when a field repeats
 
-**Done when:** specs for the demo DB match what the official client requests (spot-checked on 20 views).
+**Done when:** specs for the demo DB match what the official client requests (spot-checked on 20 views). *(17 screens captured live from Odoo's own client in headless Chromium: identical apart from fields Odoo's JS widgets add (122, P2.13 input) and 5 one-label cases; and all 1,049 readable views read live with every expression resolved)*
 
 ### P2.5 Engine: record model
 - [ ] P2.5.1 `Record`: values, field metadata, evaluated modifiers, dirty tracking, validity
@@ -456,6 +456,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.9.6 Row decorations, handle widget (resequence), row buttons
 - [ ] P2.9.7 Pager and record count (with `count_limit`)
 - [ ] P2.9.8 Empty state (view `help` html)
+- [x] P2.9.9 First slice, read-only (shown in the browser on every action with a list view): columns from the schema through the field registry, Odoo labels, number alignment, row/cell decorations and cell `invisible` per row, `column_invisible` with the action context, open a record; skipped for now: images, optional-hidden columns *(D-36)*
 
 **Done when:** partner, product and invoice lists match Odoo's data and actions.
 
@@ -504,8 +505,9 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.13.8 one2many / many2many inline list (editable sub-list, dialog form)
 - [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
-- [ ] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner)
-- [ ] P2.13.15 `useFormat()` React hook over `createFormatter()` (ex-P1.11.6)
+- [~] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner) *(read mode done: every type renders from metadata through the one formatter; edit mode with P2.13)*
+- [x] P2.13.15 `useFormat()` React hook over `createFormatter()` (ex-P1.11.6): the user's language parameters (`/web/webclient/translations`), timezone and currencies from Odoo
+- [ ] P2.13.16 Widget field dependencies (what each widget must also read: avatars → `write_date`, activities → `activity_*`, …), declared by each NOVI widget and merged into the spec; the client-spec capture lists the 122 Odoo needs today
 - [ ] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2)
 - [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)

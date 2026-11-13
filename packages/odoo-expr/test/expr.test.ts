@@ -80,3 +80,26 @@ describe("odoo-expr semantics (Python rules)", () => {
     expect(errors).toEqual(["ExprSyntaxError"]);
   });
 });
+
+describe("referencedNames", () => {
+  it("lists the record fields and parent fields an expression reads", async () => {
+    const { referencedNames } = await import("../src/index.js");
+    expect(
+      referencedNames("state != 'draft' and parent.company_id == company_id or context.get('x')"),
+    ).toEqual({
+      names: ["state", "company_id", "context"],
+      parentFields: ["company_id"],
+    });
+  });
+});
+
+describe("web-client leniency", () => {
+  it("accepts JavaScript-style true/false/null in widget options, as Odoo's client does", async () => {
+    const { evaluate } = await import("../src/index.js");
+    expect(evaluate("{'zoom': true, 'resizable': false, 'x': null}")).toEqual({
+      zoom: true,
+      resizable: false,
+      x: null,
+    });
+  });
+});
