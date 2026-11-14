@@ -151,6 +151,20 @@ describe("OdooRecord (P2.5.1)", () => {
     });
     expect(r.id).toBe(50);
   });
+
+  it("tells defaults from the user's own changes (touched)", async () => {
+    const { rpc } = fakeRpc({ web_save: [{ ...row(), id: 51 }] });
+    const r = OdooRecord.create(rpc, config, { name: "Default", qty: 1 });
+    expect(r.dirty).toBe(true); // defaults are saved with the record…
+    expect(r.touched).toBe(false); // …but leaving loses nothing the user typed
+    r.update({ qty: 2 });
+    expect(r.touched).toBe(true);
+    await r.save();
+    expect(r.touched).toBe(false);
+    r.update({ qty: 3 });
+    r.discard();
+    expect(r.touched).toBe(false);
+  });
 });
 
 describe("x2many commands (P2.5.4): every combination", () => {

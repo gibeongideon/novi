@@ -3,7 +3,7 @@ import { AccessDenied, SessionExpiredError, type SessionInfo } from "@novi/odoo-
 import { I18nProvider, ThemeProvider, TooltipProvider } from "@novi/ui";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { appIdentity } from "../src/appIcons";
@@ -161,9 +161,11 @@ function renderShell(transport: SessionTransport, path = "/", auth?: AuthClient)
       <ThemeProvider>
         <I18nProvider>
           <TooltipProvider>
-            <MemoryRouter initialEntries={[path]}>
-              <ShellRoutes />
-            </MemoryRouter>
+            <RouterProvider
+              router={createMemoryRouter([{ path: "*", element: <ShellRoutes /> }], {
+                initialEntries: [path],
+              })}
+            />
           </TooltipProvider>
         </I18nProvider>
       </ThemeProvider>
@@ -339,6 +341,28 @@ describe("record search (P1.13.2)", () => {
     expect(screen.getByRole("link", { name: "Open in Odoo" }).getAttribute("href")).toBe(
       "/odoo/res.partner/14",
     );
+  });
+});
+
+describe("palette quick commands and recent items (P2.10.11)", () => {
+  it('"new …" offers a new record in every screen with a form', async () => {
+    renderShell(fakeOdoo(true));
+    await screen.findByRole("link", { name: "Sales" });
+    await userEvent.keyboard("new quot");
+    expect(await screen.findByRole("option", { name: /New: Quotations/ })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: /New: Discuss/ })).toBeNull(); // not a form screen
+  });
+
+  it("shows recently opened records when nothing is typed", async () => {
+    localStorage.setItem(
+      "novi.recent",
+      JSON.stringify([{ url: "/record/res.partner/14", label: "Azure Interior" }]),
+    );
+    renderShell(fakeOdoo(true));
+    await screen.findByRole("link", { name: "Sales" });
+    await userEvent.keyboard("{Control>}k{/Control}");
+    expect(await screen.findByRole("option", { name: "Azure Interior" })).toBeTruthy();
+    localStorage.removeItem("novi.recent");
   });
 });
 

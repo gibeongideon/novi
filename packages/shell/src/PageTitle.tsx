@@ -7,26 +7,15 @@ export interface Crumb {
   to: string;
 }
 
-/**
- * The page title with the action stack before it (list › record › …). `leave` lets a form save
- * its changes before going back (P2.10.6).
- */
-export function PageTitle({
-  trail,
-  title,
-  leave,
-}: {
-  trail: readonly Crumb[];
-  title: string;
-  leave?(to: string): void;
-}) {
+/** The page title with the action stack before it (list › record › …). */
+export function PageTitle({ trail, title }: { trail: readonly Crumb[]; title: string }) {
   const navigate = useNavigate();
   if (!trail.length) return <h1 className="text-2xl font-semibold">{title}</h1>;
   return (
     <div className="grid min-w-0 gap-0.5">
       <Breadcrumb
         lastIsCurrent={false}
-        items={trail.map((c) => ({ label: c.label, onSelect: () => (leave ?? navigate)(c.to) }))}
+        items={trail.map((c) => ({ label: c.label, onSelect: () => navigate(c.to) }))}
       />
       <h1 className="truncate text-2xl font-semibold">{title}</h1>
     </div>

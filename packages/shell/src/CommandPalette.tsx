@@ -8,10 +8,12 @@ import {
   CommandList,
   useT,
 } from "@novi/ui";
+import { History, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppIcon } from "./AppIcon";
+import { readRecent } from "./recent";
 import { menuUrl } from "./urls";
 import { useDebounced } from "./useDebounced";
 
@@ -24,7 +26,8 @@ export interface CommandPaletteProps {
 
 /**
  * Global search (P1.13, D-24): opened by typing anywhere, ⌘K/Ctrl+K, or the top-bar search button.
- * Searches apps and every menu by its full path ("Sales Orders Customers"). Records come in P1.13.2.
+ * Searches apps, every menu by its full path ("Sales Orders Customers") and records; with nothing
+ * typed it shows recently opened records, and "new …" creates a record in any screen (P2.10.11).
  */
 export function CommandPalette({ open, onOpenChange, query, onQueryChange }: CommandPaletteProps) {
   const t = useT();
@@ -43,6 +46,19 @@ export function CommandPalette({ open, onOpenChange, query, onQueryChange }: Com
     return { apps: menus.data.apps, items };
   }, [menus.data]);
 
+  const recent = useMemo(() => (open ? readRecent() : []), [open]);
+  // "new invoice": a new record in any screen with a form (P2.10.11), named by its menu path
+  const newWord = t("newRecord").toLowerCase();
+  const wantsNew = query.trim().toLowerCase().startsWith(newWord);
+  const creatable = wantsNew
+    ? entries.items.filter(({ node }) => node.action?.model === "ir.actions.act_window")
+    : [];
+
+  const open_ = (url: string) => {
+    navigate(url);
+    onOpenChange(false);
+  };
+
   const go = (node: MenuNode) => {
     const url = menuUrl(node);
     if (url) navigate(url);
@@ -55,6 +71,37 @@ export function CommandPalette({ open, onOpenChange, query, onQueryChange }: Com
       <CommandList>
         {/* local "no results" only counts locally-filtered items, so hide it when Odoo found records */}
         {records.data?.length || records.isFetching ? null : <CommandEmpty />}
+        {!query.trim() && recent.length ? (
+          <CommandGroup heading={t("recent")}>
+            {recent.map((r) => (
+              <CommandItem
+                key={r.url}
+                value={`${r.label}${ID_SEP}recent-${r.url}`}
+                onSelect={() => open_(r.url)}
+              >
+                <History aria-hidden className="size-4 text-text-muted" />
+                {r.label}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ) : null}
+        {creatable.length ? (
+          <CommandGroup heading={t("create")}>
+            {creatable.map(({ node, path }) => (
+              <CommandItem
+                key={`new-${node.id}`}
+                value={`${newWord} ${path.join(" ")}${ID_SEP}new-${node.id}`}
+                onSelect={() => open_(`/action/${node.action!.id}/new?menu=${node.id}`)}
+              >
+                <Plus aria-hidden className="size-4 text-text-muted" />
+                <span className="truncate">
+                  {t("newRecord")}: {path.at(-1)}
+                  <span className="text-text-muted"> · {path.slice(0, -1).join(" / ")}</span>
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        ) : null}
         <CommandGroup heading={t("apps")}>
           {entries.apps.map((app) => (
             <CommandItem
@@ -89,10 +136,7 @@ export function CommandPalette({ open, onOpenChange, query, onQueryChange }: Com
                 key={`${h.model}-${h.id}`}
                 forceMount
                 value={`${h.name}${ID_SEP}rec-${h.model}-${h.id}`}
-                onSelect={() => {
-                  navigate(`/record/${h.model}/${h.id}`);
-                  onOpenChange(false);
-                }}
+                onSelect={() => open_(`/record/${h.model}/${h.id}`)}
               >
                 {h.name}
               </CommandItem>

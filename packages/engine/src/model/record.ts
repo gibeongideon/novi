@@ -181,6 +181,14 @@ export class OdooRecord extends Observable {
     return Object.keys(this.changes).length > 0 || [...this.x2many.values()].some((l) => l.dirty);
   }
 
+  /**
+   * The user changed something since the record was read or saved. A new record holding only
+   * Odoo's defaults is dirty (they are saved with it) but untouched: leaving it loses nothing.
+   */
+  get touched(): boolean {
+    return this.dirty && this.editedAt.size > 0;
+  }
+
   dirtyFields(): string[] {
     return [...Object.keys(this.changes), ...[...this.x2many].filter(([, l]) => l.dirty).map(([k]) => k)];
   }
@@ -380,6 +388,7 @@ export class OdooRecord extends Observable {
   /** Forgets the user's changes, including x2many line edits. */
   discard(): void {
     this.parseErrors.clear();
+    this.editedAt.clear();
     this.changes = {};
     for (const l of this.x2many.values()) l.discard();
     this.notify();
@@ -465,6 +474,7 @@ export class OdooRecord extends Observable {
   /** Makes `row` the saved state: plain values, and x2many lists built from their rows. */
   private hydrate(row: Values): void {
     this.id = typeof row.id === "number" ? row.id : this.id;
+    this.editedAt.clear();
     this.changes = {};
     this.data = {};
     this.x2many = new Map();

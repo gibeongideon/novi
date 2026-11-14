@@ -466,12 +466,12 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P2.10.3 Smart buttons (`oe_button_box`) → stat chips
 - [x] P2.10.4 Title area (`oe_title`), avatar/image (`/web/image`, initials when none)
 - [x] P2.10.5 Modifiers live: invisible / readonly / required re-evaluated on change (buttons, pages, groups too)
-- [~] P2.10.6 Edit-mode UX: always editable, save/discard bar when dirty, saved before leaving by breadcrumbs or record pager; tab close asks *(sidebar/menu navigation while dirty not guarded yet; "configurable" dropped until someone asks, Musk step 2)*
+- [x] P2.10.6 Edit-mode UX: always editable, save/discard bar when dirty; leaving by any in-app way (menu, palette, breadcrumbs, pager, back button) saves first and stays when Odoo or required fields refuse; closing the tab asks. A new record with only Odoo's defaults leaves freely (`touched`). *("configurable" dropped until someone asks, Musk step 2)*
 - [x] P2.10.7 Record pager (prev/next within the list the record was opened from)
 - [x] P2.10.8 Chatter slot beside the sheet (placeholder with "Open in Odoo" until P3.7)
 - [x] P2.10.9 User preferences = Odoo's own preferences form (`res.users` preferences view: language, timezone, signature, API keys, "log out from all devices") opened from the user menu through the generic form view (ex-P1.12.1)
 - [x] P2.10.10 Show onchange warnings from the engine (`onWarning`): `dialog` as a dialog, `notification` as a toast (ex-P2.6.3)
-- [ ] P2.10.11 Palette quick commands (new invoice, new lead…) and recent items (ex-P2.8.10)
+- [x] P2.10.11 Palette quick commands and recent items (ex-P2.8.10): type "new …" for a new record in any screen with a form (from the menus, no hand-kept list); recently opened records when nothing is typed
 - [x] P2.10.12 Breadcrumbs from the action stack in the URL (`encodeStack`/`decodeStack`): list → record → action from a button, restored on reload (ex-P2.8.8)
 
 **Done when:** the sale order, partner, product and employee forms render and save correctly.

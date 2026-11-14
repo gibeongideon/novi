@@ -23,11 +23,12 @@ import {
 import { FormView } from "@novi/views";
 import { ExternalLink } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useBlocker, useLocation, useNavigate } from "react-router-dom";
 
 import { ActionMenus } from "./ActionMenus";
 import { OnchangeWarningDialog, useOnchangeWarnings } from "./OnchangeWarning";
 import { type Crumb, PageTitle } from "./PageTitle";
+import { rememberRecent } from "./recent";
 import { useActionRunner } from "./useActionRunner";
 
 /** Records the list showed when one was opened (record pager, P2.10.7). */
@@ -37,8 +38,8 @@ interface PagerState {
 
 /**
  * One record in the generic form view (P2.10): always editable, with a save/discard bar while
- * there are changes. Leaving through the breadcrumbs or the record pager saves first, as Odoo's
- * client does (P2.10.6); closing the tab asks first.
+ * there are changes. Leaving by any in-app way saves first, as Odoo's client does (P2.10.6);
+ * closing the tab asks first.
  */
 export function FormPage({
   actionId,
@@ -82,40 +83,51 @@ export function FormPage({
   const form = useFormView(target, warnings.show);
   const record = useModel(form.data?.record);
   const runner = useActionRunner(() => record?.reload());
-  useLeaveGuard(!!record?.dirty);
+  useLeaveGuard(!!record?.touched);
+  // leaving by any way (menu, palette, breadcrumbs, pager, back button) saves first, as Odoo does;
+  // when Odoo or the required fields refuse, the user stays on the record
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      !!record?.touched && currentLocation.pathname !== nextLocation.pathname,
+  );
   useEffect(() => setShowErrors(false), [record]);
 
   const back = trail.at(-1)?.to ?? "/";
+  const savedName = record && !record.isNew ? String(record.values.display_name ?? "") : "";
+  useEffect(() => {
+    if (record?.id && savedName) rememberRecent({ url: `${base}/${record.id}${search}`, label: savedName });
+  }, [record?.id, savedName, base, search]);
 
-  const save = useCallback(async (): Promise<boolean> => {
-    if (!record) return false;
-    (document.activeElement as HTMLElement | null)?.blur?.(); // the field being typed in commits first
-    try {
-      const wasNew = record.isNew;
-      const ok = await record.save();
-      if (!ok) {
-        setShowErrors(true);
-        const names = record.invalidFields().map((n) => record.fields[n]?.string ?? n);
-        toast.error(t("invalidFields", { names: names.join(", ") }));
+  /** Saves; a new record's URL then gets its id (unless the user is leaving anyway). */
+  const save = useCallback(
+    async (relocate = true): Promise<boolean> => {
+      if (!record) return false;
+      (document.activeElement as HTMLElement | null)?.blur?.(); // the field being typed in commits first
+      try {
+        const wasNew = record.isNew;
+        const ok = await record.save();
+        if (!ok) {
+          setShowErrors(true);
+          const names = record.invalidFields().map((n) => record.fields[n]?.string ?? n);
+          toast.error(t("invalidFields", { names: names.join(", ") }));
+          return false;
+        }
+        setShowErrors(false);
+        if (wasNew && relocate) navigate(`${base}/${record.id}${search}`, { replace: true, state });
+        return true;
+      } catch (e) {
+        await runner.guard(() => Promise.reject(e));
         return false;
       }
-      setShowErrors(false);
-      if (wasNew) navigate(`${base}/${record.id}${search}`, { replace: true, state });
-      return true;
-    } catch (e) {
-      await runner.guard(() => Promise.reject(e));
-      return false;
-    }
-  }, [record, navigate, base, search, state, t, runner]);
-
-  /** Goes elsewhere in the stack, saving first (stays when saving is refused). */
-  const leave = useCallback(
-    async (to: string, opts?: { state?: unknown }) => {
-      if (record?.dirty && !(await save())) return;
-      navigate(to, opts);
     },
-    [record, save, navigate],
+    [record, navigate, base, search, state, t, runner],
   );
+
+  useEffect(() => {
+    if (blocker.state !== "blocked") return;
+    void save(false).then((ok) => (ok ? blocker.proceed() : blocker.reset()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per blocked navigation
+  }, [blocker.state]);
 
   const press = (button: ButtonNode) => {
     if (button.confirm && !confirm) return setConfirm(button);
@@ -124,6 +136,14 @@ export function FormPage({
     void runner.guard(() => am.executeButton(record!, button));
   };
 
+  if (actionId !== undefined && action.isSuccess && !a) {
+    // not a window action (a screen Odoo draws in JavaScript): no form to show
+    return (
+      <p role="alert" className="p-6 text-danger">
+        {t("noAction")}
+      </p>
+    );
+  }
   if (form.isError || action.isError) {
     return (
       <p role="alert" className="p-6 text-danger">
@@ -149,7 +169,7 @@ export function FormPage({
   return (
     <div className="grid gap-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center gap-2">
-        <PageTitle trail={trail} title={title} leave={(to) => void leave(to)} />
+        <PageTitle trail={trail} title={title} />
         {record.dirty || record.isNew ? (
           <>
             <Badge tone="warning">{t("unsaved")}</Badge>
@@ -160,8 +180,8 @@ export function FormPage({
               variant="ghost"
               size="sm"
               onClick={() => {
+                record.discard(); // nothing left to save: leaving isn't held
                 if (record.isNew) return navigate(back);
-                record.discard();
                 setShowErrors(false);
               }}
             >
@@ -186,6 +206,7 @@ export function FormPage({
             onDelete={() =>
               void runner.guard(async () => {
                 await record.delete();
+                record.discard();
                 navigate(back);
               })
             }
@@ -203,8 +224,8 @@ export function FormPage({
               offset={at}
               limit={1}
               total={ids.length}
-              onPrevious={() => void leave(`${base}/${sibling(-1)}${search}`, { state })}
-              onNext={() => void leave(`${base}/${sibling(1)}${search}`, { state })}
+              onPrevious={() => navigate(`${base}/${sibling(-1)}${search}`, { state })}
+              onNext={() => navigate(`${base}/${sibling(1)}${search}`, { state })}
             />
           ) : null}
         </span>
