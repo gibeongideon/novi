@@ -593,3 +593,29 @@ describe("generic list (P2.9 first slice)", () => {
     expect(opened).toEqual([2]);
   });
 });
+
+describe("error dialog (P2.8.9)", () => {
+  it("shows NOVI's title, Odoo's message, and RedirectWarning's button", async () => {
+    const { ErrorDialog } = await import("../src/index");
+    const { RedirectWarning } = await import("@novi/odoo-client");
+    const err = new RedirectWarning("No journal is set up.", {
+      data: {
+        name: "odoo.exceptions.RedirectWarning",
+        message: "No journal is set up.",
+        arguments: ["No journal is set up.", 77, "Configure journals"],
+      },
+    });
+    const redirects: unknown[] = [];
+    let closed = 0;
+    render(
+      <I18nProvider>
+        <ErrorDialog error={err} onClose={() => closed++} onRedirect={(a) => redirects.push(a)} />
+      </I18nProvider>,
+    );
+    expect((await screen.findByRole("dialog")).textContent).toContain("No journal is set up.");
+    expect(screen.getByText("This can't be done")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Configure journals" }));
+    expect(redirects).toEqual([77]);
+    expect(closed).toBe(1);
+  });
+});

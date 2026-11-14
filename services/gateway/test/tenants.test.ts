@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { buildServer } from "../src/index.js";
-import { isProxied } from "../src/proxy.js";
+import { frameableBySameOrigin, isProxied } from "../src/proxy.js";
 import { FileTenantRegistry, normalizeHost } from "../src/tenants/registry.js";
 
 const tmpFile = () => join(mkdtempSync(join(tmpdir(), "novi-tenants-")), "tenants.json");
@@ -99,5 +99,16 @@ describe("routing", () => {
     expect(await ask("beta.novi.app")).toBe(404); // suspended
     expect(await ask("attacker.example")).toBe(404); // would otherwise fall back to the default tenant
     await app.close();
+  });
+
+  it("lets NOVI (same origin) embed Odoo screens while other sites still can't", () => {
+    expect(frameableBySameOrigin({ "x-frame-options": "DENY", a: "1" })).toEqual({
+      "x-frame-options": "SAMEORIGIN",
+      a: "1",
+    });
+    expect(frameableBySameOrigin({ "x-frame-options": "SAMEORIGIN" })).toEqual({
+      "x-frame-options": "SAMEORIGIN",
+    });
+    expect(frameableBySameOrigin({ b: "2" })).toEqual({ b: "2" });
   });
 });

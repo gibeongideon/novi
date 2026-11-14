@@ -40,6 +40,30 @@ export function ActionPage() {
       </a>
     </Button>
   );
+  // screens Odoo implements in JavaScript (Discuss, dashboards…): Odoo's own screen, embedded and
+  // labelled, until NOVI has its own (client action registry, P2.8.5; iframe host, P2.14)
+  if (a.type === "ir.actions.client") {
+    const src = `/odoo/action-${a.id}`;
+    return (
+      <div className="grid h-full grid-rows-[auto_1fr] gap-2 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-semibold">{a.name}</h1>
+          <p className="text-sm text-text-muted">{t("classicScreen")}</p>
+          <Button asChild variant="secondary" size="sm" className="ms-auto">
+            <a href={src} target="_blank" rel="noreferrer">
+              <ExternalLink aria-hidden />
+              {t("openInNewTab")}
+            </a>
+          </Button>
+        </div>
+        <iframe
+          title={a.name}
+          src={src}
+          className="h-full min-h-[70vh] w-full rounded-lg border border-border bg-surface"
+        />
+      </div>
+    );
+  }
   const data = list.data;
   return (
     <div className="grid gap-4 p-6">

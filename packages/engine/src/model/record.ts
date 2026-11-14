@@ -274,7 +274,9 @@ export class OdooRecord extends Observable {
     const skip = (name: string) => {
       if (purpose !== "save" || !this.config.schema) return false;
       const own = nodes.filter((n) => n.name === name);
-      return own.length > 0 && own.every((n) => this.isReadonly(n) && !n.forceSave);
+      // not in the view (read for the spec only): its metadata decides (display_name, computed fields)
+      if (!own.length) return !!this.fields[name]?.readonly;
+      return own.every((n) => this.isReadonly(n) && !n.forceSave);
     };
     for (const [name, v] of Object.entries(this.changes))
       if (!skip(name)) out[name] = serialize(v, this.fields[name]?.type);

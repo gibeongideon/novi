@@ -300,3 +300,22 @@ describe("version + cookies", () => {
     expect(jar.header()).toBeUndefined();
   });
 });
+
+describe("call context", () => {
+  it("merges a context given in kwargs with the session's, never drops it", async () => {
+    const m = mockFetch(() => rpcResult(true));
+    const t = new JsonRpcTransport({ baseUrl: "http://odoo", db: "db", fetch: m.fetch });
+    t.setContext({ lang: "en_US", allowed_company_ids: [1] });
+    await t.call("x.wizard", "onchange", {
+      ids: [],
+      kwargs: { values: {}, context: { active_ids: [42], active_model: "sale.order" } },
+    });
+    const body = m.calls[0]!.body as { params: { kwargs: { context: Record<string, unknown> } } };
+    expect(body.params.kwargs.context).toEqual({
+      lang: "en_US",
+      allowed_company_ids: [1],
+      active_ids: [42],
+      active_model: "sale.order",
+    });
+  });
+});

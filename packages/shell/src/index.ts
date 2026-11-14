@@ -2,6 +2,7 @@
 export * from "./ActionPage";
 export * from "./AppLauncher";
 export * from "./AppShell";
+export * from "./ErrorDialog";
 export * from "./LoginPage";
 export * from "./ShellRoutes";
 export * from "./Sidebar";

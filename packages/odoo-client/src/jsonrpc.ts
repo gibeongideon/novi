@@ -143,7 +143,11 @@ export class JsonRpcTransport implements OrmTransport {
       model,
       method,
       args: call.ids ? [call.ids] : [],
-      kwargs: { ...call.kwargs, context: { ...this.ctx, ...call.context } },
+      // a context given in kwargs (how the engine passes action/record contexts) is merged, never dropped
+      kwargs: {
+        ...call.kwargs,
+        context: { ...this.ctx, ...(call.kwargs?.context as OdooContext | undefined), ...call.context },
+      },
     };
     const isRead = READ_METHODS.has(method);
     const exec = () =>

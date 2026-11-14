@@ -56,6 +56,7 @@ export async function registerProxy(app: FastifyInstance): Promise<void> {
           host: req.headers.host ?? "",
           ...forwardedHeaders(req),
         }),
+        rewriteHeaders: (headers) => frameableBySameOrigin(headers),
       });
     };
     for (const p of PROXIED_PREFIXES) {
@@ -110,4 +111,17 @@ export function registerWebsocketProxy(
     upstream.on("error", () => socket.end("HTTP/1.1 502 Bad Gateway\r\n\r\n"));
     upstream.end();
   });
+}
+
+/**
+ * Odoo forbids framing its web client (`X-Frame-Options: DENY`). NOVI embeds Odoo's own screens
+ * for client actions it doesn't render yet (P2.8.5, D-39), always from the same origin, so the
+ * gateway relaxes DENY to SAMEORIGIN: other sites still can't frame Odoo (clickjacking stays
+ * blocked); only NOVI, on the same host, can.
+ */
+export function frameableBySameOrigin<H extends Record<string, unknown>>(headers: H): H {
+  const xfo = headers["x-frame-options"];
+  return typeof xfo === "string" && xfo.toUpperCase() === "DENY"
+    ? { ...headers, "x-frame-options": "SAMEORIGIN" }
+    : headers;
 }

@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 7 | 🟦 |
+| 2 Engine core | 16 | 8 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -434,18 +434,18 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** create/edit/delete/duplicate/archive all work on 10 different models. *(live, generic, each through its own form view: partners, partner tags, products, product categories, CRM tags, departments, jobs, projects, project tags, activity types)*
 
 ### P2.8 ActionManager
-- [ ] P2.8.1 `ir.actions.act_window` (current, new = dialog, fullscreen; view modes; domain; context; limit)
-- [ ] P2.8.2 `ir.actions.server` via `/web/action/run`
-- [ ] P2.8.3 `ir.actions.report` → download/preview
-- [ ] P2.8.4 `ir.actions.act_url` (new tab / self)
-- [ ] P2.8.5 `ir.actions.client`: registry + iframe fallback for unknown tags
-- [ ] P2.8.6 `ir.actions.act_window_close` (close dialog, reload parent)
-- [ ] P2.8.7 Button execution: `type="object"` (call_button) and `type="action"`; handle `confirm=` attr
-- [ ] P2.8.8 Action stack / breadcrumbs, restored from the URL
-- [ ] P2.8.9 Odoo error dialog for user actions (UserError/ValidationError/AccessError text as sent by Odoo; RedirectWarning button opens its action) (ex-P1.12.5)
-- [ ] P2.8.10 Palette quick commands (new invoice, new lead…) and recent items (ex-P1.13.3)
+- [x] P2.8.1 `ir.actions.act_window` → window descriptor: target (current, new = dialog, fullscreen/main), view modes, record id, domain and context evaluated with the active record and companies, limit *(D-39)*
+- [x] P2.8.2 `ir.actions.server` via `/web/action/run` with the active records; what it returns is resolved in turn
+- [x] P2.8.3 `ir.actions.report` → PDF/HTML/text URL (records, report options) to preview or download *(verified: the sales order PDF downloads)*
+- [x] P2.8.4 `ir.actions.act_url` (new tab / same tab / download)
+- [x] P2.8.5 `ir.actions.client`: `display_notification` (with its next action) and `reload` built in; any other tag shows Odoo's own screen embedded and labelled, with "open in a new tab" (the gateway lets the same origin frame it, D-39)
+- [x] P2.8.6 `ir.actions.act_window_close` → close descriptor (with its infos) for the dialog and the parent reload
+- [x] P2.8.7 Buttons: save first, `type="object"` via call_button and `type="action"` with the button's context evaluated on the record, `special` save/cancel, record reloaded unless a screen opens; `confirm` text is asked by the screen before running
+- [-] P2.8.8 Action stack in the URL *(engine part done: `encodeStack`/`decodeStack` (`/action/12/42/action/30`); driving navigation and the breadcrumb bar from it moved to P2.10.12 with the form view)*
+- [x] P2.8.9 Error dialog: NOVI's title per kind of error, Odoo's message as sent, RedirectWarning's button opens its action, technical details for unexpected errors only (`describeError` + `ErrorDialog`)
+- [-] P2.8.10 Palette quick commands and recent items *(moved to P2.10.11: they open new records in the form view)*
 
-**Done when:** every button in the demo sales/accounting flows works.
+**Done when:** every button in the demo sales/accounting flows works. *(live: quotation → Confirm → Create Invoice wizard → Confirm invoice → Pay wizard → paid, every button taken from the real form views)*
 
 ### P2.9 List view
 - [ ] P2.9.1 TanStack Table with virtual scrolling (10k rows smooth)
@@ -471,6 +471,8 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.10.8 Chatter slot (drawer placeholder until P3.7)
 - [ ] P2.10.9 User preferences = Odoo's own preferences form (`res.users` preferences view: language, timezone, signature, API keys, "log out from all devices") opened from the user menu through the generic form view (ex-P1.12.1)
 - [ ] P2.10.10 Show onchange warnings from the engine (`onWarning`): `dialog` as a dialog, `notification` as a toast (ex-P2.6.3)
+- [ ] P2.10.11 Palette quick commands (new invoice, new lead…) and recent items (ex-P2.8.10)
+- [ ] P2.10.12 Breadcrumbs from the action stack in the URL (`encodeStack`/`decodeStack`): list → record → action from a button, restored on reload (ex-P2.8.8)
 
 **Done when:** the sale order, partner, product and employee forms render and save correctly.
 

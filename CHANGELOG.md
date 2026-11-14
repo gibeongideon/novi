@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-14
+- [P2.8] Action manager: menus and buttons now run any Odoo action (open screens and wizards, server actions, reports as PDF, links, notifications, closing dialogs); buttons save first and refresh the record like Odoo. Proven live on the whole demo sales → invoicing → payment flow using the screens' own buttons. Odoo's errors get a clear dialog (with Odoo's suggested action when it offers one). Screens Odoo builds in JavaScript (e.g. Discuss) open embedded inside NOVI. Fixed: action and wizard contexts were dropped on the way to Odoo.
 - [P2.7] Records can be saved (only what changed), checked before saving (required values, values that couldn't be read), discarded, deleted, duplicated, archived and restored, alone or as a list selection, and several selected records can be edited at once. Closing the tab with unsaved changes asks first. Proven live on 10 different models through their own forms.
 ### 2026-11-13
 - [P2.6] Onchange and defaults: new records and lines get Odoo's defaults, and changing a field (customer, product, quantity) asks Odoo for its consequences exactly as Odoo's own screens do; on a quotation line, choosing a product gives the same price, taxes and totals as Odoo (proven live). Fast typing can't make an old answer overwrite newer input.
