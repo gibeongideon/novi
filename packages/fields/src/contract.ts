@@ -25,6 +25,8 @@ export interface FieldProps<V = unknown> {
   invalid?: string;
   /** Record values + user context, for domains/defaults of relational widgets. */
   context: Readonly<OdooContext>;
+  /** The record holding the value (images and avatars are served by Odoo per record). */
+  owner?: { model: string; id?: number; stamp?: string };
   /** Accessible name when the field has no visible label next to it (a title, a field in text). */
   label?: string;
   /** Arch `placeholder`. */

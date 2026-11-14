@@ -3,7 +3,7 @@
  * field's domain. "Create and edit" and opening the record come with the dialog form.
  */
 import { useNameSearch } from "@novi/engine";
-import { Combobox } from "@novi/ui";
+import { Avatar, Combobox } from "@novi/ui";
 import { useState } from "react";
 
 import type { FieldProps } from "./contract.js";
@@ -40,5 +40,33 @@ export function Many2OneField(props: FieldProps<M2O>) {
         <p className="whitespace-pre-line text-sm text-text-muted">{more.join("\n").trim()}</p>
       ) : null}
     </div>
+  );
+}
+
+/** The record's picture, served by Odoo (`avatar_128`: initials when it has none). */
+function RelatedAvatar({ model, value }: { model?: string; value: M2O }) {
+  if (!value || !model) return null;
+  return (
+    <Avatar
+      size="sm"
+      name={String(value.display_name ?? "")}
+      src={`/web/image/${model}/${value.id}/avatar_128`}
+    />
+  );
+}
+
+/** `many2one_avatar`, `…_user`, `…_employee`: the person's picture beside the name. */
+export function Many2OneAvatarField(props: FieldProps<M2O>) {
+  const model = props.meta.relation as string | undefined;
+  const editing = props.mode === "edit" && !props.readonly;
+  return (
+    <span
+      className={
+        editing ? "flex items-start gap-2 [&>*:last-child]:flex-1" : "inline-flex items-center gap-2"
+      }
+    >
+      <RelatedAvatar model={model} value={props.value} />
+      {editing ? <Many2OneField {...props} /> : <FallbackField {...props} />}
+    </span>
   );
 }

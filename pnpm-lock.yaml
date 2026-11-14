@@ -230,6 +230,9 @@ importers:
       '@novi/ui':
         specifier: workspace:*
         version: link:../ui
+      lucide-react:
+        specifier: ^0.468.0
+        version: 0.468.0(react@18.3.1)
     devDependencies:
       '@types/react':
         specifier: ^18.3.18
@@ -278,6 +281,9 @@ importers:
         specifier: ^6.28.0
         version: 6.30.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
+      '@novi/fields':
+        specifier: workspace:*
+        version: link:../fields
       '@novi/odoo-client':
         specifier: workspace:*
         version: link:../odoo-client
@@ -492,9 +498,15 @@ importers:
 
   tools/coverage-scanner:
     dependencies:
+      '@novi/fields':
+        specifier: workspace:*
+        version: link:../../packages/fields
       '@novi/odoo-client':
         specifier: workspace:*
         version: link:../../packages/odoo-client
+      '@novi/views':
+        specifier: workspace:*
+        version: link:../../packages/views
 
   tools/progress-dashboard: {}
 

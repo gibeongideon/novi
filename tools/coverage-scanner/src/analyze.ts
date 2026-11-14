@@ -5,8 +5,9 @@
 
 export interface Supported {
   viewTypes: string[];
-  widgets: string[];
-  fieldTypes: string[];
+  /** Filled from the code (field registry, views) by the CLI; absent from supported.json. */
+  widgets?: string[];
+  fieldTypes?: string[];
   clientActions: string[];
 }
 

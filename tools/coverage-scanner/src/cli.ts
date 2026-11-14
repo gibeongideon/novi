@@ -42,7 +42,20 @@ const db = arg("db", process.env.ODOO_DB ?? "novi_demo")!;
 const login = arg("login", seed?.users.admin?.login ?? "admin")!;
 const password = arg("password", seed?.users.admin?.password ?? "admin")!;
 const outDir = resolve(repoRoot, arg("out", "docs/coverage")!);
+// what renders natively: view types and client actions from supported.json; widgets and field
+// types from the code itself (the field registry and the views), never a hand-kept list (P2.13.13)
 const supported = JSON.parse(readFileSync(join(here, "../supported.json"), "utf8")) as Supported;
+const { fieldRegistry } = await import("@novi/fields");
+const { VIEW_WIDGETS } = await import("@novi/views");
+const manifest = fieldRegistry.manifest();
+supported.widgets = [
+  ...new Set([
+    ...(supported.widgets ?? []),
+    ...manifest.widgets,
+    ...VIEW_WIDGETS.flatMap((w) => [w, `<widget>${w}`]),
+  ]),
+];
+supported.fieldTypes = [...new Set([...(supported.fieldTypes ?? []), ...manifest.fieldTypes])];
 
 interface WindowAction {
   id: number;
@@ -114,8 +127,8 @@ async function main(): Promise<void> {
     },
     coverage: [
       coverage("View types", usage.viewTypes, supported.viewTypes),
-      coverage("Widgets", usage.widgets, supported.widgets),
-      coverage("Field types (default widget)", usage.fieldTypes, supported.fieldTypes),
+      coverage("Widgets", usage.widgets, supported.widgets ?? []),
+      coverage("Field types (default widget)", usage.fieldTypes, supported.fieldTypes ?? []),
       coverage("Client actions", usage.clientActions, supported.clientActions),
     ],
     examples: Object.fromEntries([...usage.examples].map(([k, v]) => [k, [...v]])),

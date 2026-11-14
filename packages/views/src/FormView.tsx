@@ -266,10 +266,15 @@ function Group({ node }: { node: GroupNode }) {
   );
 }
 
-/** x2many lists take the whole row, with their label above (as a section). */
-const fieldShowsLabel = (record: OdooRecord, node: FieldNode) =>
-  !["one2many", "many2many"].includes(record.fields[node.name]?.type ?? "") ||
-  node.widget === "many2many_tags";
+/** An x2many with a widget of its own (tags…) renders through it; otherwise as lines. */
+const asTags = (node: FieldNode, type = "") =>
+  !!node.widget && fieldRegistry.resolve(type, node.widget).source === "widget";
+
+/** x2many lines take the whole row, with their label above (as a section). */
+const fieldShowsLabel = (record: OdooRecord, node: FieldNode) => {
+  const type = record.fields[node.name]?.type ?? "";
+  return !["one2many", "many2many"].includes(type) || asTags(node, type);
+};
 
 function FieldLabel({ node }: { node: { for?: string; string?: string } }) {
   const { record, invalid } = useForm();
@@ -298,7 +303,7 @@ function FieldSlot({ node, labelled = false }: { node: FieldNode; labelled?: boo
   const meta = record.fields[node.name];
   if (!meta) return null;
   const isX2m = meta.type === "one2many" || meta.type === "many2many";
-  if (isX2m && node.widget !== "many2many_tags") return <Lines node={node} />;
+  if (isX2m && !asTags(node, meta.type)) return <Lines node={node} />;
   const ctx = record.evalContext();
   const options = node.optionsExpr
     ? (safeEvaluate(node.optionsExpr, ctx, {}) as Record<string, unknown>)
@@ -308,7 +313,11 @@ function FieldSlot({ node, labelled = false }: { node: FieldNode; labelled?: boo
   return (
     <W
       name={node.name}
-      value={isX2m ? record.list(node.name).records.map((r) => r.values) : record.values[node.name]}
+      value={
+        isX2m
+          ? record.list(node.name).records.map((r) => ({ id: r.id, display_name: r.values.display_name }))
+          : record.values[node.name]
+      }
       meta={meta}
       options={options}
       mode="edit"
@@ -319,7 +328,16 @@ function FieldSlot({ node, labelled = false }: { node: FieldNode; labelled?: boo
       domain={relational ? record.fieldDomain(node) : undefined}
       placeholder={node.placeholder}
       label={labelled ? undefined : (node.string ?? meta.string)}
-      onChange={(v) => record.update({ [node.name]: v })}
+      onChange={(v) =>
+        isX2m
+          ? record.list(node.name).replaceWith(v as { id: number; display_name?: string }[])
+          : record.update({ [node.name]: v })
+      }
+      owner={{
+        model: record.config.model,
+        id: record.id,
+        stamp: String(record.values.write_date ?? ""),
+      }}
       onInvalid={(m) => record.markInvalid(node.name, m)}
     />
   );

@@ -1,116 +1,107 @@
 # Coverage report: novi_demo
 
-Odoo 20.0+e-20261111 · generated 2026-11-11 13:48 UTC · `pnpm scan`
+Odoo 20.0+e-20261111 · generated 2026-11-14 10:00 UTC · `pnpm scan`
 
-Scanned **499** window actions (**1691** views), 40 client actions, 174 server actions, 43 reports.
+Scanned **604** window actions (**2133** views), 48 client actions, 215 server actions, 46 reports.
 
 | Area | Native | Occurrences | Coverage |
 |---|---|---|---|
-| View types | 0 | 1691 | **0%** |
-| Widgets | 0 | 5592 | **0%** |
-| Field types (default widget) | 0 | 21557 | **0%** |
-| Client actions | 0 | 40 | **0%** |
+| View types | 956 | 2133 | **44.8%** |
+| Widgets | 5312 | 8397 | **63.3%** |
+| Field types (default widget) | 29485 | 31251 | **94.3%** |
+| Client actions | 0 | 48 | **0%** |
 
 ## Missing view types (by usage)
 
 | Name | Uses | Examples |
 |---|---|---|
-| `search` | 492 |  |
-| `form` | 422 |  |
-| `list` | 363 |  |
-| `kanban` | 150 |  |
-| `graph` | 83 |  |
-| `pivot` | 77 |  |
-| `activity` | 43 |  |
-| `calendar` | 35 |  |
-| `map` | 9 |  |
+| `search` | 604 |  |
+| `kanban` | 201 |  |
+| `graph` | 114 |  |
+| `pivot` | 102 |  |
+| `activity` | 62 |  |
+| `calendar` | 50 |  |
+| `map` | 16 |  |
+| `gantt` | 15 |  |
 | `hierarchy` | 7 |  |
-| `gantt` | 5 |  |
+| `grid` | 3 |  |
 | `cohort` | 3 |  |
-| `grid` | 2 |  |
 
 ## Missing widgets (by usage)
 
 | Name | Uses | Examples |
 |---|---|---|
-| `statinfo` | 373 | hr.leave.accrual.plan:form, stock.picking:form, account.analytic.account:form |
-| `monetary` | 368 | hr.employee:list, product.value:form, account.analytic.account:kanban |
-| `many2many_tags` | 351 | hr.employee:list, hr.employee:kanban, hr.employee:form |
-| `<widget>web_ribbon` | 302 |  |
-| `radio` | 271 | hr.leave.accrual.plan:form, stock.add.to.wave:form, stock.picking.to.batch:form |
-| `many2one_avatar_user` | 256 | hr.employee:list, hr.employee:kanban, hr.employee:form |
-| `upgrade_boolean` | 220 | res.config.settings:form |
-| `badge` | 176 | stock.move.line:list, mail.alias:list, mail.alias:form |
-| `handle` | 154 | account.report:list, account.report:form, mail.activity.plan:form |
-| `image` | 118 | hr.employee:list, hr.employee:form, ir.module.module:form |
-| `statusbar` | 107 | hr.leave.allocation:form, hr.leave:form, hr.attendance:form |
-| `many2many_tax_tags` | 107 | account.move.line:list, account.move.line:kanban, account.move:form |
-| `phone` | 98 | hr.employee:list, hr.employee:kanban, hr.employee:form |
-| `priority` | 87 | stock.picking:list, stock.picking:kanban, stock.picking:form |
-| `text` | 78 | ir.access:form, mail.activity.plan:form, mail.activity.type:form |
-| `<widget>iap_buy_more_credits` | 77 |  |
-| `res_partner_many2one` | 71 | account.move:form, res.partner:form, crm.lead:form |
-| `boolean_toggle` | 68 | hr.employee:form, account.report:form, mail.followers.edit:form |
-| `many2one_avatar_employee` | 67 | hr.employee:list, hr.employee:form, hr.leave.allocation:list |
-| `float_time` | 60 | hr.leave:form, account.analytic.line:graph, hr.attendance:list |
-| `kanban_activity` | 56 | hr.employee:kanban, stock.picking:kanban, stock.picking.batch:kanban |
-| `list_activity` | 54 | hr.employee:list, account.move:list, res.partner:list |
-| `email` | 52 | hr.employee:form, account.move:form, res.users:form |
-| `relative_date` | 46 | mail.activity:list, stock.picking:list, hr.employee:list |
-| `float` | 45 | hr.leave.allocation:kanban, hr.leave:kanban, account.analytic.line:grid |
-| `daterange` | 45 | hr.leave:form, hr.attendance:form, account.move.line:list |
+| `daterange` | 146 | project.task:list, project.task:kanban, project.task:form |
+| `<widget>iap_buy_more_credits` | 119 |  |
+| `relative_date` | 95 | mail.activity:list, project.task:list, project.task:kanban |
+| `list_activity` | 93 | hr.employee:list, project.task:list, project.task:form |
+| `project_task_state_selection` | 83 | project.task:list, project.task:kanban, project.task:form |
+| `kanban_activity` | 76 | hr.employee:kanban, project.task:kanban, stock.picking:kanban |
+| `document_tax_mode_selector` | 52 | account.move:form, sale.order:form, purchase.order:form |
+| `name_with_subtask_count` | 47 | project.task:list, project.task:form, project.task:kanban |
 | `stock_rescheduling_popover` | 45 | stock.picking:list, stock.picking:kanban, stock.picking:form |
-| `percentage` | 45 | hr.time.rule:form, account.account:list, account.move:form |
-| `document_tax_mode_selector` | 42 | account.move:form, sale.order:form |
-| `x2many_buttons` | 39 | res.partner.bank:form, account.move:form, account.payment:form |
-| `properties` | 36 | hr.employee:kanban, stock.picking:kanban, res.partner:kanban |
-| `many2one_bank` | 36 | account.move:form, account.payment:form |
+| `x2many_buttons` | 45 | res.partner.bank:form, account.move:form, account.payment:form |
+| `project` | 43 | project.task:list, project.task:calendar, project.task:form |
+| `color` | 43 | product.attribute:form, base.document.layout:form, hr.employee.cv.wizard:form |
+| `<widget>documentation_link` | 41 |  |
+| `many2many_tags_email` | 39 | mail.followers.edit:form, mail.compose.message:form, portal.share:form |
+| `properties` | 38 | hr.employee:kanban, stock.picking:kanban, res.partner:kanban |
 | `labeled_monetary_field` | 36 | sale.order:form |
+| `activity_exception` | 33 | hr.leave.allocation:list, hr.leave:list, stock.picking:list |
+| `kanban_color_picker` | 33 | project.task:kanban, utm.campaign:kanban, account.journal:kanban |
 | `field_partner_autocomplete` | 32 | res.company:form, res.partner:form |
-| `url` | 31 | ir.module.module:form, ir.attachment:kanban, ir.attachment:form |
-| `color` | 31 | product.attribute:form, base.document.layout:form, hr.employee.cv.wizard:form |
+| `boolean_favorite` | 32 | account.journal:kanban, product.product:kanban, stock.picking.type:kanban |
+| `color_picker` | 31 | account.account.tag:list, account.analytic.plan:list, account.analytic.plan:form |
+| `float_time_selection` | 31 | hr.leave:kanban, hr.leave.generate.multi.wizard:form, res.config.settings:form |
+| `account_review_state_selection_badge` | 31 | account.asset.variant:form, account.account:list, account.move:list |
 | `<widget>pls_tooltip_button` | 30 |  |
-| `<widget>documentation_link` | 29 |  |
+| `boolean_checkbox` | 30 | product.product:form, product.template:form |
 | `stock_picking_locked_statusbar` | 28 | stock.picking:form |
-| `boolean_favorite` | 28 | account.journal:kanban, product.product:kanban, stock.picking.type:kanban |
-| … 195 more | | |
+| `label_selection` | 26 | ir.access:list, stock.picking:kanban, stock.picking.batch:kanban |
+| `m2o_cell_with_extra_fields` | 26 | account.move:form |
+| `many2one_barcode` | 26 | account.move:form, sale.order:form, purchase.order:form |
+| `account-tax-totals-field` | 26 | account.move:form, sale.order:form, purchase.order:form |
+| `payment` | 26 | account.move:form |
+| `rotting_statusbar_duration` | 25 | project.task:form, crm.lead:form |
+| `html` | 24 | project.task:form, account.payment:form |
+| `CopyClipboardChar` | 24 | account.move:form, hr.expense:form, calendar.event:form |
+| `badges_many2one` | 23 | mail.activity:form, project.task:list, hr.employee.skill:form |
+| `extract_state_header` | 23 | account.bank.statement:form, account.move:form, hr.expense:form |
+| `<widget>section_state` | 23 |  |
+| `selection` | 23 | calendar.calendar:list, base.document.layout:form, quotation.document:kanban |
+| `mail_composer_attachment_list` | 23 | mail.compose.message:form, mail.template.preview:form |
+| `sms_widget` | 23 | sms.sms:form, sms.composer:form, sms.template:form |
+| … 213 more | | |
 
 ## Missing field types (default widget) (by usage)
 
 | Name | Uses | Examples |
 |---|---|---|
-| `many2one` | 5746 | stock.quant:list |
-| `boolean` | 4338 |  |
-| `char` | 4085 | ir.cron:form, ir.actions.server:form |
-| `selection` | 1700 | calendar.calendar:list, base.document.layout:form, quotation.document:kanban |
-| `integer` | 983 | hr.export.work.entries:form |
-| `float` | 951 | hr.leave.allocation:kanban, hr.leave:kanban, account.analytic.line:grid |
-| `date` | 864 |  |
-| `monetary` | 684 | hr.employee:list, product.value:form, account.analytic.account:kanban |
-| `datetime` | 568 | stock.inventory.adjustment.name:form |
-| `many2many` | 460 | stock.picking.batch:form, account.batch.payment:form, ir.cron:form |
-| `text` | 379 | ir.access:form, mail.activity.plan:form, mail.activity.type:form |
-| `one2many` | 266 | hr.employee:form, res.currency:form, calendar.event:form |
-| `html` | 220 | account.payment:form |
-| `properties` | 115 | hr.employee:kanban, stock.picking:kanban, res.partner:kanban |
-| `binary` | 58 | hr.employee:form, hr.employee.skill:list, hr.resume.line:list |
-| `json` | 57 |  |
-| `reference` | 54 | ir.model.data:form |
-| `many2one_reference` | 28 |  |
+| `many2many` | 656 | stock.picking.batch:form, account.batch.payment:form, ir.cron:form |
+| `one2many` | 386 | hr.employee:form, res.currency:form, account.fiscal.position:form |
+| `html` | 291 | project.task:form, account.payment:form |
+| `properties` | 178 | hr.employee:kanban, stock.picking:kanban, res.partner:kanban |
+| `json` | 77 |  |
+| `reference` | 64 | ir.model.data:form |
+| `binary` | 60 | hr.employee:form, hr.employee.skill:list, spreadsheet.template:list |
+| `many2one_reference` | 53 |  |
 | `properties_definition` | 1 |  |
 
 ## Missing client actions (by usage)
 
 | Name | Uses | Examples |
 |---|---|---|
-| `account_report` | 22 |  |
+| `account_report` | 23 |  |
+| `account_import_action` | 5 |  |
 | `stock_barcode_client_action` | 3 |  |
 | `stock_forecasted` | 2 |  |
+| `account_import_guide` | 1 |  |
 | `allocation_report` | 1 |  |
 | `stock_barcode_main_menu` | 1 |  |
 | `account_report_followup` | 1 |  |
 | `action_spreadsheet_dashboard` | 1 |  |
 | `mail.action_discuss` | 1 |  |
+| `document_action_preference` | 1 |  |
 | `stock_valuation_report` | 1 |  |
 | `hr_attendance_greeting_message` | 1 |  |
 | `mysubscription.dashboard` | 1 |  |
@@ -119,13 +110,3 @@ Scanned **499** window actions (**1691** views), 40 client actions, 174 server a
 | `stock_report_generic` | 1 |  |
 | `mail.discuss_call_settings_action` | 1 |  |
 | `journal_create_wizard` | 1 |  |
-
-## Scan errors (7)
-
-- action 170 (account.analytic.plan): You are not allowed to access 'Analytic Plan' (account.analytic.plan) records. This operation is allowed for the following groups: - Analytic Accounting - Show 
-- action 626 (account.return.check.template): You are not allowed to access 'Account Return Check Template' (account.return.check.template) records. This operation is allowed for the following groups: - Sho
-- action 630 (account.return.check): You are not allowed to access 'Accounting Return Check' (account.return.check) records. This operation is allowed for the following groups: - Show Accounting Fe
-- action 623 (account.return.creation.wizard): You are not allowed to access 'Return creation wizard' (account.return.creation.wizard) records. This operation is allowed for the following groups: - Show Full
-- action 512 (account.auto.reconcile.wizard): You are not allowed to access 'Account automatic reconciliation wizard' (account.auto.reconcile.wizard) records. This operation is allowed for the following gro
-- action 627 (account.return.creation.wizard): You are not allowed to access 'Return creation wizard' (account.return.creation.wizard) records. This operation is allowed for the following groups: - Show Full
-- action 267 (account.automatic.entry.wizard): You are not allowed to access 'Create Automatic Entries' (account.automatic.entry.wizard) records. This operation is allowed for the following groups: - Show Fu

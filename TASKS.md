@@ -499,22 +499,22 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** searching, grouping and favourites behave the same as in Odoo for 10 actions.
 
 ### P2.13 Core field widgets (with read/edit modes)
-- [~] P2.13.1 char, text, email, phone, url *(char and text, read + edit, done with P2.10; email/phone/url links next)*
-- [~] P2.13.2 integer, float, monetary (currency field, digits), percentage *(typed in the user's number format, done with P2.10; percentage next)*
-- [~] P2.13.3 boolean, boolean_toggle *(boolean done with P2.10)*
-- [~] P2.13.4 selection, radio, badge, priority (stars) *(selection done with P2.10)*
+- [x] P2.13.1 char, text, email, phone, url (links open the mail app, phone or page; `text` widget on char is multi-line)
+- [x] P2.13.2 integer, float, monetary (currency field, digits), percentage, float_time — typed in the user's number format
+- [x] P2.13.3 boolean, boolean_toggle (switch), upgrade_boolean
+- [x] P2.13.4 selection, radio, badge, priority (stars)
 - [~] P2.13.5 date, datetime (tz-aware), daterange *(date and datetime with the platform pickers, done with P2.10)*
-- [~] P2.13.6 many2one (search, create & edit, open record, `options` no_create/no_open) *(search in the field's domain done with P2.10; create/open next)*
-- [ ] P2.13.7 many2many_tags (colours), many2many_checkboxes
+- [~] P2.13.6 many2one (search, create & edit, open record, `options` no_create/no_open) *(search in the field's domain and avatar variants done; create/open next)*
+- [~] P2.13.7 many2many_tags (remove, add by search; also tax tags, avatar tags), many2many_checkboxes *(tags done; tag colours and checkboxes next)*
 - [ ] P2.13.8 one2many / many2many inline list (editable sub-list, dialog form)
-- [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
+- [~] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop) *(image shown from Odoo; upload next)*
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
 - [~] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner) *(read mode done: every type renders from metadata through the one formatter; edit mode with P2.13)*
 - [x] P2.13.15 `useFormat()` React hook over `createFormatter()` (ex-P1.11.6): the user's language parameters (`/web/webclient/translations`), timezone and currencies from Odoo
 - [ ] P2.13.16 Widget field dependencies (what each widget must also read: avatars → `write_date`, activities → `activity_*`, …), declared by each NOVI widget and merged into the spec; the client-spec capture lists the 122 Odoo needs today
 - [ ] P2.13.17 Inline list editing (`editable="top|bottom"`), keyboard navigation, multi-edit on selected rows (`writeSelected`) (ex-P2.9.4)
 - [~] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2) *(Select, Combobox, Textarea, Tabs, Stepper done with P2.10; the platform's date input and checkbox stand in for DatePicker and Checkbox)*
-- [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
+- [x] P2.13.13 The coverage scanner reads widgets and field types from the code (field registry `manifest()` + views' `VIEW_WIDGETS`); `supported.json` keeps only view types and client actions (ex-P1.17.7). Demo: widgets 0% → 63%, field types 0% → 94%, view types 45%
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)
 
 **Done when:** every widget has stories, tests and works inside forms and lists.

@@ -1,7 +1,5 @@
 {
-  "$comment": "What the NOVI engine renders natively. Updated as Phase 2/3 tasks land; the scanner measures coverage against it.",
-  "viewTypes": [],
-  "widgets": [],
-  "fieldTypes": [],
+  "$comment": "View types and client actions NOVI renders natively, updated as views land. Widgets and field types come from the code (field registry manifest + VIEW_WIDGETS), never from this file.",
+  "viewTypes": ["form", "list"],
   "clientActions": []
 }
