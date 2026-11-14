@@ -10,7 +10,7 @@
 import { type Group, GroupedList, type OdooRecord, RecordList, useModel } from "@novi/engine";
 import { fieldRegistry } from "@novi/fields";
 import { type EvalContext, evaluateBool } from "@novi/odoo-expr";
-import type { ButtonNode, FieldNode, ListSchema } from "@novi/odoo-meta";
+import type { ButtonNode, ColumnNode, FieldNode, ListSchema } from "@novi/odoo-meta";
 import {
   Button,
   cn,
@@ -61,7 +61,113 @@ export interface ListViewProps {
   onButton?(record: OdooRecord, button: ButtonNode): void;
 }
 
-type Column = FieldNode | ButtonNode;
+/** A list column: a field, a button, or Odoo's `<column>` (several fields shown together). */
+export type Column = FieldNode | ButtonNode | ColumnNode;
+
+/** The field a column is named, sorted and totalled by (a `<column>`'s first field). */
+export const leadField = (c: Column): FieldNode | undefined =>
+  c.type === "field"
+    ? c
+    : c.type === "column"
+      ? c.children.find((x): x is FieldNode => x.type === "field")
+      : undefined;
+
+/**
+ * The columns shown: column_invisible is evaluated once for the whole list (context, parent),
+ * not per row; optional columns as the user chose; no handle; images wait for their widget.
+ */
+export function visibleColumns(
+  schema: ListSchema,
+  evalContext: Record<string, unknown>,
+  shown: Set<string>,
+): Column[] {
+  const type = (name: string) => schema.fields[name]?.type ?? "char";
+  return schema.columns.filter((c): c is Column => {
+    if (c.type === "widget" || holds(c.columnInvisible, evalContext)) return false;
+    if (c.type === "button") return true;
+    const f = leadField(c);
+    if (!f || !schema.fields[f.name]) return false;
+    if (c.type === "column") return true;
+    return (
+      c.invisible !== true &&
+      (!c.optional || shown.has(c.name)) &&
+      c.widget !== "handle" &&
+      !["binary", "image"].includes(type(c.name))
+    );
+  });
+}
+
+/** One cell's content, read-only, through the field registry (lists and form lines alike). */
+export function ReadCell({
+  record,
+  node,
+  fields,
+  context,
+  onButton,
+}: {
+  record: OdooRecord;
+  node: Column | ButtonNode;
+  fields: ListSchema["fields"];
+  context: Record<string, unknown>;
+  onButton?(record: OdooRecord, button: ButtonNode): void;
+}): ReactNode {
+  if (holds(node.invisible, context)) return null;
+  if (node.type === "button") {
+    return (
+      <Button
+        variant={node.primary ? "primary" : "secondary"}
+        size="sm"
+        title={node.help ?? node.string}
+        onClick={(e) => {
+          e.stopPropagation();
+          onButton?.(record, node);
+        }}
+      >
+        {node.string ?? node.name}
+      </Button>
+    );
+  }
+  if (node.type === "column") {
+    // the fields Odoo shows in this column: not hidden for the column, not optional-hidden
+    const kids = node.children.filter(
+      (child) =>
+        child.type !== "widget" &&
+        !holds(child.columnInvisible, context) &&
+        !(child.type === "field" && child.optional === "hide"),
+    );
+    return (
+      <div className="grid gap-0.5">
+        {kids.map((child, i) => (
+          <div key={i}>
+            <ReadCell
+              record={record}
+              node={child as Column}
+              fields={fields}
+              context={context}
+              onButton={onButton}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  const m = fields[node.name];
+  if (!m || ["binary", "image"].includes(m.type)) return null;
+  const Cell = fieldRegistry.resolve(m.type, node.widget).component;
+  return (
+    <Cell
+      name={node.name}
+      value={record.values[node.name]}
+      meta={m}
+      options={node.options ?? {}}
+      mode="read"
+      readonly
+      required={false}
+      context={context}
+      onChange={() => undefined}
+    />
+  );
+}
 
 function readShown(key: string | undefined, schema: ListSchema): Set<string> {
   const defaults = schema.columns
@@ -84,18 +190,7 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
 
   const meta = (name: string) => schema.fields[name] ?? { type: "char" };
   const optional = schema.columns.filter((c): c is FieldNode => c.type === "field" && !!c.optional);
-  // column_invisible is evaluated once for the whole list (context, parent), not per row
-  const columns = schema.columns.filter(
-    (c): c is Column =>
-      (c.type === "field" &&
-        c.invisible !== true &&
-        !holds(c.columnInvisible, evalContext) &&
-        (!c.optional || shown.has(c.name)) &&
-        c.widget !== "handle" &&
-        // images wait for their own widget (P2.13.9)
-        !["binary", "image"].includes(meta(c.name).type)) ||
-      (c.type === "button" && !holds(c.columnInvisible, evalContext)),
-  );
+  const columns = visibleColumns(schema, evalContext, shown);
   const handle = schema.columns.find((c): c is FieldNode => c.type === "field" && c.widget === "handle");
   const flat = list instanceof RecordList ? list : undefined;
   const canDrag = !!handle && !!flat;
@@ -111,41 +206,6 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
     } catch {
       // per-browser convenience only
     }
-  };
-
-  const cell = (rec: OdooRecord, c: Column, ctx: Record<string, unknown>): ReactNode => {
-    if (c.type === "button") {
-      if (holds(c.invisible, ctx)) return null;
-      return (
-        <Button
-          variant={c.primary ? "primary" : "secondary"}
-          size="sm"
-          title={c.help ?? c.string}
-          onClick={(e) => {
-            e.stopPropagation();
-            onButton?.(rec, c);
-          }}
-        >
-          {c.string ?? c.name}
-        </Button>
-      );
-    }
-    if (holds(c.invisible, ctx)) return null;
-    const m = meta(c.name);
-    const Cell = fieldRegistry.resolve(m.type, c.widget).component;
-    return (
-      <Cell
-        name={c.name}
-        value={rec.values[c.name]}
-        meta={m}
-        options={c.options ?? {}}
-        mode="read"
-        readonly
-        required={false}
-        context={ctx}
-        onChange={() => undefined}
-      />
-    );
   };
 
   /** A total formatted like the column's values (through the same field widget). */
@@ -214,18 +274,19 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
           </td>
         ) : null}
         {columns.map((c, i) => {
-          const numeric = c.type === "field" && NUMERIC.has(meta(c.name).type);
+          const lead = leadField(c);
+          const numeric = !!lead && NUMERIC.has(meta(lead.name).type);
           return (
             <td
-              key={`${c.type}-${c.type === "field" ? c.name : (c.name ?? i)}`}
+              key={`${c.type}-${lead?.name ?? i}`}
               className={cn(
                 "max-w-xs truncate px-3 py-2",
                 numeric && "text-right tabular-nums",
                 i === 0 && depth > 0 && "ps-6",
-                c.type === "field" && decorations(c.decorations, ctx),
+                lead && decorations(lead.decorations, ctx),
               )}
             >
-              {cell(rec, c, ctx)}
+              <ReadCell record={rec} node={c} fields={schema.fields} context={ctx} onButton={onButton} />
             </td>
           );
         })}
@@ -258,7 +319,7 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
               </td>
             ) : (
               <td key={`a-${i}`} className="px-3 py-2 text-right tabular-nums">
-                {c.type === "field" ? total(c, group.aggregates[c.name]) : null}
+                {leadField(c) ? total(leadField(c)!, group.aggregates[leadField(c)!.name]) : null}
               </td>
             ),
           )}
@@ -273,9 +334,10 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
     });
 
   const pageTotals =
-    flat && columns.some((c) => c.type === "field" && (c.sum || c.avg))
-      ? columns.map((c) => {
-          if (c.type !== "field" || !(c.sum || c.avg)) return undefined;
+    flat && columns.some((c) => leadField(c)?.sum || leadField(c)?.avg)
+      ? columns.map((col) => {
+          const c = leadField(col);
+          if (!c || !(c.sum || c.avg)) return undefined;
           const values = flat.records.map((r) => Number(r.values[c.name] ?? 0));
           const sum = values.reduce((a, b) => a + b, 0);
           return c.sum ? sum : values.length ? sum / values.length : 0;
@@ -302,14 +364,15 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
             </th>
             {canDrag ? <th scope="col" className="w-6" /> : null}
             {columns.map((c, i) => {
-              if (c.type === "button") return <th key={`b-${i}`} scope="col" />;
-              const m = meta(c.name);
-              const label = c.string ?? m.string ?? c.name;
+              const f = leadField(c);
+              if (!f) return <th key={`b-${i}`} scope="col" />;
+              const m = meta(f.name);
+              const label = (c.type === "column" ? c.string : undefined) ?? f.string ?? m.string ?? f.name;
               const sortable = !!flat && m.sortable !== false;
-              const active = sortField === c.name;
+              const active = sortField === f.name;
               return (
                 <th
-                  key={c.name}
+                  key={f.name}
                   scope="col"
                   aria-sort={active ? (sortDir === "DESC" ? "descending" : "ascending") : undefined}
                   className={cn(
@@ -322,7 +385,7 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
                       type="button"
                       className="inline-flex items-center gap-1 hover:text-text"
                       title={t("sortBy", { name: String(label) })}
-                      onClick={() => void flat!.sortBy(c.name)}
+                      onClick={() => void flat!.sortBy(f.name)}
                     >
                       {label}
                       {active ? (

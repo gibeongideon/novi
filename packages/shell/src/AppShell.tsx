@@ -11,7 +11,7 @@ import {
   useColorMode,
   useT,
 } from "@novi/ui";
-import { LayoutGrid, LogOut, Menu as MenuIcon, Moon, Search, Sun } from "lucide-react";
+import { LayoutGrid, LogOut, Menu as MenuIcon, Moon, Search, Sun, UserCog } from "lucide-react";
 import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -23,6 +23,7 @@ import { isTypingTarget } from "./typing";
 
 // Loaded on first use: most visits never open search (Lighthouse: unused JS)
 const CommandPalette = lazy(() => import("./CommandPalette").then((m) => ({ default: m.CommandPalette })));
+const Preferences = lazy(() => import("./Preferences").then((m) => ({ default: m.Preferences })));
 import { menuUrl } from "./urls";
 
 /** Top bar + current app's sidebar + content. The active menu comes from `?menu=` (deep-linkable). */
@@ -35,6 +36,7 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
   const menus = useMenus();
   const [params] = useSearchParams();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [prefs, setPrefs] = useState(0); // opens the preferences dialog (a new one per click)
   const [search, setSearch] = useState({ open: false, used: false, query: "" });
 
   // Type anywhere to search; ⌘K / Ctrl+K also opens it (D-24)
@@ -130,6 +132,10 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>{userName}</DropdownMenuLabel>
+            <DropdownMenuItem onSelect={() => setPrefs((n) => n + 1)}>
+              <UserCog aria-hidden />
+              {t("preferences")}
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => logout()}>
               <LogOut aria-hidden />
               {t("signOut")}
@@ -153,6 +159,11 @@ export function AppShell({ children, productName = "NOVI" }: { children: ReactNo
           <ErrorBoundary resetKey={location.pathname + location.search}>{children}</ErrorBoundary>
         </main>
       </div>
+      {prefs ? (
+        <Suspense fallback={null}>
+          <Preferences key={prefs} />
+        </Suspense>
+      ) : null}
       {search.used ? (
         <Suspense fallback={null}>
           <CommandPalette

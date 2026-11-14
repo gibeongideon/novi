@@ -15,15 +15,17 @@ const ResetPasswordPage = lazy(() =>
 const SignupStatusPage = lazy(() =>
   import("./SignupStatusPage").then((m) => ({ default: m.SignupStatusPage })),
 );
-const ActionPage = lazy(() => import("./ActionPage").then((m) => ({ default: m.ActionPage })));
-const RecordPage = lazy(() => import("./RecordPage").then((m) => ({ default: m.RecordPage })));
+const StackPage = lazy(() => import("./StackPage").then((m) => ({ default: m.StackPage })));
+const FormPage = lazy(() => import("./FormPage").then((m) => ({ default: m.FormPage })));
 
 /**
  * URL scheme (deep-linkable, survives reload):
  *   /                          app launcher
  *   /apps/:appId               opens the app's first action
  *   /action/:actionId?menu=ID  an action, with the menu that opened it (sidebar + breadcrumbs)
- *   /record/:model/:id         one record (from search; native form view in P2)
+ *   /action/12/42[/action/30…] an action stack: action 12's record 42, then what it opened (P2.10.12)
+ *   /action/12/new             a new record in action 12's form
+ *   /record/:model/:id         one record without an action (search), in the model's default form
  *   /signup, /signup/status/:id   self-service sign-up and provisioning progress (public)
  *   /reset-password[?token=…]     password reset by email (public)
  */
@@ -50,10 +52,10 @@ export function ShellRoutes({ productName }: { productName?: string }) {
         <Route path="/" element={<AppLauncher />} />
         <Route path="/apps/:appId" element={<OpenApp />} />
         <Route
-          path="/action/:actionId"
+          path="/action/*"
           element={
             <Suspense fallback={<Skeleton className="m-6 h-8 w-48" />}>
-              <ActionPage />
+              <StackPage />
             </Suspense>
           }
         />
@@ -61,13 +63,26 @@ export function ShellRoutes({ productName }: { productName?: string }) {
           path="/record/:model/:id"
           element={
             <Suspense fallback={<Skeleton className="m-6 h-8 w-48" />}>
-              <RecordPage />
+              <RecordRoute />
             </Suspense>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
+  );
+}
+
+function RecordRoute() {
+  const { model, id } = useParams();
+  return (
+    <FormPage
+      key={`${model}/${id}`}
+      model={model}
+      resId={id === "new" ? "new" : Number(id)}
+      trail={[]}
+      base={`/record/${model}`}
+    />
   );
 }
 

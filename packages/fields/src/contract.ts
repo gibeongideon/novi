@@ -25,8 +25,16 @@ export interface FieldProps<V = unknown> {
   invalid?: string;
   /** Record values + user context, for domains/defaults of relational widgets. */
   context: Readonly<OdooContext>;
+  /** Accessible name when the field has no visible label next to it (a title, a field in text). */
+  label?: string;
+  /** Arch `placeholder`. */
+  placeholder?: string;
+  /** Relational widgets: the evaluated domain to search in (arch `domain` or the field's own). */
+  domain?: readonly unknown[];
   /** The engine turns this into dirty state + onchange. */
   onChange(value: V): void;
+  /** The user typed something the widget can't turn into a value (refuses saving until corrected). */
+  onInvalid?(message: string): void;
 }
 
 // The registry stores widgets for many value types side by side, so it erases V.

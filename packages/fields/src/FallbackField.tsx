@@ -20,7 +20,11 @@ export function FallbackField({ value, meta, context, options }: FieldProps) {
     case "many2one":
     case "reference":
     case "many2one_reference":
-      return <>{named(value) ? (value.display_name ?? "") : String(value)}</>;
+      return (
+        <span className="whitespace-pre-line">
+          {named(value) ? (value.display_name ?? "") : String(value)}
+        </span>
+      );
     case "one2many":
     case "many2many": {
       const items = Array.isArray(value) ? value : [];

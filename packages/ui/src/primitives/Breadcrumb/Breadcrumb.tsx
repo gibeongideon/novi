@@ -11,17 +11,19 @@ export interface BreadcrumbItem {
 
 export interface BreadcrumbProps {
   items: BreadcrumbItem[];
+  /** False when the current page is named elsewhere (a page title under the trail). */
+  lastIsCurrent?: boolean;
   className?: string;
 }
 
 /** Odoo action stack as breadcrumbs; the last item is the current page. */
-export function Breadcrumb({ items, className }: BreadcrumbProps) {
+export function Breadcrumb({ items, lastIsCurrent = true, className }: BreadcrumbProps) {
   const t = useT();
   return (
     <nav aria-label={t("breadcrumb")} className={cn("min-w-0", className)}>
       <ol className="flex min-w-0 items-center gap-1 text-sm text-text-muted">
         {items.map((item, i) => {
-          const current = i === items.length - 1;
+          const current = lastIsCurrent && i === items.length - 1;
           return (
             <Fragment key={`${i}-${item.label}`}>
               {i > 0 ? <ChevronRight className="size-4 shrink-0" aria-hidden /> : null}

@@ -7,11 +7,16 @@ export interface AvatarProps {
   src?: string;
   /** Person or company name; used for alt text and initials fallback. */
   name: string;
-  size?: "sm" | "md" | "lg";
+  size?: keyof typeof sizes;
   className?: string;
 }
 
-const sizes = { sm: "size-6 text-xs", md: "size-8 text-sm", lg: "size-12 text-base" } as const;
+const sizes = {
+  sm: "size-6 text-xs",
+  md: "size-8 text-sm",
+  lg: "size-12 text-base",
+  xl: "size-20 text-2xl",
+} as const;
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

@@ -461,18 +461,18 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** partner, product and invoice lists match Odoo's data and actions. *(live, against Odoo's own client: same request incl. default filters, same records and count, same Action/Print menus; also "My Quotations")*
 
 ### P2.10 Form view
-- [ ] P2.10.1 Layout renderer: sheet → card, groups → responsive 12-column grid, notebook → tabs
-- [ ] P2.10.2 Header: statusbar stepper + primary/secondary action buttons
-- [ ] P2.10.3 Smart buttons (`oe_button_box`) → stat chips
-- [ ] P2.10.4 Title area (`oe_title`), avatar/image
-- [ ] P2.10.5 Modifiers live: invisible / readonly / required re-evaluated on change
-- [ ] P2.10.6 Edit-mode UX: always editable, save/discard bar when dirty, autosave on leave (configurable)
-- [ ] P2.10.7 Record pager (prev/next within the list)
-- [ ] P2.10.8 Chatter slot (drawer placeholder until P3.7)
-- [ ] P2.10.9 User preferences = Odoo's own preferences form (`res.users` preferences view: language, timezone, signature, API keys, "log out from all devices") opened from the user menu through the generic form view (ex-P1.12.1)
-- [ ] P2.10.10 Show onchange warnings from the engine (`onWarning`): `dialog` as a dialog, `notification` as a toast (ex-P2.6.3)
+- [x] P2.10.1 Layout renderer: sheet → card, groups → label/value rows or columns of groups (responsive grid), notebook → tabs (`Tabs` pattern), settings app/block/setting, Odoo 20 `<column>` in lists and lines
+- [x] P2.10.2 Header: statusbar stepper (`Stepper` pattern; selection and many2one steps, clickable saves) + primary/secondary action buttons, with `confirm` asked first
+- [x] P2.10.3 Smart buttons (`oe_button_box`) → stat chips
+- [x] P2.10.4 Title area (`oe_title`), avatar/image (`/web/image`, initials when none)
+- [x] P2.10.5 Modifiers live: invisible / readonly / required re-evaluated on change (buttons, pages, groups too)
+- [~] P2.10.6 Edit-mode UX: always editable, save/discard bar when dirty, saved before leaving by breadcrumbs or record pager; tab close asks *(sidebar/menu navigation while dirty not guarded yet; "configurable" dropped until someone asks, Musk step 2)*
+- [x] P2.10.7 Record pager (prev/next within the list the record was opened from)
+- [x] P2.10.8 Chatter slot beside the sheet (placeholder with "Open in Odoo" until P3.7)
+- [x] P2.10.9 User preferences = Odoo's own preferences form (`res.users` preferences view: language, timezone, signature, API keys, "log out from all devices") opened from the user menu through the generic form view (ex-P1.12.1)
+- [x] P2.10.10 Show onchange warnings from the engine (`onWarning`): `dialog` as a dialog, `notification` as a toast (ex-P2.6.3)
 - [ ] P2.10.11 Palette quick commands (new invoice, new lead…) and recent items (ex-P2.8.10)
-- [ ] P2.10.12 Breadcrumbs from the action stack in the URL (`encodeStack`/`decodeStack`): list → record → action from a button, restored on reload (ex-P2.8.8)
+- [x] P2.10.12 Breadcrumbs from the action stack in the URL (`encodeStack`/`decodeStack`): list → record → action from a button, restored on reload (ex-P2.8.8)
 
 **Done when:** the sale order, partner, product and employee forms render and save correctly.
 
@@ -499,12 +499,12 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** searching, grouping and favourites behave the same as in Odoo for 10 actions.
 
 ### P2.13 Core field widgets (with read/edit modes)
-- [ ] P2.13.1 char, text, email, phone, url
-- [ ] P2.13.2 integer, float, monetary (currency field, digits), percentage
-- [ ] P2.13.3 boolean, boolean_toggle
-- [ ] P2.13.4 selection, radio, badge, priority (stars)
-- [ ] P2.13.5 date, datetime (tz-aware), daterange
-- [ ] P2.13.6 many2one (search, create & edit, open record, `options` no_create/no_open)
+- [~] P2.13.1 char, text, email, phone, url *(char and text, read + edit, done with P2.10; email/phone/url links next)*
+- [~] P2.13.2 integer, float, monetary (currency field, digits), percentage *(typed in the user's number format, done with P2.10; percentage next)*
+- [~] P2.13.3 boolean, boolean_toggle *(boolean done with P2.10)*
+- [~] P2.13.4 selection, radio, badge, priority (stars) *(selection done with P2.10)*
+- [~] P2.13.5 date, datetime (tz-aware), daterange *(date and datetime with the platform pickers, done with P2.10)*
+- [~] P2.13.6 many2one (search, create & edit, open record, `options` no_create/no_open) *(search in the field's domain done with P2.10; create/open next)*
 - [ ] P2.13.7 many2many_tags (colours), many2many_checkboxes
 - [ ] P2.13.8 one2many / many2many inline list (editable sub-list, dialog form)
 - [ ] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop)
@@ -513,7 +513,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [x] P2.13.15 `useFormat()` React hook over `createFormatter()` (ex-P1.11.6): the user's language parameters (`/web/webclient/translations`), timezone and currencies from Odoo
 - [ ] P2.13.16 Widget field dependencies (what each widget must also read: avatars → `write_date`, activities → `activity_*`, …), declared by each NOVI widget and merged into the spec; the client-spec capture lists the 122 Odoo needs today
 - [ ] P2.13.17 Inline list editing (`editable="top|bottom"`), keyboard navigation, multi-edit on selected rows (`writeSelected`) (ex-P2.9.4)
-- [ ] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2)
+- [~] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2) *(Select, Combobox, Textarea, Tabs, Stepper done with P2.10; the platform's date input and checkbox stand in for DatePicker and Checkbox)*
 - [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)
 

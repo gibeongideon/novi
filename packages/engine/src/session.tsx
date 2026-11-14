@@ -11,6 +11,7 @@ import {
   QueryClient,
   QueryClientProvider,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -21,19 +22,21 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
 } from "react";
 
-import { ActionManager } from "./actions.js";
+import { ActionManager, type StackEntry } from "./actions.js";
 import { type AuthClient, directAuth, LoginError, type LoginResult } from "./auth.js";
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { createFormatter, type CurrencyInfo, type Formatter, type LangParameters } from "./format.js";
+import { type FormTarget, loadFormView } from "./formView.js";
 import { type ListViewData, loadListView } from "./listView.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
 import { type ListConfig, RecordList } from "./model/lists.js";
 import type { Observable, Rpc } from "./model/observable.js";
-import { OdooRecord, type RecordConfig } from "./model/record.js";
+import { OdooRecord, type OnchangeWarning, type RecordConfig } from "./model/record.js";
 import { modelLabels, type RecordGroup, SEARCHABLE_MODELS, searchRecords } from "./recordSearch.js";
 
 /** What the hooks need from a transport (JsonRpcTransport satisfies it). */
@@ -282,7 +285,11 @@ export function useRecordSearch(query: string) {
 /** Display name of one record (record page title until the form view lands in P2). */
 export function useRecordName(model: string | undefined, id: number | undefined) {
   const { transport } = useEngine();
-  return useQuery({
+  return useQuery(recordNameQuery(transport, model, id));
+}
+
+function recordNameQuery(transport: SessionTransport, model: string | undefined, id: number | undefined) {
+  return {
     queryKey: ["record-name", model, id],
     enabled: !!model && !!id,
     queryFn: async () => {
@@ -292,6 +299,51 @@ export function useRecordName(model: string | undefined, id: number | undefined)
       });
       return rec?.display_name ?? null;
     },
+  };
+}
+
+/**
+ * The names of an action stack's entries (P2.10.12 breadcrumbs): each action's name and, for a
+ * record entry, the record's name; `undefined` while loading or for a new record.
+ */
+export function useStackLabels(entries: readonly StackEntry[]): { action?: string; record?: string }[] {
+  const { transport } = useEngine();
+  const actions = useQueries({
+    queries: entries.map((e) => ({
+      queryKey: ["action", e.action],
+      queryFn: () => transport.loadAction<ActionInfo>(e.action as number),
+      staleTime: Infinity,
+    })),
+  });
+  const names = useQueries({
+    queries: entries.map((e, i) => {
+      const model = actions[i]?.data?.res_model || undefined;
+      return recordNameQuery(transport, model, typeof e.resId === "number" ? e.resId : undefined);
+    }),
+  });
+  return entries.map((_, i) => ({
+    action: actions[i]?.data?.name,
+    record: names[i]?.data ?? undefined,
+  }));
+}
+
+/** An action resolved for showing (the window action's views, context, domain), cached per id. */
+export function useWindowAction(actionId: number | string | undefined) {
+  const am = useActionManager();
+  const { transport } = useEngine();
+  const session = useQuery({
+    queryKey: ["session"],
+    queryFn: () => transport.getSessionInfo(),
+    staleTime: Infinity,
+  });
+  return useQuery({
+    queryKey: ["window-action", actionId],
+    enabled: actionId !== undefined && !!session.data,
+    queryFn: async () => {
+      const d = await am.resolve(actionId!);
+      return d.kind === "window" ? d.action : null;
+    },
+    staleTime: Infinity,
   });
 }
 
@@ -393,6 +445,72 @@ export function useListView(actionId: number | undefined) {
   });
   useModel(query.data?.list);
   return query;
+}
+
+/**
+ * A record's form (P2.10): its view and the live record (saved or new). Onchange warnings go to
+ * `onWarning`. The record is never served from cache: every visit reads it again.
+ */
+export function useFormView(target: FormTarget | undefined, onWarning?: (w: OnchangeWarning) => void) {
+  const { transport } = useEngine();
+  const session = useQuery({
+    queryKey: ["session"],
+    queryFn: () => transport.getSessionInfo(),
+    staleTime: Infinity,
+  });
+  const warn = useRef(onWarning);
+  warn.current = onWarning;
+  const query = useQuery({
+    queryKey: ["form-view", JSON.stringify(target ?? null)],
+    enabled: !!target && !!session.data,
+    queryFn: () => {
+      const rpc: Rpc = (model, method, call) => transport.call(model, method, call);
+      return loadFormView(rpc, target!, baseEvalContext(session.data ?? null), (w) => warn.current?.(w));
+    },
+    staleTime: 0,
+    gcTime: 0,
+  });
+  useModel(query.data?.record);
+  return query;
+}
+
+/** Records a many2one can point to (`web_name_search`, as Odoo's autocomplete), for the typed text. */
+export function useNameSearch(
+  model: string | undefined,
+  text: string,
+  domain: unknown[],
+  enabled: boolean,
+  limit = 8,
+) {
+  const { transport } = useEngine();
+  return useQuery({
+    queryKey: ["name-search", model, text, JSON.stringify(domain), limit],
+    enabled: enabled && !!model,
+    queryFn: () =>
+      transport.call<{ id: number; display_name: string }[]>(model!, "web_name_search", {
+        kwargs: { name: text, domain, specification: { display_name: {} }, limit },
+      }),
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * The steps of a many2one status bar (`stage_id`): the comodel's records in the field's domain,
+ * in the comodel's order, as Odoo's statusbar widget reads them.
+ */
+export function useRelatedRecords(model: string | undefined, domain: unknown[], enabled = true) {
+  const { transport } = useEngine();
+  return useQuery({
+    queryKey: ["related-records", model, JSON.stringify(domain)],
+    enabled: enabled && !!model,
+    queryFn: async () =>
+      (
+        await transport.call<{ records: { id: number; display_name: string }[] }>(model!, "web_search_read", {
+          kwargs: { domain, specification: { display_name: {} }, limit: 40 },
+        })
+      ).records,
+    staleTime: 60_000,
+  });
 }
 
 const noSubscribe = () => () => undefined;

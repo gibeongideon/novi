@@ -262,6 +262,9 @@ importers:
       '@novi/engine':
         specifier: workspace:*
         version: link:../engine
+      '@novi/odoo-meta':
+        specifier: workspace:*
+        version: link:../odoo-meta
       '@novi/ui':
         specifier: workspace:*
         version: link:../ui

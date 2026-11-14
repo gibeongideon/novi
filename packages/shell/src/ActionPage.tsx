@@ -1,27 +1,11 @@
 import { RecordList, useAction, useActionManager, useListView } from "@novi/engine";
-import {
-  Badge,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Pager,
-  Skeleton,
-  useT,
-} from "@novi/ui";
+import { Badge, Button, Pager, Skeleton, useT } from "@novi/ui";
 import { ListView } from "@novi/views";
-import { ChevronDown, ExternalLink, Printer } from "lucide-react";
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { ExternalLink, Plus } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import { ErrorDialog } from "./ErrorDialog";
+import { ActionMenus } from "./ActionMenus";
+import { type Crumb, PageTitle } from "./PageTitle";
 import { useActionRunner } from "./useActionRunner";
 
 /** Odoo's help HTML as plain paragraphs (never injected as HTML). */
@@ -44,17 +28,16 @@ const helpText = (html: unknown) =>
  * sorting, selection with bulk actions (Odoo's toolbar included), groups, empty state. Client
  * actions show Odoo's own screen embedded until NOVI has its own (P2.8.5).
  */
-export function ActionPage() {
+export function ActionPage({ actionId, trail }: { actionId: number | undefined; trail: Crumb[] }) {
   const t = useT();
   const navigate = useNavigate();
-  const actionId = Number(useParams().actionId) || undefined;
+  const { pathname, search } = useLocation();
   const action = useAction(actionId);
   const view = useListView(actionId);
   const am = useActionManager();
   const data = view.data;
   const list = data?.list;
   const runner = useActionRunner(() => list?.load());
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (action.isPending) {
     return (
@@ -113,79 +96,27 @@ export function ActionPage() {
   return (
     <div className="grid gap-4 p-6">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">{a.name}</h1>
+        <PageTitle trail={trail} title={a.name} />
+        {data && data.schema.access.create !== false && !selected.length ? (
+          <Button variant="primary" size="sm" onClick={() => navigate(`${pathname}/new${search}`)}>
+            <Plus aria-hidden />
+            {t("newRecord")}
+          </Button>
+        ) : null}
         {selected.length && list ? (
           <>
             <Badge tone="info">{t("selectedCount", { n: selected.length })}</Badge>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="sm">
-                  {t("actions")}
-                  <ChevronDown aria-hidden />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onSelect={() => void runner.guard(async () => void (await list.duplicateSelected()))}
-                >
-                  {t("duplicate")}
-                </DropdownMenuItem>
-                {canArchive ? (
-                  <>
-                    <DropdownMenuItem
-                      onSelect={() =>
-                        void runner.guard(async () =>
-                          am.resolve((await list.setArchivedSelected(true)) as never),
-                        )
-                      }
-                    >
-                      {t("archive")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() =>
-                        void runner.guard(async () =>
-                          am.resolve((await list.setArchivedSelected(false)) as never),
-                        )
-                      }
-                    >
-                      {t("unarchive")}
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-                <DropdownMenuItem className="text-danger" onSelect={() => setConfirmDelete(true)}>
-                  {t("delete")}
-                </DropdownMenuItem>
-                {data!.toolbar.action.length ? <DropdownMenuSeparator /> : null}
-                {data!.toolbar.action.map((item) => (
-                  <DropdownMenuItem
-                    key={item.id}
-                    onSelect={() => void runner.guard(() => am.resolve(item.id, bulkContext))}
-                  >
-                    {item.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {data!.toolbar.print.length ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" size="sm" aria-label={t("print")}>
-                    <Printer aria-hidden />
-                    <ChevronDown aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {data!.toolbar.print.map((item) => (
-                    <DropdownMenuItem
-                      key={item.id}
-                      onSelect={() => void runner.guard(() => am.resolve(item.id, bulkContext))}
-                    >
-                      {item.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
+            <ActionMenus
+              count={selected.length}
+              canArchive={canArchive}
+              toolbar={data!.toolbar}
+              onDuplicate={() => void runner.guard(async () => void (await list.duplicateSelected()))}
+              onArchive={(archived) =>
+                void runner.guard(async () => am.resolve((await list.setArchivedSelected(archived)) as never))
+              }
+              onDelete={() => void runner.guard(async () => void (await list.deleteSelected()))}
+              onToolbar={(item) => void runner.guard(() => am.resolve(item.id, bulkContext))}
+            />
           </>
         ) : list instanceof RecordList ? (
           <Pager
@@ -225,7 +156,11 @@ export function ActionPage() {
             list={list}
             evalContext={data.evalContext}
             storageKey={`${data.action.model}.${data.action.id ?? ""}`}
-            onOpen={(rec) => navigate(`/record/${data.schema.model}/${rec.id}`)}
+            onOpen={(rec) =>
+              navigate(`${pathname}/${rec.id}${search}`, {
+                state: { ids: list instanceof RecordList ? list.records.map((r) => r.id) : [] },
+              })
+            }
             onButton={(rec, button) => void runner.guard(() => am.executeButton(rec, button))}
           />
         )
@@ -233,31 +168,7 @@ export function ActionPage() {
         <p className="text-text-muted">{t("nativeViewSoon")}</p>
       )}
 
-      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent size="sm">
-          <DialogTitle>{t("deleteConfirmTitle", { n: selected.length })}</DialogTitle>
-          <DialogDescription>{t("deleteConfirmBody")}</DialogDescription>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-              {t("cancel")}
-            </Button>
-            <Button
-              variant="danger"
-              onClick={() => {
-                setConfirmDelete(false);
-                void runner.guard(async () => void (await list?.deleteSelected()));
-              }}
-            >
-              {t("delete")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      <ErrorDialog
-        error={runner.error}
-        onClose={runner.clearError}
-        onRedirect={(target) => void runner.guard(() => am.resolve(target as never))}
-      />
+      {runner.ui}
     </div>
   );
 }

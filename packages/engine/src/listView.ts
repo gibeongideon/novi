@@ -70,6 +70,24 @@ export function defaultSearch(
   return { domain: parts.length ? Domain.and(parts).toList() : [], groupBy };
 }
 
+/** What an action's expressions are evaluated with: the base, the active record(s), its context. */
+export function actionEvalContext(context: OdooContext, base: EvalContext): EvalContext {
+  return {
+    ...base,
+    ...Object.fromEntries(
+      ["active_id", "active_ids", "active_model"]
+        .filter((k) => k in context)
+        .map((k) => [k, context[k] as PyValue]),
+    ),
+    context: context as never,
+  };
+}
+
+/** The context reads are sent with: the action's, without the search defaults (as Odoo's client sends it). */
+export function readContext(context: OdooContext): OdooContext {
+  return Object.fromEntries(Object.entries(context).filter(([k]) => !k.startsWith("search_default_")));
+}
+
 /** A domain as Odoo's client sends it: no filter at all is `[]`, not the TRUE leaf. */
 function noFilter(d: Domain): PyValue[] {
   return d.isTrue() ? [] : d.toList();
@@ -118,20 +136,9 @@ export async function loadListView(
         models: views.models,
       }) as SearchSchema)
     : undefined;
-  const evalContext: EvalContext = {
-    ...base,
-    ...Object.fromEntries(
-      ["active_id", "active_ids", "active_model"]
-        .filter((k) => k in action.context)
-        .map((k) => [k, action.context[k] as PyValue]),
-    ),
-    context: action.context as never,
-  };
+  const evalContext = actionEvalContext(action.context, base);
   const defaults = defaultSearch(search, action.context, evalContext);
-  // the read context is the action's, without the search defaults (as Odoo's client sends it)
-  const context = Object.fromEntries(
-    Object.entries(action.context).filter(([k]) => !k.startsWith("search_default_")),
-  );
+  const context = readContext(action.context);
   const config: ListConfig = {
     model: action.model,
     models: views.models,

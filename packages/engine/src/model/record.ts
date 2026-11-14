@@ -12,7 +12,7 @@
  * Headless: React subscribes (P2.5.5).
  */
 import type { FieldInfo, OdooContext, Specification } from "@novi/odoo-client";
-import { type EvalContext, safeEvaluate, truthy } from "@novi/odoo-expr";
+import { Domain, type EvalContext, type PyValue, safeEvaluate, truthy } from "@novi/odoo-expr";
 import { type FieldNode, type ModelsInfo, type Modifier, viewFields, type ViewSchema } from "@novi/odoo-meta";
 
 import { Observable, type Rpc } from "./observable.js";
@@ -216,7 +216,8 @@ export class OdooRecord extends Observable {
     return truthy(safeEvaluate(modifier, this.evalContext(), false));
   }
 
-  isInvisible(node: FieldNode): boolean {
+  /** Any arch node: fields, buttons, groups, pages… */
+  isInvisible<N extends { invisible?: Modifier }>(node: N): boolean {
     return this.holds(node.invisible) ?? false;
   }
 
@@ -227,6 +228,20 @@ export class OdooRecord extends Observable {
 
   isRequired(node: FieldNode): boolean {
     return this.holds(node.required) ?? !!this.fields[node.name]?.required;
+  }
+
+  /**
+   * The domain a relational field searches in (arch `domain`, else the field's own), evaluated
+   * with this record's values; `[]` when it can't be evaluated yet.
+   */
+  fieldDomain(node: FieldNode): PyValue[] {
+    const raw = node.domain ?? (this.fields[node.name]?.domain as string | PyValue[] | undefined);
+    if (!raw) return [];
+    try {
+      return Domain.parse(raw, this.evalContext()).toList();
+    } catch {
+      return [];
+    }
   }
 
   /** Field nodes of the view, or plain nodes for every field read (no view given). */

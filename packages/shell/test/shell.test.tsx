@@ -134,7 +134,22 @@ function fakeOdoo(loggedIn = false): FakeOdoo {
         const q = String(c?.kwargs?.name).toLowerCase();
         return ("azure interior".includes(q) ? [{ id: 14, display_name: "Azure Interior" }] : []) as T;
       }
-      if (method === "web_read") return [{ id: c?.ids?.[0], display_name: "Azure Interior" }] as T;
+      if (method === "get_views")
+        return {
+          views: {
+            form: { arch: '<form><sheet><group><field name="name"/></group></sheet><chatter/></form>' },
+          },
+          models: {
+            "res.partner": {
+              fields: {
+                name: { type: "char", string: "Name", required: true },
+                display_name: { type: "char", string: "Display Name", readonly: true },
+              },
+            },
+          },
+        } as T;
+      if (method === "web_read")
+        return [{ id: c?.ids?.[0], display_name: "Azure Interior", name: "Azure Interior" }] as T;
       return [] as T;
     },
   };
@@ -311,14 +326,16 @@ describe("errors (P1.12.5)", () => {
 });
 
 describe("record search (P1.13.2)", () => {
-  it("finds a customer by name through Odoo and opens the record", async () => {
+  it("finds a customer by name through Odoo and opens the record in the form view", async () => {
     renderShell(fakeOdoo(true));
     await screen.findByRole("link", { name: "Sales" });
     await userEvent.keyboard("azu");
     const group = await screen.findByText("Contact", {}, { timeout: 2000 }); // Odoo's model label
     expect(group).toBeTruthy();
     await userEvent.click(await screen.findByText("Azure Interior"));
+    // the record opens in the generic form view (P2.10), editable
     expect(await screen.findByRole("heading", { name: "Azure Interior" })).toBeTruthy();
+    expect((screen.getByLabelText(/Name/) as HTMLInputElement).value).toBe("Azure Interior");
     expect(screen.getByRole("link", { name: "Open in Odoo" }).getAttribute("href")).toBe(
       "/odoo/res.partner/14",
     );

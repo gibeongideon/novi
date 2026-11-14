@@ -155,6 +155,19 @@ export const en = {
   continueWith: "Continue with {name}",
   ssoNotLinked:
     "That sign-in isn't linked to an account in this workspace. Ask your administrator for an invitation, or open your invitation or password-reset email and choose it there.",
+  noMatches: "No matches",
+  preferences: "Preferences",
+  requiredField: "Required",
+  invalidNumber: "Enter a number",
+  save: "Save",
+  discard: "Discard",
+  newRecord: "New",
+  unsaved: "Unsaved changes",
+  saved: "Saved",
+  invalidFields: "Fill in or correct: {names}",
+  discussion: "Discussion",
+  discussionSoon:
+    "Messages, activities and followers arrive with NOVI's chatter. Open the record in Odoo to use them now.",
 } as const;
 
 export type MessageKey = keyof typeof en;

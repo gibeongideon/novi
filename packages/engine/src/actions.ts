@@ -6,7 +6,7 @@
  *   report       ir.actions.report: a PDF/HTML/text URL to preview or download
  *   client       ir.actions.client: NOVI's own screen for the tag, else Odoo's screen embedded
  *   notification Odoo's `display_notification` client action, with the action to run after
- *   reload       Odoo's `reload` / `soft_reload`
+ *   reload       Odoo's `soft_reload` (the screen), `reload` / `reload_context` (`full`: the app)
  *   close        ir.actions.act_window_close: close the dialog, reload what opened it
  *   none         nothing to do (a button returned False)
  * Server actions run on the server; whatever they return is resolved in turn.
@@ -61,7 +61,7 @@ export type ActionDescriptor =
       sticky: boolean;
       next?: ActionDescriptor;
     }
-  | { kind: "reload" }
+  | { kind: "reload"; full?: boolean }
   | { kind: "close"; infos?: unknown }
   | { kind: "none" };
 
@@ -136,6 +136,18 @@ export class ActionManager {
    * context evaluated on the record. The record is reloaded unless a new screen opens. Asking for
    * confirmation (`button.confirm`) is the screen's job before calling this.
    */
+  /** The signed-in user's preferences: Odoo's own form (`res.users.action_get`), as a dialog (P2.10.9). */
+  async preferences(): Promise<ActionDescriptor> {
+    const uid = Number(this.base().uid) || 0;
+    const raw = await this.transport.callButton<RawAction>(
+      "res.users",
+      "action_get",
+      [uid],
+      this.contextFor({}),
+    );
+    return this.resolve({ ...raw, res_id: uid });
+  }
+
   async executeButton(record: OdooRecord, button: ButtonNode): Promise<ActionDescriptor> {
     if (button.special === "cancel") return { kind: "close" };
     if (!(await record.save())) throw new InvalidRecordError(record.invalidFields());
@@ -230,7 +242,9 @@ export class ActionManager {
         next: params.next ? await this.resolve(params.next as RawAction, opts) : undefined,
       };
     }
-    if (tag === "reload" || tag === "soft_reload") return { kind: "reload" };
+    if (tag === "soft_reload") return { kind: "reload" };
+    // the user's language or companies changed: the whole app starts again (Odoo's client too)
+    if (tag === "reload" || tag === "reload_context") return { kind: "reload", full: true };
     return {
       kind: "client",
       tag,
