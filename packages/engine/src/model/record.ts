@@ -63,6 +63,8 @@ export class OdooRecord extends Observable {
   /** Per field: the edit counter value of the user's last change (race guard). */
   private editedAt = new Map<string, number>();
   private edits = 0;
+  /** Values a widget couldn't accept (e.g. "12,3.4" in a number field): field → message. */
+  private parseErrors = new Map<string, string>();
 
   constructor(
     readonly rpc: Rpc,
@@ -136,7 +138,10 @@ export class OdooRecord extends Observable {
    * clears it. Fields marked `on_change` in the view then ask Odoo for their consequences.
    */
   update(changes: Values): void {
-    for (const name of Object.keys(changes)) this.editedAt.set(name, ++this.edits);
+    for (const name of Object.keys(changes)) {
+      this.editedAt.set(name, ++this.edits);
+      this.parseErrors.delete(name);
+    }
     this.setValues(changes);
     this.notify();
     const names = Object.keys(changes).filter((n) => this.triggersOnchange(n));
@@ -231,9 +236,23 @@ export class OdooRecord extends Observable {
       : Object.keys(this.config.spec).map((name) => ({ type: "field", name }));
   }
 
-  /** Required fields without a value (visible ones only, as Odoo checks), and invalid lines. */
+  /**
+   * A widget reports a value it can't turn into a field value (P2.7.2): the field shows the
+   * message and saving is refused until the user corrects it (any `update` of the field).
+   */
+  markInvalid(field: string, message: string): void {
+    this.parseErrors.set(field, message);
+    this.notify();
+  }
+
+  /** The message to show under a field: the widget's parse error, if any. */
+  fieldError(field: string): string | undefined {
+    return this.parseErrors.get(field);
+  }
+
+  /** Required fields without a value (visible ones only, as Odoo checks), unparsable values, invalid lines. */
   invalidFields(): string[] {
-    const out = new Set<string>();
+    const out = new Set<string>(this.parseErrors.keys());
     for (const node of this.nodes()) {
       if (this.isInvisible(node) || !this.isRequired(node)) continue;
       if (node.name === this.config.relationField) continue; // a line's link to its parent is set by saving the parent
@@ -295,8 +314,55 @@ export class OdooRecord extends Observable {
     return true;
   }
 
+  /** Reads the record again (after an action changed it on the server); drops unsaved changes. */
+  async reload(): Promise<void> {
+    if (this.isNew) return;
+    const [row] = await this.rpc<Values[]>(this.config.model, "web_read", {
+      ids: [this.id!],
+      kwargs: { specification: this.config.spec, context: this.config.context ?? {} },
+    });
+    if (row) this.hydrate(row);
+    this.parseErrors.clear();
+    this.notify();
+  }
+
+  /** Deletes the record (`web_unlink`). */
+  async delete(): Promise<void> {
+    if (this.isNew) return;
+    await this.rpc(this.config.model, "web_unlink", {
+      ids: [this.id!],
+      kwargs: { context: this.config.context ?? {} },
+    });
+  }
+
+  /** Duplicates the saved record (`copy`); returns the new record's id. */
+  async duplicate(): Promise<number> {
+    if (this.isNew) throw new Error("Save the record before duplicating it");
+    const [id] = await this.rpc<number[]>(this.config.model, "copy", {
+      ids: [this.id!],
+      kwargs: { context: this.config.context ?? {} },
+    });
+    return id!;
+  }
+
+  /**
+   * Archives or restores the record through the model's own method (`action_archive` /
+   * `action_unarchive`), then reloads it. Returns what Odoo returned: some models answer with an
+   * action (a wizard, a warning) for the action manager to run.
+   */
+  async setArchived(archived: boolean): Promise<unknown> {
+    if (this.isNew) throw new Error("Save the record before archiving it");
+    const result = await this.rpc(this.config.model, archived ? "action_archive" : "action_unarchive", {
+      ids: [this.id!],
+      kwargs: { context: this.config.context ?? {} },
+    });
+    await this.reload();
+    return result;
+  }
+
   /** Forgets the user's changes, including x2many line edits. */
   discard(): void {
+    this.parseErrors.clear();
     this.changes = {};
     for (const l of this.x2many.values()) l.discard();
     this.notify();
@@ -417,7 +483,7 @@ export function isEmpty(v: unknown, type?: string): boolean {
 }
 
 /** A value in the form `web_save` / `onchange` expect. */
-function serialize(v: unknown, type?: string): unknown {
+export function serialize(v: unknown, type?: string): unknown {
   if (type === "many2one") return v && typeof v === "object" ? (v as { id: number }).id : false;
   if (type === "reference" && v && typeof v === "object") {
     const r = (v as { id?: { id: number; model: string } }).id;

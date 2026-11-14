@@ -9,7 +9,7 @@ import { Domain, type EvalContext, type PyValue } from "@novi/odoo-expr";
 import type { ModelsInfo, ViewSchema } from "@novi/odoo-meta";
 
 import { Observable, type Rpc } from "./observable.js";
-import { OdooRecord, type Values } from "./record.js";
+import { OdooRecord, serialize, type Values } from "./record.js";
 
 export interface ListConfig {
   model: string;
@@ -102,6 +102,62 @@ export class RecordList extends Observable {
     if (selected) this.selection.add(id);
     else this.selection.delete(id);
     this.notify();
+  }
+
+  /** Ids of the selected records. */
+  get selectedIds(): number[] {
+    return [...this.selection];
+  }
+
+  /** Deletes the selected records (`web_unlink`) and reloads the page. */
+  async deleteSelected(): Promise<void> {
+    await this.rpc(this.config.model, "web_unlink", {
+      ids: this.selectedIds,
+      kwargs: { context: this.config.context ?? {} },
+    });
+    this.selection.clear();
+    await this.load();
+  }
+
+  /** Duplicates the selected records (`copy`); returns the new ids. */
+  async duplicateSelected(): Promise<number[]> {
+    const ids = await this.rpc<number[]>(this.config.model, "copy", {
+      ids: this.selectedIds,
+      kwargs: { context: this.config.context ?? {} },
+    });
+    await this.load();
+    return ids;
+  }
+
+  /** Archives or restores the selected records; returns Odoo's answer (it may be an action). */
+  async setArchivedSelected(archived: boolean): Promise<unknown> {
+    const result = await this.rpc(this.config.model, archived ? "action_archive" : "action_unarchive", {
+      ids: this.selectedIds,
+      kwargs: { context: this.config.context ?? {} },
+    });
+    this.selection.clear();
+    await this.load();
+    return result;
+  }
+
+  /**
+   * Writes the same values on every selected record (list multi-edit, P2.7.5) in one
+   * `web_save_multi` call; values in `web_read` form (many2one as `{ id, display_name }`).
+   */
+  async writeSelected(values: Values): Promise<void> {
+    const fields = this.config.models[this.config.model]?.fields ?? {};
+    const vals = Object.fromEntries(
+      Object.entries(values).map(([k, v]) => [k, serialize(v, fields[k]?.type)]),
+    );
+    await this.rpc(this.config.model, "web_save_multi", {
+      ids: this.selectedIds,
+      kwargs: {
+        vals_list: this.selectedIds.map(() => vals),
+        specification: this.config.spec,
+        context: this.config.context ?? {},
+      },
+    });
+    await this.load();
   }
 
   /** Selects or clears every record of the page. */

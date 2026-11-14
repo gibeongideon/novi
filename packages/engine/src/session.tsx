@@ -471,3 +471,19 @@ export function baseEvalContext(info: SessionInfo | null): EvalContext {
     current_company_id: companies[0] ?? false,
   };
 }
+
+/**
+ * Asks before the browser tab is closed or reloaded while there are unsaved changes (P2.7.3).
+ * Leaving to another screen inside NOVI is guarded by the form view's save/discard bar (P2.10.6).
+ */
+export function useLeaveGuard(dirty: boolean): void {
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = ""; // the browser shows its own "leave site?" prompt
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+}

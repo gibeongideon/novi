@@ -12,10 +12,10 @@ Phases run **strictly in order**. A phase unlocks only when every **Gate** check
 |---|---|
 | **Current phase** | Phase 2 — Engine core |
 | **In progress** | — |
-| **Next task** | `P2.7` save, delete and actions on records, then `P2.8` ActionManager (buttons, wizards, reports) |
+| **Next task** | `P2.8` ActionManager (window actions, server actions, reports, URLs, client actions, buttons, error dialog), then the views (P2.9–P2.12) |
 | **Blockers** | P1.14.2 needs the platform's Google Cloud / Microsoft Entra OAuth client IDs |
 | **Open business items** | Deferred by D-20: Figma kit + design sign-off (Phase 2 gate), Odoo licence + cost (Phase 4 gate) |
-| **Last updated** | 2026-11-13 |
+| **Last updated** | 2026-11-14 |
 
 ---
 

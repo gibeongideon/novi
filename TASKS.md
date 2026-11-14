@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 6 | 🟦 |
+| 2 Engine core | 16 | 7 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -425,13 +425,13 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** the sale order line product change updates price/taxes exactly like Odoo. *(live: NOVI's line price, taxes, description, quantity, subtotal and order total equal the same order created by Odoo itself, and what NOVI's save stores)*
 
 ### P2.7 Engine: save, delete, actions on records
-- [ ] P2.7.1 `web_save(vals, spec)` with only changed values
-- [ ] P2.7.2 Field-level validation errors and the required fields check before save
-- [ ] P2.7.3 Discard changes, with an unsaved-changes guard on navigation
-- [ ] P2.7.4 Delete (`web_unlink`), duplicate (`copy`), archive/unarchive
-- [ ] P2.7.5 Bulk write on multiple selected records (`web_save_multi`)
+- [x] P2.7.1 `web_save(vals, spec)` with only changed values (read-only values left out unless `force_save`; save waits for onchanges)
+- [x] P2.7.2 Validation before save: Odoo's required check (visible fields), values a widget couldn't parse (`markInvalid` → message under the field, save refused until edited); Odoo's own errors on save reach the caller as typed errors (shown by P2.8.9)
+- [x] P2.7.3 Discard (record and lines back to what was read) and a guard when closing/reloading the tab with unsaved changes (`useLeaveGuard`); leaving to another NOVI screen is guarded by the form's save/discard bar (P2.10.6)
+- [x] P2.7.4 Delete (`web_unlink`), duplicate (`copy`), archive/unarchive through the model's own `action_archive`/`action_unarchive` (their answer, possibly an action, returned for P2.8), reload; the same on a list selection
+- [x] P2.7.5 Bulk write on the selected records (`web_save_multi`, one call, same values for each)
 
-**Done when:** create/edit/delete/duplicate/archive all work on 10 different models.
+**Done when:** create/edit/delete/duplicate/archive all work on 10 different models. *(live, generic, each through its own form view: partners, partner tags, products, product categories, CRM tags, departments, jobs, projects, project tags, activity types)*
 
 ### P2.8 ActionManager
 - [ ] P2.8.1 `ir.actions.act_window` (current, new = dialog, fullscreen; view modes; domain; context; limit)
