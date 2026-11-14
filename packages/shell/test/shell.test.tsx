@@ -520,28 +520,32 @@ describe("single sign-on (P1.14)", () => {
   });
 });
 
-describe("generic list (P2.9 first slice)", () => {
-  it("renders Odoo columns through the field registry with NOVI's decorations and Odoo's visibility rules", async () => {
+describe("generic list (P2.9)", () => {
+  it("renders Odoo columns, sorts, selects, totals and opens rows through the engine's list", async () => {
     const { ListView } = await import("@novi/views");
+    const { OdooRecord, RecordList } = await import("@novi/engine");
     const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+    const fields = {
+      name: { type: "char", string: "Number" },
+      partner_id: { type: "many2one", string: "Customer" },
+      vendor_id: { type: "many2one", string: "Vendor" },
+      state: {
+        type: "selection",
+        string: "Status",
+        selection: [
+          ["draft", "Draft"],
+          ["posted", "Posted"],
+        ],
+      },
+      note: { type: "char", string: "Note" },
+      amount: { type: "float", string: "Amount" },
+      ref: { type: "char", string: "Reference" },
+    };
     const schema = {
       viewType: "list",
       model: "x.order",
       access: {},
-      fields: {
-        name: { type: "char", string: "Number" },
-        partner_id: { type: "many2one", string: "Customer" },
-        vendor_id: { type: "many2one", string: "Vendor" },
-        state: {
-          type: "selection",
-          string: "Status",
-          selection: [
-            ["draft", "Draft"],
-            ["posted", "Posted"],
-          ],
-        },
-        note: { type: "char", string: "Note" },
-      },
+      fields,
       decorations: { info: "state == 'draft'" },
       columns: [
         { type: "field", name: "name" },
@@ -553,11 +557,13 @@ describe("generic list (P2.9 first slice)", () => {
         },
         { type: "field", name: "state" },
         { type: "field", name: "note", invisible: "state == 'posted'" },
+        { type: "field", name: "amount", sum: "Total" },
+        { type: "field", name: "ref", optional: "hide" },
       ],
       headerButtons: [],
       groupRows: {},
     } as never;
-    const records = [
+    const rows = [
       {
         id: 1,
         name: "INV/1",
@@ -565,9 +571,29 @@ describe("generic list (P2.9 first slice)", () => {
         vendor_id: false,
         state: "draft",
         note: "hello",
+        amount: 2,
+        ref: "R1",
       },
-      { id: 2, name: "INV/2", partner_id: false, vendor_id: false, state: "posted", note: "hidden" },
+      {
+        id: 2,
+        name: "INV/2",
+        partner_id: false,
+        vendor_id: false,
+        state: "posted",
+        note: "hidden",
+        amount: 3,
+        ref: "R2",
+      },
     ];
+    const calls: { method: string; kwargs?: Record<string, unknown> }[] = [];
+    const rpc = (async (_m: string, method: string, call?: { kwargs?: Record<string, unknown> }) => {
+      calls.push({ method, kwargs: call?.kwargs });
+      return { records: rows, length: 2 };
+    }) as never;
+    const config = { model: "x.order", models: { "x.order": { fields } } as never, spec: {} };
+    const list = new RecordList(rpc, config);
+    list.records = rows.map((r) => new OdooRecord(rpc, config, r));
+    list.length = 2;
     const opened: number[] = [];
     render(
       <EngineProvider transport={fakeOdoo(true)} db="novi_demo">
@@ -575,21 +601,30 @@ describe("generic list (P2.9 first slice)", () => {
           <I18nProvider>
             <ListView
               schema={schema}
-              records={records}
+              list={list}
               evalContext={{ context: { default_move_type: "out_invoice" } }}
-              onOpen={(id) => opened.push(id)}
+              onOpen={(rec) => opened.push(rec.id!)}
             />
           </I18nProvider>
         </QueryClientProvider>
       </EngineProvider>,
     );
     const headers = screen.getAllByRole("columnheader").map((h) => h.textContent);
-    expect(headers).toEqual(["Number", "Customer", "Status", "Note"]); // vendor hidden for customer invoices
-    const rows = screen.getAllByRole("row").slice(1);
-    expect(rows[0]!.textContent).toBe("INV/1AcmeDrafthello");
-    expect(rows[1]!.textContent).toBe("INV/2Posted"); // note invisible on posted rows
-    expect(rows[0]!.className).toContain("text-info");
-    await userEvent.click(rows[1]!);
+    expect(headers.slice(1, 7)).toEqual(["Number", "Customer", "Status", "Note", "Amount", ""]); // vendor hidden, ref optional-hidden
+    const body = screen.getAllByRole("row").slice(1, 3);
+    expect(body[0]!.textContent).toBe("INV/1AcmeDrafthello2.00");
+    expect(body[1]!.textContent).toBe("INV/2Posted3.00"); // note invisible on posted rows
+    expect(body[0]!.className).toContain("text-info");
+    expect(screen.getAllByRole("row").at(-1)!.textContent).toBe("5.00"); // page total of the sum column
+
+    await userEvent.click(screen.getByRole("button", { name: /Number/ }));
+    expect(list.order).toBe("name ASC");
+    expect(calls.at(-1)).toMatchObject({ method: "web_search_read", kwargs: { order: "name ASC" } });
+
+    await userEvent.click(screen.getAllByRole("checkbox", { name: "Select" })[1]!);
+    expect(list.selectedIds).toEqual([2]);
+
+    await userEvent.click(screen.getAllByRole("row")[2]!.querySelector("td:nth-child(2)")!);
     expect(opened).toEqual([2]);
   });
 });

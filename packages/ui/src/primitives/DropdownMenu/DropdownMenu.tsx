@@ -81,3 +81,25 @@ export const DropdownMenuRadioItem = forwardRef<
   </Menu.RadioItem>
 ));
 DropdownMenuRadioItem.displayName = "DropdownMenuRadioItem";
+
+/** A toggle inside a menu (e.g. which optional list columns show); same look as the radio item. */
+export const DropdownMenuCheckboxItem = forwardRef<
+  HTMLDivElement,
+  ComponentPropsWithoutRef<typeof Menu.CheckboxItem>
+>(({ className, children, ...props }, ref) => (
+  <Menu.CheckboxItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none",
+      "data-[highlighted]:bg-surface-sunken data-[disabled]:opacity-50 [&_svg]:size-4",
+      className,
+    )}
+    {...props}
+  >
+    {children}
+    <Menu.ItemIndicator className="absolute right-2 inline-flex text-primary">
+      <Check aria-hidden />
+    </Menu.ItemIndicator>
+  </Menu.CheckboxItem>
+));
+DropdownMenuCheckboxItem.displayName = "DropdownMenuCheckboxItem";

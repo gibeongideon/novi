@@ -31,7 +31,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 |---|---|---|---|
 | 0 Foundations | 13 | 10 (+3 deferred, D-20/D-21) | ✅ |
 | 1 Gateway, provisioning & shell | 17 | 16 (+1 carried: P1.14 blocked on OAuth apps; D-32) | ✅ |
-| 2 Engine core | 16 | 8 | 🟦 |
+| 2 Engine core | 16 | 9 | 🟦 |
 | 3 Breadth | 12 | 0 | ⬜ |
 | 4 Sales + CRM | 8 | 0 | ⬜ |
 | 5 Accounting | 10 | 0 | ⬜ |
@@ -448,17 +448,17 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** every button in the demo sales/accounting flows works. *(live: quotation → Confirm → Create Invoice wizard → Confirm invoice → Pay wizard → paid, every button taken from the real form views)*
 
 ### P2.9 List view
-- [ ] P2.9.1 TanStack Table with virtual scrolling (10k rows smooth)
-- [ ] P2.9.2 Sort, column resize/reorder, optional columns toggle (saved in gateway prefs)
-- [ ] P2.9.3 Grouped rows with aggregates and lazy loading
-- [ ] P2.9.4 Inline editing (`editable="top|bottom"`), keyboard navigation
-- [ ] P2.9.5 Selection + bulk actions menu (action/print toolbar from `get_views` toolbar)
-- [ ] P2.9.6 Row decorations, handle widget (resequence), row buttons
-- [ ] P2.9.7 Pager and record count (with `count_limit`)
-- [ ] P2.9.8 Empty state (view `help` html)
+- [-] P2.9.1 TanStack Table with virtual scrolling *(dropped, D-41: lists page at 80 rows like Odoo, so 10k rows are never on screen; a plain table, no dependency)*
+- [x] P2.9.2 Sort from the column headers (toggle, direction shown); optional columns menu remembered per view in the browser (as Odoo does; no gateway database, D-32) *(column reorder dropped: Odoo has none; resize deferred: widths come from the arch)*
+- [x] P2.9.3 Grouped rows (from the action's `group_by` and the search defaults) with counts and totals, opened lazily, nested group-bys
+- [-] P2.9.4 Inline editing *(moved to P2.13.17: it needs the edit-mode widgets)*
+- [x] P2.9.5 Selection (row, page) + Actions menu (duplicate, archive/restore, delete with confirmation, and Odoo's own toolbar actions) + Print menu (toolbar reports), across groups too
+- [x] P2.9.6 Row and cell decorations, handle widget (drag to reorder → `web_resequence`), row buttons through the ActionManager
+- [x] P2.9.7 Pager and record count ("1–80 / 312", "10001+" past Odoo's count limit), previous/next wrap like Odoo (`Pager` L2 pattern, reused by the form view)
+- [x] P2.9.8 Empty state: the action's own help text from Odoo, as plain text (never injected HTML)
 - [x] P2.9.9 First slice, read-only (shown in the browser on every action with a list view): columns from the schema through the field registry, Odoo labels, number alignment, row/cell decorations and cell `invisible` per row, `column_invisible` with the action context, open a record; skipped for now: images, optional-hidden columns *(D-36)*
 
-**Done when:** partner, product and invoice lists match Odoo's data and actions.
+**Done when:** partner, product and invoice lists match Odoo's data and actions. *(live, against Odoo's own client: same request incl. default filters, same records and count, same Action/Print menus; also "My Quotations")*
 
 ### P2.10 Form view
 - [ ] P2.10.1 Layout renderer: sheet → card, groups → responsive 12-column grid, notebook → tabs
@@ -494,6 +494,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [ ] P2.12.5 Favourites: load/save/delete via `ir.filters`, default favourite, shared
 - [ ] P2.12.6 Search panel (left sidebar categories/filters)
 - [ ] P2.12.7 Search state in the URL
+- [x] P2.12.8 Search defaults from the action context (`search_default_*`: filters OR'd within a group and AND'd across, field defaults, group-bys) applied to the list, as Odoo's client does *(done with P2.9 for data parity)*
 
 **Done when:** searching, grouping and favourites behave the same as in Odoo for 10 actions.
 
@@ -511,6 +512,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [~] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner) *(read mode done: every type renders from metadata through the one formatter; edit mode with P2.13)*
 - [x] P2.13.15 `useFormat()` React hook over `createFormatter()` (ex-P1.11.6): the user's language parameters (`/web/webclient/translations`), timezone and currencies from Odoo
 - [ ] P2.13.16 Widget field dependencies (what each widget must also read: avatars → `write_date`, activities → `activity_*`, …), declared by each NOVI widget and merged into the spec; the client-spec capture lists the 122 Odoo needs today
+- [ ] P2.13.17 Inline list editing (`editable="top|bottom"`), keyboard navigation, multi-edit on selected rows (`writeSelected`) (ex-P2.9.4)
 - [ ] P2.13.14 Remaining primitives, built only when the first widget/view needs them: Select, Combobox, Checkbox, Radio, Switch, Textarea, DatePicker, Tabs, Drawer, Popover, Card, Table base (ex-P1.10.2)
 - [ ] P2.13.13 Registry `manifest()` writes `tools/coverage-scanner/supported.json` automatically (ex-P1.17.7)
 - [ ] P2.13.12 Widgets use the `FieldProps` contract and `registerField` registry from P1.17.4 (read + edit mode, all contexts)

@@ -37,6 +37,8 @@ export interface WindowAction {
   /** Open this record (form) instead of a list. */
   resId?: number;
   views: [number | false, string][];
+  /** The action's search view (filters, group-bys, defaults). */
+  searchViewId: number | false;
   /** First view type to show. */
   viewType: string;
   domain: PyValue[];
@@ -183,6 +185,11 @@ export class ActionManager {
       model: String(raw.res_model),
       resId,
       views: views.length ? views : [[false, viewType]],
+      searchViewId: Array.isArray(raw.search_view_id)
+        ? (raw.search_view_id[0] as number)
+        : typeof raw.search_view_id === "number"
+          ? raw.search_view_id
+          : false,
       viewType,
       domain: Domain.parse(
         ((raw.domain as string | PyValue[] | false) || []) as string | PyValue[],

@@ -26,7 +26,8 @@
     "@novi/fields": "workspace:*",
     "@novi/odoo-expr": "workspace:*",
     "@novi/odoo-meta": "workspace:*",
-    "@novi/ui": "workspace:*"
+    "@novi/ui": "workspace:*",
+    "lucide-react": "^0.468.0"
   },
   "peerDependencies": {
     "react": "^18.3.1"

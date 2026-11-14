@@ -78,6 +78,10 @@ export function FallbackField({ value, meta, context, options }: FieldProps) {
     case "binary":
     case "image":
       return null; // images get their own widget (P2.13.9)
+    case "json":
+    case "properties":
+    case "properties_definition":
+      return null; // structured data only a dedicated widget can show (never raw JSON)
     default:
       return <>{typeof value === "object" ? JSON.stringify(value) : String(value)}</>;
   }

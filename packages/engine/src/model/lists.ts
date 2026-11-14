@@ -109,32 +109,23 @@ export class RecordList extends Observable {
     return [...this.selection];
   }
 
-  /** Deletes the selected records (`web_unlink`) and reloads the page. */
+  /** Deletes the selected records (`web_unlink`) and reloads. */
   async deleteSelected(): Promise<void> {
-    await this.rpc(this.config.model, "web_unlink", {
-      ids: this.selectedIds,
-      kwargs: { context: this.config.context ?? {} },
-    });
+    await bulk(this, "web_unlink");
     this.selection.clear();
     await this.load();
   }
 
   /** Duplicates the selected records (`copy`); returns the new ids. */
   async duplicateSelected(): Promise<number[]> {
-    const ids = await this.rpc<number[]>(this.config.model, "copy", {
-      ids: this.selectedIds,
-      kwargs: { context: this.config.context ?? {} },
-    });
+    const ids = await bulk<number[]>(this, "copy");
     await this.load();
     return ids;
   }
 
   /** Archives or restores the selected records; returns Odoo's answer (it may be an action). */
   async setArchivedSelected(archived: boolean): Promise<unknown> {
-    const result = await this.rpc(this.config.model, archived ? "action_archive" : "action_unarchive", {
-      ids: this.selectedIds,
-      kwargs: { context: this.config.context ?? {} },
-    });
+    const result = await bulk(this, archived ? "action_archive" : "action_unarchive");
     this.selection.clear();
     await this.load();
     return result;
@@ -145,19 +136,32 @@ export class RecordList extends Observable {
    * `web_save_multi` call; values in `web_read` form (many2one as `{ id, display_name }`).
    */
   async writeSelected(values: Values): Promise<void> {
-    const fields = this.config.models[this.config.model]?.fields ?? {};
-    const vals = Object.fromEntries(
-      Object.entries(values).map(([k, v]) => [k, serialize(v, fields[k]?.type)]),
-    );
-    await this.rpc(this.config.model, "web_save_multi", {
-      ids: this.selectedIds,
+    await writeMany(this, values);
+    await this.load();
+  }
+
+  /**
+   * Drag-to-reorder (handle widget, P2.9.6): moves a record to `toIndex` on this page and lets
+   * Odoo renumber the handle field for the page in its new order (`web_resequence`).
+   */
+  async resequence(id: number, toIndex: number, field = "sequence"): Promise<void> {
+    const ids = this.records.map((r) => r.id!).filter((x) => x !== id);
+    ids.splice(Math.max(0, Math.min(toIndex, ids.length)), 0, id);
+    await this.rpc(this.config.model, "web_resequence", {
+      ids,
       kwargs: {
-        vals_list: this.selectedIds.map(() => vals),
         specification: this.config.spec,
+        field_name: field,
+        offset: this.offset,
         context: this.config.context ?? {},
       },
     });
     await this.load();
+  }
+
+  clearSelection(): void {
+    this.selection.clear();
+    this.notify();
   }
 
   /** Selects or clears every record of the page. */
@@ -230,6 +234,40 @@ export class GroupedList extends Observable {
     return this;
   }
 
+  /** Selected record ids across the open groups. */
+  get selectedIds(): number[] {
+    return this.groups.flatMap((g) => (g.list ? g.list.selectedIds : []));
+  }
+
+  /** Clears the selection in every open group. */
+  clearSelection(): void {
+    for (const g of this.groups) g.list?.clearSelection();
+    this.notify();
+  }
+
+  /** Bulk actions on the selection across groups; the groups reload afterwards. */
+  async deleteSelected(): Promise<void> {
+    await bulk(this, "web_unlink");
+    await this.load();
+  }
+
+  async duplicateSelected(): Promise<number[]> {
+    const ids = await bulk<number[]>(this, "copy");
+    await this.load();
+    return ids;
+  }
+
+  async setArchivedSelected(archived: boolean): Promise<unknown> {
+    const result = await bulk(this, archived ? "action_archive" : "action_unarchive");
+    await this.load();
+    return result;
+  }
+
+  async writeSelected(values: Values): Promise<void> {
+    await writeMany(this, values);
+    await this.load();
+  }
+
   /** Opens or closes a group; opening loads its records or its sub-groups. */
   async toggle(group: Group): Promise<void> {
     group.folded = !group.folded;
@@ -278,4 +316,26 @@ export class GroupedList extends Observable {
     }
     return group;
   }
+}
+
+/** One call on the selected records of a list (flat or grouped): delete, copy, archive… */
+function bulk<T = unknown>(list: RecordList | GroupedList, method: string): Promise<T> {
+  return list.rpc<T>(list.config.model, method, {
+    ids: list.selectedIds,
+    kwargs: { context: list.config.context ?? {} },
+  });
+}
+
+/** The same values on every selected record, in one `web_save_multi` call. */
+async function writeMany(list: RecordList | GroupedList, values: Values): Promise<void> {
+  const fields = list.config.models[list.config.model]?.fields ?? {};
+  const vals = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, serialize(v, fields[k]?.type)]));
+  await list.rpc(list.config.model, "web_save_multi", {
+    ids: list.selectedIds,
+    kwargs: {
+      vals_list: list.selectedIds.map(() => vals),
+      specification: list.config.spec,
+      context: list.config.context ?? {},
+    },
+  });
 }

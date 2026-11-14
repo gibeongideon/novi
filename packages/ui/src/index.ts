@@ -3,6 +3,7 @@ export * from "./contrast.js";
 export * from "./lib/cn.js";
 export * from "./lib/i18n.js";
 export * from "./lib/theme.js";
+export * from "./patterns/Pager/index.js";
 export * from "./primitives/Avatar/index.js";
 export * from "./primitives/Badge/index.js";
 export * from "./primitives/Breadcrumb/index.js";

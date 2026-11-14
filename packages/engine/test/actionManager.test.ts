@@ -70,6 +70,7 @@ describe("ActionManager.resolve (P2.8.1–P2.8.6)", () => {
           [false, "list"],
           [3, "form"],
         ],
+        searchViewId: false,
         viewType: "list",
         domain: ["&", ["partner_id", "=", 9], ["company_id", "in", [1]]],
         context: {

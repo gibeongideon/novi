@@ -4,8 +4,7 @@
  * session cookie is Odoo's own. Gateway mode later swaps the transport, not these hooks.
  */
 import { SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
-import { Domain, type EvalContext, evaluate, type PyValue } from "@novi/odoo-expr";
-import { buildSpec, type ListSchema, type ModelsInfo, parseView } from "@novi/odoo-meta";
+import type { EvalContext } from "@novi/odoo-expr";
 import {
   MutationCache,
   QueryCache,
@@ -26,9 +25,11 @@ import {
   useSyncExternalStore,
 } from "react";
 
+import { ActionManager } from "./actions.js";
 import { type AuthClient, directAuth, LoginError, type LoginResult } from "./auth.js";
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { createFormatter, type CurrencyInfo, type Formatter, type LangParameters } from "./format.js";
+import { type ListViewData, loadListView } from "./listView.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
 import { type ListConfig, RecordList } from "./model/lists.js";
 import type { Observable, Rpc } from "./model/observable.js";
@@ -41,7 +42,18 @@ export interface SessionTransport {
   getSessionInfo(opts?: { retry?: boolean }): Promise<SessionInfo>;
   destroy(): Promise<void>;
   loadMenus(lang?: string): Promise<Record<string, unknown>>;
-  loadAction<T = Record<string, unknown>>(actionId: number | string): Promise<T>;
+  loadAction<T = Record<string, unknown>>(
+    actionId: number | string,
+    context?: Record<string, unknown>,
+  ): Promise<T>;
+  /** `/web/action/run` and `/web/dataset/call_button` (ActionManager); optional for test fakes. */
+  runAction?<T = unknown>(actionId: number | string, context?: Record<string, unknown>): Promise<T>;
+  callButton?<T = unknown>(
+    model: string,
+    method: string,
+    ids: number[],
+    context?: Record<string, unknown>,
+  ): Promise<T>;
   setContext(patch: Record<string, unknown>): void;
   /** `/web/webclient/translations` (lang_parameters for formatting); optional for test fakes. */
   translations?<T = unknown>(lang?: string): Promise<T>;
@@ -323,83 +335,64 @@ export function useFormat(): Formatter {
   );
 }
 
-/** What the generic list renderer needs: the parsed view, the rows and the total count. */
-export interface ListViewData {
-  schema: ListSchema;
-  records: Record<string, unknown>[];
-  length: number;
-  /** User + action context and uid: what column-level expressions are evaluated with. */
-  evalContext: Record<string, unknown>;
-}
-
 /**
- * An action's list view with its first page of records (P2.9 first slice): `get_views` →
- * odoo-meta schema → specification → `web_search_read` with the action's domain and context.
- * `null` when the action has no list view (kanban-only, client actions).
+ * The engine's ActionManager for this session (P2.8): actions resolved with the user's context,
+ * companies and uid.
  */
-export function useListView(actionId: number | undefined, limit = 80) {
+export function useActionManager(): ActionManager {
   const { transport } = useEngine();
-  const action = useAction(actionId);
   const session = useQuery({
     queryKey: ["session"],
     queryFn: () => transport.getSessionInfo(),
     staleTime: Infinity,
   });
-  const a = action.data;
-  return useQuery({
-    queryKey: ["list-view", actionId, limit],
-    enabled: !!a && !!session.data,
-    queryFn: async (): Promise<ListViewData | null> => {
-      const listView = a!.views?.find(([, type]) => type === "list");
-      if (!a!.res_model || !listView) return null;
-      const model = a!.res_model;
-      const base = baseEvalContext(session.data ?? null);
-      const actionContext = toDict(a!.context, base);
-      const context = { ...(base.context as Record<string, unknown>), ...actionContext };
-      const views = await transport.call<{ views: { list: { arch: string } }; models: ModelsInfo }>(
-        model,
-        "get_views",
+  const info = session.data ?? null;
+  return useMemo(
+    () =>
+      new ActionManager(
         {
-          kwargs: { views: [[listView[0], "list"]], options: { action_id: a!.id }, context },
+          loadAction: (id, ctx) => transport.loadAction(id, ctx),
+          runAction: (id, ctx) =>
+            transport.runAction
+              ? transport.runAction(id, ctx)
+              : Promise.reject(new Error("runAction unavailable")),
+          callButton: (model, method, ids, ctx) =>
+            transport.callButton
+              ? transport.callButton(model, method, ids, ctx)
+              : Promise.reject(new Error("callButton unavailable")),
         },
-      );
-      const schema = parseView({ arch: views.views.list.arch, model, models: views.models }) as ListSchema;
-      // actions opened from a record carry it in their context (Odoo offers these names too)
-      const active = Object.fromEntries(
-        ["active_id", "active_ids", "active_model"].filter((k) => k in context).map((k) => [k, context[k]]),
-      );
-      const evalContext = { ...base, ...active, context: context as Record<string, never> } as EvalContext;
-      const domain = Domain.parse(
-        ((a!.domain as string | PyValue[] | undefined) || []) as string | PyValue[],
-        evalContext,
-      ).toList();
-      const result = await transport.call<{ records: Record<string, unknown>[]; length: number }>(
-        model,
-        "web_search_read",
-        {
-          kwargs: {
-            domain,
-            specification: buildSpec(schema, { evalContext }),
-            limit,
-            context: { ...context, bin_size: true },
-          },
-        },
-      );
-      return { schema, records: result.records, length: result.length, evalContext };
-    },
-  });
+        () => baseEvalContext(info),
+      ),
+    [transport, info],
+  );
 }
 
-/** An action's `context` (a Python dict as text, or already a dict) evaluated for the user. */
-function toDict(value: unknown, ctx: Record<string, unknown>): Record<string, unknown> {
-  if (value && typeof value === "object") return value as Record<string, unknown>;
-  if (typeof value !== "string" || !value.trim()) return {};
-  try {
-    const v = evaluate(value, ctx as never);
-    return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
-  } catch {
-    return {};
-  }
+/**
+ * An action's list (P2.9): resolved through the ActionManager, loaded like Odoo's client loads it
+ * (list + search views, toolbar, search defaults, order, paging). `null` without a list view.
+ */
+export function useListView(actionId: number | undefined) {
+  const { transport } = useEngine();
+  const am = useActionManager();
+  const session = useQuery({
+    queryKey: ["session"],
+    queryFn: () => transport.getSessionInfo(),
+    staleTime: Infinity,
+  });
+  const query = useQuery({
+    queryKey: ["list-view", actionId],
+    enabled: actionId !== undefined && !!session.data,
+    queryFn: async (): Promise<ListViewData | null> => {
+      const d = await am.resolve(actionId!);
+      if (d.kind !== "window") return null;
+      const rpc: Rpc = (model, method, call) => transport.call(model, method, call);
+      return loadListView(rpc, d.action, baseEvalContext(session.data ?? null));
+    },
+    staleTime: 0,
+    gcTime: 0, // the list is a live model: never served stale
+  });
+  useModel(query.data?.list);
+  return query;
 }
 
 const noSubscribe = () => () => undefined;
