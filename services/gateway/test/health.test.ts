@@ -25,9 +25,9 @@ describe("client IP (P1.6.6)", () => {
       tenantsFile: "/nonexistent",
       pendingTtlMs: 1000,
     });
-    app.get("/__ip", async (req) => req.ip);
+    app.get("/api/__ip", async (req) => req.ip);
     const ip = async (remoteAddress: string) =>
-      (await app.inject({ url: "/__ip", remoteAddress, headers: { "x-forwarded-for": "1.2.3.4" } })).body;
+      (await app.inject({ url: "/api/__ip", remoteAddress, headers: { "x-forwarded-for": "1.2.3.4" } })).body;
     expect(await ip("127.0.0.1")).toBe("1.2.3.4"); // via Caddy / Vite
     expect(await ip("203.0.113.5")).toBe("203.0.113.5"); // a client sending its own header
     await app.close();

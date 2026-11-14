@@ -1,7 +1,8 @@
 /**
  * Same-origin reverse proxy to each tenant's own Odoo (D-27). The browser only ever talks to the
  * tenant's NOVI host, so Odoo's own session cookie works there in every hosting mode, with no
- * session vault. Only the Odoo routes the web app needs are proxied (P1.8.2 allow-list).
+ * session vault. Every path that isn't NOVI's goes to the tenant's Odoo, except the blocked ones
+ * (paths.ts, D-40).
  */
 import { request as httpRequest } from "node:http";
 import type { Duplex } from "node:stream";
@@ -9,25 +10,10 @@ import type { Duplex } from "node:stream";
 import replyFrom from "@fastify/reply-from";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
+import { isAppPath, isProxied } from "./paths.js";
 import type { Tenant } from "./tenants/registry.js";
 
-/** Route prefixes the NOVI web app uses (PLAN §1). Everything else stays unreachable. */
-// /auth_oauth/: the SSO return leg (P1.14), so Odoo sets its session on the tenant's own host
-export const PROXIED_PREFIXES = [
-  "/web/",
-  "/json/2/",
-  "/mail/",
-  "/report/",
-  "/odoo",
-  "/websocket",
-  "/auth_oauth/",
-] as const;
-/** Never exposed, even under an allowed prefix. */
-export const BLOCKED_PREFIXES = ["/web/database"] as const;
-
-export const isProxied = (url: string) =>
-  PROXIED_PREFIXES.some((p) => url === p.replace(/\/$/, "") || url.startsWith(p)) &&
-  !BLOCKED_PREFIXES.some((p) => url.startsWith(p));
+export { isProxied } from "./paths.js";
 
 /** Headers Odoo needs behind a proxy (`proxy_mode`): the browser's host, IP and scheme. */
 function forwardedHeaders(req: { headers: Record<string, unknown>; ip: string; protocol: string }) {
@@ -38,7 +24,14 @@ function forwardedHeaders(req: { headers: Record<string, unknown>; ip: string; p
   };
 }
 
-export async function registerProxy(app: FastifyInstance): Promise<void> {
+/**
+ * One catch-all for the tenant's host: Odoo's paths are forwarded, NOVI's app paths are served by
+ * `serveApp` (production build), blocked paths answer 404. More specific routes (/api/…) win.
+ */
+export async function registerProxy(
+  app: FastifyInstance,
+  serveApp?: (req: FastifyRequest, reply: FastifyReply) => unknown,
+): Promise<void> {
   await app.register(async (scope) => {
     // stream bodies through untouched (JSON, form posts, file uploads)
     scope.removeAllContentTypeParsers();
@@ -47,7 +40,11 @@ export async function registerProxy(app: FastifyInstance): Promise<void> {
 
     const handler = async (req: FastifyRequest, reply: FastifyReply) => {
       const url = req.url;
-      if (!isProxied(url)) return reply.code(404).send({ status: "not_found" });
+      if (!isProxied(url)) {
+        if (serveApp && isAppPath(url) && (req.method === "GET" || req.method === "HEAD"))
+          return serveApp(req, reply);
+        return reply.code(404).send({ status: "not_found" });
+      }
       const tenant = req.tenant!;
       return reply.from(`${tenant.odooUrl}${url}`, {
         // keep the browser's Host: Odoo builds URLs from it and the websocket Origin check needs it (D-17)
@@ -59,11 +56,8 @@ export async function registerProxy(app: FastifyInstance): Promise<void> {
         rewriteHeaders: (headers) => frameableBySameOrigin(headers),
       });
     };
-    for (const p of PROXIED_PREFIXES) {
-      const base = p.replace(/\/$/, "");
-      scope.all(base, handler);
-      scope.all(`${base}/*`, handler);
-    }
+    scope.all("/", handler);
+    scope.all("/*", handler);
   });
 }
 

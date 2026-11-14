@@ -43,15 +43,18 @@ describe("tenant registry", () => {
 });
 
 describe("routing", () => {
-  it("proxies only the Odoo routes the app needs; the database manager and legacy RPC never", () => {
+  it("gives NOVI its own paths, Odoo everything else, and never the database manager or legacy RPC", () => {
     for (const ok of [
-      "/web/session/get_session_info",
-      "/web/dataset/call_kw/x/y",
+      "/web/dataset/call_kw/res.partner/web_read",
       "/mail/store",
+      "/discuss/channel/mark_as_read",
+      "/calendar/attendee/accept",
+      "/my/invoices/12?access_token=x",
       "/json/2/res.partner/search",
       "/report/pdf/x/1",
       "/odoo/action-1",
       "/websocket",
+      "/auth_oauth/signin",
     ])
       expect(isProxied(ok), ok).toBe(true);
     for (const no of [
@@ -61,6 +64,10 @@ describe("routing", () => {
       "/xmlrpc/2/object",
       "/api/auth/login",
       "/",
+      "/action/12/42",
+      "/apps/3",
+      "/assets/index-1.js",
+      "/signup/status/x",
     ])
       expect(isProxied(no), no).toBe(false);
   });

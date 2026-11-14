@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import fastifyStatic from "@fastify/static";
 import { loadKey, type Mailer, platformConfig, SignupStore, smtpMailer } from "@novi/provisioner";
-import Fastify from "fastify";
+import Fastify, { type FastifyReply, type FastifyRequest } from "fastify";
 
 import { registerAuthRoutes } from "./auth/routes.js";
 import { type GatewayConfig, loadConfig } from "./config.js";
@@ -54,22 +54,22 @@ export async function buildServer(config: GatewayConfig = loadConfig(), deps: { 
       platformHosts: config.platformHosts,
     });
   }
-  await registerProxy(app);
+  // the built web app (production / pnpm serve): files looked up on each request (a rebuild never
+  // strands a running gateway); app routes (/apps/…, /action/…) get the shell; a missing asset is a 404
+  const dist = config.webDist && existsSync(join(config.webDist, "index.html")) ? config.webDist : undefined;
+  if (dist) await app.register(fastifyStatic, { root: dist, serve: false });
+  const serveApp = dist
+    ? (req: FastifyRequest, reply: FastifyReply) => {
+        const path = decodeURIComponent(req.url.split("?")[0]!);
+        const isFile = path.startsWith("/assets/") || /\.[a-z0-9]+$/i.test(path);
+        if (!isFile) return reply.type("text/html").sendFile("index.html");
+        return existsSync(join(dist, path))
+          ? reply.sendFile(path.slice(1))
+          : reply.code(404).send({ status: "not_found" });
+      }
+    : undefined;
+  await registerProxy(app, serveApp);
   registerWebsocketProxy(app, resolve);
-
-  if (config.webDist && existsSync(join(config.webDist, "index.html"))) {
-    // files are looked up on each request, so rebuilding the web app never strands a running gateway
-    await app.register(fastifyStatic, { root: config.webDist, wildcard: true });
-    // client-side routes (/apps/…, /action/…) get the app shell; a missing asset is a real 404
-    app.setNotFoundHandler((req, reply) =>
-      req.method === "GET" &&
-      !req.url.startsWith("/api/") &&
-      !req.url.startsWith("/assets/") &&
-      !isProxied(req.url)
-        ? reply.type("text/html").sendFile("index.html")
-        : reply.code(404).send({ status: "not_found" }),
-    );
-  }
   return app;
 }
 

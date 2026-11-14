@@ -272,7 +272,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 
 ### P1.8 RPC proxy
 - [x] P1.8.1 Proxy `/api/rpc/*` → Odoo `/web/dataset/*`, `/web/action/*`, `/mail/*`, file routes (same-origin reverse proxy of the Odoo routes the app uses (`/web`, `/json/2`, `/mail`, `/report`, `/odoo`, `/websocket`) to each tenant's own Odoo; Host kept, X-Forwarded-* set)
-- [x] P1.8.2 Allow-list of routes and methods (block `/web/database/*`, private methods) (allow-list by route prefix; `/web/database/*`, `/jsonrpc`, `/xmlrpc` unreachable; Odoo still enforces method access)
+- [x] P1.8.2 Allow-list of routes and methods (block `/web/database/*`, private methods) (allow-list by route prefix; `/web/database/*`, `/jsonrpc`, `/xmlrpc` unreachable; Odoo still enforces method access) *(replaced by D-40: NOVI's own paths + a deny-list (database manager, legacy RPC); everything else goes to the tenant's Odoo, so new apps' routes work without a gateway change)*
 - [-] P1.8.3 Rate limiting per user and per tenant *(deferred to P7.7/P7.8, D-32: sign-up and reset are limited per IP; login by Odoo's cooldown; per-account limits against IP-rotating attacks and per-tenant API quotas need load data first)*
 - [-] P1.8.4 Audit log for writes *(deferred to P7.9, D-32: Odoo already records who changed what (`write_uid`/`write_date`, chatter field tracking); a separate gateway log only if a compliance requirement asks for it)*
 - [x] P1.8.5 Streaming for file downloads/uploads (no buffering in memory) (bodies streamed through untouched by reply-from: no JSON re-parsing, uploads not buffered)

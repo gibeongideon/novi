@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type ProxyOptions } from "vite";
 
+import { APP_PATHS } from "../../services/gateway/src/paths";
+
 /**
  * Everything Odoo-related goes through the NOVI gateway, in dev exactly as in production (D-27):
  * the gateway resolves the tenant (localhost → the local demo Odoo), signs in (incl. 2FA) and
@@ -11,10 +13,15 @@ import { defineConfig, type ProxyOptions } from "vite";
  */
 const GATEWAY = process.env.GATEWAY_URL ?? "http://127.0.0.1:4000";
 const toGateway = { target: GATEWAY, changeOrigin: false };
-const proxy: Record<string, ProxyOptions> = Object.fromEntries(
-  ["/api", "/web", "/json", "/mail", "/report", "/odoo"].map((p) => [p, toGateway]),
-);
-proxy["/websocket"] = { target: GATEWAY.replace(/^http/, "ws"), ws: true, changeOrigin: false };
+// Vite serves its own files and the app's routes (one list with the gateway: paths.ts, D-40);
+// everything else (Odoo's routes, the gateway's /api) goes to the gateway. Websocket first.
+const escape = (p: string) => p.slice(1).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const VITE_OWN = ["@", "src/", "node_modules/"];
+const notApp = `^/(?!(?:${[...VITE_OWN, ...APP_PATHS.map((p) => `${escape(p)}(?:/|\\?|$)`), "\\?", "$"].join("|")})).*`;
+const proxy: Record<string, ProxyOptions> = {
+  "/websocket": { target: GATEWAY.replace(/^http/, "ws"), ws: true, changeOrigin: false },
+  [notApp]: toGateway,
+};
 
 export default defineConfig({
   plugins: [react()],
