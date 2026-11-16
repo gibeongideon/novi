@@ -156,6 +156,13 @@ export const en = {
   ssoNotLinked:
     "That sign-in isn't linked to an account in this workspace. Ask your administrator for an invitation, or open your invitation or password-reset email and choose it there.",
   noMatches: "No matches",
+  views: "Views",
+  quickCreate: "Quick create",
+  fold: "Fold",
+  add: "Add",
+  loadMore: "Load {n} more",
+  viewList: "List",
+  viewKanban: "Kanban",
   addLine: "Add a line",
   removeLine: "Remove line",
   done: "Done",

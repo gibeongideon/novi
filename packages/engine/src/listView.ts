@@ -9,6 +9,7 @@ import type { OdooContext } from "@novi/odoo-client";
 import { Domain, type EvalContext, type PyValue } from "@novi/odoo-expr";
 import {
   buildSpec,
+  type KanbanSchema,
   type ListSchema,
   type ModelsInfo,
   normalizeOrder,
@@ -27,15 +28,17 @@ export interface ToolbarItem {
   type?: string;
 }
 
-export interface ListViewData {
+export interface RecordsViewData<S extends ListSchema | KanbanSchema> {
   action: WindowAction;
-  schema: ListSchema;
+  schema: S;
   search?: SearchSchema;
   toolbar: { action: ToolbarItem[]; print: ToolbarItem[] };
   list: RecordList | GroupedList;
   /** User + action context and uid: what list-level expressions are evaluated with. */
   evalContext: EvalContext;
 }
+export type ListViewData = RecordsViewData<ListSchema>;
+export type KanbanViewData = RecordsViewData<KanbanSchema>;
 
 export const LIST_LIMIT = 80;
 export const COUNT_LIMIT = 10001;
@@ -104,20 +107,42 @@ function contextGroupBy(context: OdooContext): string[] {
 }
 
 /** Loads an action's list view and builds its (grouped) list; null when the action has no list view. */
-export async function loadListView(
+export function loadListView(
   rpc: Rpc,
   action: WindowAction,
   base: EvalContext,
 ): Promise<ListViewData | null> {
-  const listView = action.views.find(([, type]) => type === "list");
-  if (!listView) return null;
+  return loadRecordsView(rpc, action, base, "list") as Promise<ListViewData | null>;
+}
+
+/**
+ * Loads an action's kanban view (P2.11): the same list, grouped by the view's `default_group_by`
+ * unless the search asks otherwise, with every column opened at once (`auto_unfold`), empty
+ * columns kept (`read_group_expand`) and the progress bar's sum per column, as Odoo's client.
+ */
+export function loadKanbanView(
+  rpc: Rpc,
+  action: WindowAction,
+  base: EvalContext,
+): Promise<KanbanViewData | null> {
+  return loadRecordsView(rpc, action, base, "kanban") as Promise<KanbanViewData | null>;
+}
+
+async function loadRecordsView(
+  rpc: Rpc,
+  action: WindowAction,
+  base: EvalContext,
+  viewType: "list" | "kanban",
+): Promise<RecordsViewData<ListSchema | KanbanSchema> | null> {
+  const view = action.views.find(([, type]) => type === viewType);
+  if (!view) return null;
   const views = await rpc<{
-    views: { list: { arch: string; toolbar?: ListViewData["toolbar"] }; search?: { arch: string } };
+    views: Record<string, { arch: string; toolbar?: ListViewData["toolbar"] }>;
     models: ModelsInfo;
   }>(action.model, "get_views", {
     kwargs: {
       views: [
-        [listView[0], "list"],
+        [view[0], viewType],
         [action.searchViewId, "search"],
       ],
       options: { action_id: action.id ?? false, toolbar: true, load_filters: false },
@@ -125,10 +150,10 @@ export async function loadListView(
     },
   });
   const schema = parseView({
-    arch: views.views.list.arch,
+    arch: views.views[viewType]!.arch,
     model: action.model,
     models: views.models,
-  }) as ListSchema;
+  }) as ListSchema | KanbanSchema;
   const search = views.views.search
     ? (parseView({
         arch: views.views.search.arch,
@@ -148,23 +173,56 @@ export async function loadListView(
     context,
     evalContext,
     order: schema.defaultOrder ? normalizeOrder(schema.defaultOrder) : undefined,
-    limit: action.limit ?? schema.limit ?? LIST_LIMIT,
+    limit: action.limit ?? ("limit" in schema ? schema.limit : undefined) ?? LIST_LIMIT,
     countLimit: COUNT_LIMIT,
   };
-  const groupBy = [...contextGroupBy(action.context), ...defaults.groupBy];
-  const aggregates = schema.columns.flatMap((c) =>
-    c.type === "field" && (c.sum || c.avg) ? [`${c.name}:${c.sum ? "sum" : "avg"}`] : [],
-  );
-  const list = groupBy.length
-    ? new GroupedList(rpc, { ...config, groupBy, aggregates })
-    : new RecordList(rpc, config);
+  let groupBy = [...contextGroupBy(action.context), ...defaults.groupBy];
+  let list: RecordList | GroupedList;
+  if (schema.viewType === "kanban") {
+    // a kanban is grouped by its default unless the search groups it; one level of columns
+    if (!groupBy.length && schema.defaultGroupBy) groupBy = [schema.defaultGroupBy];
+    groupBy = groupBy.slice(0, 1);
+    list = groupBy.length
+      ? new GroupedList(rpc, {
+          ...config,
+          limit: undefined,
+          context: { ...context, read_group_expand: true },
+          groupBy,
+          aggregates: kanbanAggregates(schema),
+          autoUnfold: true,
+          unfoldLimit: LIST_LIMIT,
+          progressbar: schema.progressbar,
+        })
+      : new RecordList(rpc, config);
+  } else {
+    const aggregates = schema.columns.flatMap((c) =>
+      c.type === "field" && (c.sum || c.avg) ? [`${c.name}:${c.sum ? "sum" : "avg"}`] : [],
+    );
+    list = groupBy.length
+      ? new GroupedList(rpc, { ...config, groupBy, aggregates })
+      : new RecordList(rpc, config);
+  }
   await list.load();
+  const toolbar = views.views[viewType]!.toolbar;
   return {
     action,
     schema,
     search,
-    toolbar: { action: views.views.list.toolbar?.action ?? [], print: views.views.list.toolbar?.print ?? [] },
+    toolbar: { action: toolbar?.action ?? [], print: toolbar?.print ?? [] },
     list,
     evalContext,
   };
+}
+
+/**
+ * A kanban column's figures: the progress bar's sum, and for an amount its currencies and the sum
+ * in the company currency, as Odoo 20's client asks.
+ */
+function kanbanAggregates(schema: KanbanSchema): string[] {
+  const sum = schema.progressbar?.sumField;
+  if (!sum) return [];
+  const currency = schema.fields[sum]?.currency_field;
+  return typeof currency === "string" && schema.fields[sum]?.type === "monetary"
+    ? [`${sum}:sum`, `${currency}:array_agg_distinct`, `${sum}:sum_currency`]
+    : [`${sum}:sum`];
 }

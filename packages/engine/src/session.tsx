@@ -32,7 +32,7 @@ import { type AuthClient, directAuth, LoginError, type LoginResult } from "./aut
 import { activeCompanyIds, allowedCompanies, readCidsCookie, writeCidsCookie } from "./companies.js";
 import { createFormatter, type CurrencyInfo, type Formatter, type LangParameters } from "./format.js";
 import { type FormTarget, loadFormView } from "./formView.js";
-import { type ListViewData, loadListView } from "./listView.js";
+import { type KanbanViewData, type ListViewData, loadKanbanView, loadListView } from "./listView.js";
 import { buildMenuTree, type MenuTree, type RawMenu } from "./menus.js";
 import { type ListConfig, RecordList } from "./model/lists.js";
 import type { Observable, Rpc } from "./model/observable.js";
@@ -420,10 +420,11 @@ export function useActionManager(): ActionManager {
 }
 
 /**
- * An action's list (P2.9): resolved through the ActionManager, loaded like Odoo's client loads it
- * (list + search views, toolbar, search defaults, order, paging). `null` without a list view.
+ * An action's list (P2.9) or kanban (P2.11): resolved through the ActionManager, loaded like
+ * Odoo's client loads it (view + search views, toolbar, search defaults, order, paging,
+ * kanban columns). `null` when the action has no such view.
  */
-export function useListView(actionId: number | undefined) {
+export function useListView(actionId: number | undefined, viewType: "list" | "kanban" = "list") {
   const { transport } = useEngine();
   const am = useActionManager();
   const session = useQuery({
@@ -432,13 +433,14 @@ export function useListView(actionId: number | undefined) {
     staleTime: Infinity,
   });
   const query = useQuery({
-    queryKey: ["list-view", actionId],
+    queryKey: ["list-view", actionId, viewType],
     enabled: actionId !== undefined && !!session.data,
-    queryFn: async (): Promise<ListViewData | null> => {
+    queryFn: async (): Promise<ListViewData | KanbanViewData | null> => {
       const d = await am.resolve(actionId!);
       if (d.kind !== "window") return null;
       const rpc: Rpc = (model, method, call) => transport.call(model, method, call);
-      return loadListView(rpc, d.action, baseEvalContext(session.data ?? null));
+      const base = baseEvalContext(session.data ?? null);
+      return viewType === "kanban" ? loadKanbanView(rpc, d.action, base) : loadListView(rpc, d.action, base);
     },
     staleTime: 0,
     gcTime: 0, // the list is a live model: never served stale

@@ -1,8 +1,15 @@
 import { RecordList, useAction, useActionManager, useListView } from "@novi/engine";
+import type { ListSchema } from "@novi/odoo-meta";
 import { Badge, Button, Pager, Skeleton, useT } from "@novi/ui";
-import { ListView } from "@novi/views";
-import { ExternalLink, Plus } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { KanbanView, ListView } from "@novi/views";
+import { ExternalLink, LayoutGrid, List, Plus } from "lucide-react";
+
+/** View types NOVI renders itself (P2.9 list, P2.11 kanban); others stay in Odoo for now. */
+const NATIVE_VIEWS = ["list", "kanban"] as const;
+type NativeView = (typeof NATIVE_VIEWS)[number];
+const VIEW_ICON = { list: List, kanban: LayoutGrid } as const;
+const VIEW_LABEL = { list: "viewList", kanban: "viewKanban" } as const;
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { ActionMenus } from "./ActionMenus";
 import { type Crumb, PageTitle } from "./PageTitle";
@@ -32,8 +39,15 @@ export function ActionPage({ actionId, trail }: { actionId: number | undefined; 
   const t = useT();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
+  const [params, setParams] = useSearchParams();
   const action = useAction(actionId);
-  const view = useListView(actionId);
+  // the views NOVI shows natively, in the action's order; `?view=` keeps the user's choice
+  const offered = (action.data?.views ?? [])
+    .map(([, type]) => type)
+    .filter((type): type is NativeView => (NATIVE_VIEWS as readonly string[]).includes(type));
+  const requested = params.get("view") as NativeView | null;
+  const viewType = requested && offered.includes(requested) ? requested : (offered[0] ?? "list");
+  const view = useListView(action.data ? actionId : undefined, viewType);
   const am = useActionManager();
   const data = view.data;
   const list = data?.list;
@@ -118,7 +132,7 @@ export function ActionPage({ actionId, trail }: { actionId: number | undefined; 
               onToolbar={(item) => void runner.guard(() => am.resolve(item.id, bulkContext))}
             />
           </>
-        ) : list instanceof RecordList ? (
+        ) : list instanceof RecordList && viewType === "list" ? (
           <Pager
             offset={list.offset}
             limit={list.limit}
@@ -128,7 +142,33 @@ export function ActionPage({ actionId, trail }: { actionId: number | undefined; 
             onNext={() => void runner.guard(async () => void (await list.nextPage()))}
           />
         ) : null}
-        <span className="ms-auto">{openInOdoo}</span>
+        <span className="ms-auto flex items-center gap-2">
+          {offered.length > 1 ? (
+            <span role="group" aria-label={t("views")} className="flex rounded-md border border-border">
+              {offered.map((type) => {
+                const Icon = VIEW_ICON[type];
+                return (
+                  <Button
+                    key={type}
+                    variant={type === viewType ? "secondary" : "ghost"}
+                    size="icon"
+                    aria-label={t(VIEW_LABEL[type])}
+                    aria-pressed={type === viewType}
+                    onClick={() =>
+                      setParams((p) => {
+                        p.set("view", type);
+                        return p;
+                      })
+                    }
+                  >
+                    <Icon aria-hidden />
+                  </Button>
+                );
+              })}
+            </span>
+          ) : null}
+          {openInOdoo}
+        </span>
       </div>
 
       {view.isPending ? (
@@ -150,9 +190,18 @@ export function ActionPage({ actionId, trail }: { actionId: number | undefined; 
               </p>
             ))}
           </div>
+        ) : data.schema.viewType === "kanban" ? (
+          <KanbanView
+            schema={data.schema}
+            list={list}
+            evalContext={data.evalContext}
+            onOpen={(rec) => navigate(`${pathname}/${rec.id}${search}`)}
+            onButton={(rec, button) => void runner.guard(() => am.executeButton(rec, button))}
+            onError={(e) => void runner.guard(() => Promise.reject(e))}
+          />
         ) : (
           <ListView
-            schema={data.schema}
+            schema={data.schema as ListSchema}
             list={list}
             evalContext={data.evalContext}
             storageKey={`${data.action.model}.${data.action.id ?? ""}`}

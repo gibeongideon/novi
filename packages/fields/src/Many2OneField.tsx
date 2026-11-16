@@ -59,6 +59,12 @@ function RelatedAvatar({ model, value }: { model?: string; value: M2O }) {
 export function Many2OneAvatarField(props: FieldProps<M2O>) {
   const model = props.meta.relation as string | undefined;
   const editing = props.mode === "edit" && !props.readonly;
+  if (props.compact && !editing)
+    return (
+      <span title={props.value ? String(props.value.display_name ?? "") : undefined}>
+        <RelatedAvatar model={model} value={props.value} />
+      </span>
+    );
   return (
     <span
       className={

@@ -6,6 +6,9 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 
 ## Unreleased
 
+### 2026-11-16
+- [P2.11] Kanban view: screens Odoo opens as cards (CRM pipeline, projects, contacts…) now show NOVI's own cards and columns: counts, coloured progress bars and totals per column, priority stars you can click, tags and people's pictures; fold a column, drag a card to another column, add a card from a column's +, load more cards. Switch between cards and list with the buttons at the top. Same records and columns as Odoo's own screens (checked against Odoo's client).
+
 ### 2026-11-14
 - [P2.13.8] Order lines (and every other list inside a form) can be edited: add a line, pick the product, change quantities and prices, remove lines, all priced by Odoo as you go; lists that Odoo edits in a pop-up open the line's own form. The column chooser works on lines too (e.g. show "Product" on quotation lines). Fixed: fields Odoo shows only on phones or only on desktops (the quotation's Tax Excl./Incl. switch) no longer appear twice.
 - [P2.13] More field types work in forms and lists: emails, phone numbers and websites as links; percentages and hours (1:30); on/off switches; option buttons, badges and priority stars; people with their picture; tags you can remove or add by searching; pictures. The coverage report now reads what NOVI supports straight from the code: 63% of widgets and 94% of field types in the demo database render natively (from 0%).

@@ -74,6 +74,30 @@ export class RecordList extends Observable {
     return this;
   }
 
+  /**
+   * Appends the next records after those shown (kanban columns, P2.11.6): offset = what's
+   * loaded, same limit; the shown records stay as they are.
+   */
+  async loadMore(): Promise<this> {
+    if (this.records.length >= this.length) return this;
+    const r = await this.rpc<{ records: Values[]; length: number }>(this.config.model, "web_search_read", {
+      kwargs: {
+        domain: this.config.domain ?? [],
+        specification: this.config.spec,
+        offset: this.records.length,
+        limit: this.limit,
+        ...(this.order ? { order: this.order } : {}),
+        ...(this.config.countLimit ? { count_limit: this.config.countLimit } : {}),
+        context: { ...this.config.context, bin_size: true },
+      },
+    });
+    const more = r.records.map((row) => new OdooRecord(this.rpc, this.config, row));
+    this.records = [...this.records, ...more];
+    this.length = r.length;
+    this.notify();
+    return this;
+  }
+
   /** Moves to the page starting at `offset` (clamped to the list). */
   async goTo(offset: number): Promise<this> {
     this.offset = Math.max(0, Math.min(offset, Math.max(0, this.length - 1)));
@@ -189,6 +213,8 @@ export interface Group {
   folded: boolean;
   /** Unfolded: its records (last group-by) or its sub-groups. */
   list?: RecordList | GroupedList;
+  /** Kanban progress bar: records per value of the bar's field (`{planned: 3, overdue: 1}`). */
+  progress?: Record<string, number>;
 }
 
 export interface GroupedConfig extends ListConfig {
@@ -198,6 +224,10 @@ export interface GroupedConfig extends ListConfig {
   aggregates?: string[];
   /** Open groups right away (kanban: unfolds unless Odoo says `__fold`). */
   autoUnfold?: boolean;
+  /** Records read per opened group (kanban columns: Odoo's `unfold_read_default_limit`). */
+  unfoldLimit?: number;
+  /** Kanban `<progressbar>`: counts per column read with `read_progress_bar` (P2.11.5). */
+  progressbar?: { field: string; colors: Record<string, string> };
 }
 
 export class GroupedList extends Observable {
@@ -224,14 +254,39 @@ export class GroupedList extends Observable {
         ...(this.config.limit ? { limit: this.config.limit } : {}),
         ...(this.config.order ? { order: this.config.order } : {}),
         auto_unfold: !!this.config.autoUnfold && last,
+        ...(this.config.autoUnfold && last && this.config.unfoldLimit
+          ? { unfold_read_default_limit: this.config.unfoldLimit }
+          : {}),
         ...(last ? { unfold_read_specification: this.config.spec } : {}),
         context: this.config.context ?? {},
       },
     });
     this.length = r.length;
     this.groups = r.groups.map((g) => this.toGroup(g, groupBy, rest));
+    if (this.config.progressbar) await this.loadProgress(groupBy);
     this.notify();
     return this;
+  }
+
+  /** Per column, how many records have each value of the progress bar's field (Odoo's keys: str(id)). */
+  private async loadProgress(groupBy: string): Promise<void> {
+    const bar = this.config.progressbar!;
+    const counts = await this.rpc<Record<string, Record<string, number>>>(
+      this.config.model,
+      "read_progress_bar",
+      {
+        kwargs: {
+          domain: this.config.domain ?? [],
+          group_by: groupBy,
+          progress_bar: { field: bar.field, colors: bar.colors },
+          context: this.config.context ?? {},
+        },
+      },
+    );
+    for (const g of this.groups) {
+      const key = Array.isArray(g.value) ? g.value[0] : g.value;
+      g.progress = counts[String(key === false || key === null ? "False" : key)];
+    }
   }
 
   /** Selected record ids across the open groups. */
@@ -266,6 +321,39 @@ export class GroupedList extends Observable {
   async writeSelected(values: Values): Promise<void> {
     await writeMany(this, values);
     await this.load();
+  }
+
+  /**
+   * Kanban quick create without a quick-create form (P2.11.4): a record named `name` in the
+   * group's column (`name_create` with the column as default, as Odoo's client), then reloads.
+   */
+  async quickCreate(group: Group, name: string): Promise<number> {
+    const field = this.config.groupBy[0]!;
+    const key = Array.isArray(group.value) ? group.value[0] : group.value;
+    const [id] = await this.rpc<[number, string]>(this.config.model, "name_create", {
+      kwargs: {
+        name,
+        context: {
+          ...this.config.context,
+          ...(key !== false && key !== null ? { [`default_${field}`]: key } : {}),
+        },
+      },
+    });
+    await this.load();
+    return id;
+  }
+
+  /**
+   * Moves a record to another column (kanban drag and drop, P2.11.3): writes the group field
+   * with the column's value and saves, then reloads the columns (counts, totals, bars).
+   */
+  async moveTo(record: OdooRecord, group: Group): Promise<boolean> {
+    const field = this.config.groupBy[0]!;
+    const v = group.value;
+    record.update({ [field]: Array.isArray(v) ? { id: v[0], display_name: v[1] } : v });
+    const ok = await record.save();
+    await this.load();
+    return ok;
   }
 
   /** Opens or closes a group; opening loads its records or its sub-groups. */

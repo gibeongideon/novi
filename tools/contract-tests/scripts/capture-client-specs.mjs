@@ -91,7 +91,7 @@ listeners.push(async (m) => {
       (await send("Network.getRequestPostData", { requestId: m.params.requestId })).postData ??
       "{}";
     const body = JSON.parse(raw).params ?? {};
-    if (["get_views", "web_search_read", "web_read"].includes(body.method))
+    if (["get_views", "web_search_read", "web_read", "web_read_group"].includes(body.method))
       requests.set(m.params.requestId, { step, model: body.model, method: body.method, kwargs: body.kwargs });
   }
   if (m.method === "Network.loadingFinished" && requests.has(m.params.requestId)) {
@@ -100,7 +100,11 @@ listeners.push(async (m) => {
     if (req.method === "get_views") {
       const r = await send("Network.getResponseBody", { requestId: m.params.requestId });
       captures.push({ ...req, result: JSON.parse(r.body ?? "{}").result });
-    } else captures.push({ ...req, specification: req.kwargs.specification });
+    } else
+      captures.push({
+        ...req,
+        specification: req.kwargs.specification ?? req.kwargs.unfold_read_specification,
+      });
   }
 });
 await send("Network.enable");

@@ -204,7 +204,24 @@ describe("kanban", () => {
     expect(roles(s.card.main as never)).toEqual(["name:title", "partner_id:subtitle", "tag_ids:tags"]);
     expect(roles(s.card.footer as never)).toEqual(["priority:priority", "date:date", "user_id:avatar"]);
   });
+
+  it("hides what a container hides: its `invisible`, or a QWeb t-if on record values", () => {
+    const s = parse(`<kanban><templates><t t-name="card">
+      <div invisible="not partner_id"><field name="partner_id" invisible="state == 'sale'"/></div>
+      <t t-if="record.amount.raw_value"><field name="amount"/></t>
+      <t t-if="widget.isMobile"><field name="date"/></t>
+      <span t-att-title="record.priority.value"/>
+      <t t-if="record.user_id.value"><span/></t>
+    </t></templates></kanban>`) as KanbanSchema;
+    const byName = Object.fromEntries((s.card.main as FieldNodeLike[]).map((f) => [f.name, f.invisible]));
+    expect(byName.partner_id).toBe("(not partner_id) or (state == 'sale')");
+    expect(byName.amount).toBe("not (amount)");
+    expect(byName.date).toBeUndefined(); // JavaScript state NOVI can't know: shown
+    // fields displayed by the templates are read; fields only tested by t-if aren't (Odoo's client)
+    expect(s.templateFields).toEqual(["priority"]);
+  });
 });
+type FieldNodeLike = { name: string; invisible?: unknown };
 
 describe("search", () => {
   it("groups filters by separators, splits out group-bys, date filters and the search panel", () => {

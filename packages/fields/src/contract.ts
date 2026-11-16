@@ -27,6 +27,8 @@ export interface FieldProps<V = unknown> {
   context: Readonly<OdooContext>;
   /** The record holding the value (images and avatars are served by Odoo per record). */
   owner?: { model: string; id?: number; stamp?: string };
+  /** Dense places (kanban cards): the widget's shortest form, e.g. a person's picture without the name. */
+  compact?: boolean;
   /** Accessible name when the field has no visible label next to it (a title, a field in text). */
   label?: string;
   /** Arch `placeholder`. */

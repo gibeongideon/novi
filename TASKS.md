@@ -477,12 +477,12 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** the sale order, partner, product and employee forms render and save correctly.
 
 ### P2.11 Kanban view
-- [ ] P2.11.1 Card renderer from the kanban schema
-- [ ] P2.11.2 Columns by `default_group_by`, fold/unfold, column counts and aggregates
-- [ ] P2.11.3 Drag-and-drop between columns (write the group field) and within a column (resequence)
-- [ ] P2.11.4 Quick create (simple form or `quick_create_view`)
-- [ ] P2.11.5 Progress bars (`progressbar` attr)
-- [ ] P2.11.6 Infinite load per column
+- [x] P2.11.1 Card renderer from the kanban schema (values placed by role through the field widgets; container `invisible` and simple QWeb `t-if` on record values honoured; Odoo-only widgets left off cards)
+- [x] P2.11.2 Columns by `default_group_by`, fold/unfold, column counts and aggregates (same request as Odoo's client: `auto_unfold`, `unfold_read_default_limit`, `read_group_expand`)
+- [~] P2.11.3 Drag-and-drop between columns (write the group field) and within a column (resequence) *(between columns done; reordering inside a column next)*
+- [x] P2.11.4 Quick create (simple form or `quick_create_view`)
+- [x] P2.11.5 Progress bars (`progressbar` attr): `read_progress_bar` counts and the column sum
+- [x] P2.11.6 Infinite load per column ("Load N more")
 
 **Done when:** the CRM pipeline works generically (before the bespoke version in P4).
 

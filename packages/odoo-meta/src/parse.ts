@@ -5,7 +5,7 @@
  * error), so a new Odoo tag degrades gracefully instead of breaking a screen.
  */
 import type { FieldInfo } from "@novi/odoo-client";
-import { evaluate, ExprError, type PyValue } from "@novi/odoo-expr";
+import { evaluate, ExprError, type PyValue, referencedNames } from "@novi/odoo-expr";
 
 import type {
   ButtonNode,
@@ -398,6 +398,36 @@ const ROLE_BY_WIDGET: Record<string, CardRole> = {
 };
 const EMPHASIS = /^(fw-bold|fw-bolder|fs-\d|h[1-5]|o_kanban_record_title|o_text_overflow)$/;
 
+/** "a" or "b", as one modifier (either hides). */
+function anyOf(a: Modifier | undefined, b: Modifier | undefined): Modifier | undefined {
+  if (a === undefined || a === false) return b;
+  if (b === undefined || b === false) return a;
+  if (a === true || b === true) return true;
+  return `(${a}) or (${b})`;
+}
+
+/**
+ * A QWeb `t-if` on record values (`record.amount.raw_value`, `record.partner_id.value and …`) as
+ * the `invisible` expression it amounts to; undefined when it reads anything else (widget state,
+ * JS helpers), which NOVI can't know: then the content shows.
+ */
+function qwebHidden(tIf: string | undefined): string | undefined {
+  if (!tIf) return undefined;
+  const fields = new Set<string>();
+  const expr = tIf.replace(/\brecord\.(\w+)(?:\.(?:raw_value|value))?\b/g, (_, f: string) => {
+    fields.add(f);
+    return f;
+  });
+  if (/[!&|]{1,2}|===?/.test(expr)) return undefined; // JavaScript, not Python
+  try {
+    // every name must be one of the record's values (not `widget.isMobile`, `luxon`, …)
+    if (!referencedNames(expr).names.every((n) => fields.has(n))) return undefined;
+    return `not (${expr})`;
+  } catch {
+    return undefined;
+  }
+}
+
 function parseKanban(root: XmlElement, c: Ctx): KanbanSchema {
   const a = root.attrs;
   const fields = fieldsOf(c);
@@ -425,29 +455,39 @@ function parseKanban(root: XmlElement, c: Ctx): KanbanSchema {
 
   const card: KanbanSchema["card"] = { main: [], aside: [], footer: [] };
   const emphasised = new Set<FieldNode>();
-  const walk = (el: XmlElement, section: keyof typeof card, emphasis: boolean) => {
+  // a container's `invisible` (or a QWeb `t-if` on a record value) hides what it holds
+  const walk = (el: XmlElement, section: keyof typeof card, emphasis: boolean, hidden?: Modifier) => {
     for (const x of elements(el)) {
       const sec = x.tag === "footer" || x.tag === "aside" ? x.tag : section;
       const emph =
         emphasis ||
         ["strong", "b", "h1", "h2", "h3", "h4", "h5"].includes(x.tag) ||
         classes(x).some((k) => EMPHASIS.test(k));
+      const add = <N extends { invisible?: Modifier }>(n: N): N => {
+        if (hidden) n.invisible = anyOf(hidden, n.invisible);
+        return n;
+      };
       if (x.tag === "field") {
-        const f = fieldNode(x, c);
+        const f = add(fieldNode(x, c));
         if (emph) emphasised.add(f);
         card[sec].push(f);
-      } else if (x.tag === "button") card[sec].push(buttonNode(x, c));
-      else if (x.tag === "widget") card[sec].push(widgetNode(x));
-      else walk(x, sec, emph);
+      } else if (x.tag === "button") card[sec].push(add(buttonNode(x, c)));
+      else if (x.tag === "widget") card[sec].push(add(widgetNode(x)));
+      else {
+        const own = modifier(x.attrs.invisible) ?? qwebHidden(x.attrs["t-if"]);
+        walk(x, sec, emph, own === undefined ? hidden : anyOf(hidden, own));
+      }
     }
   };
   if (cardEl) walk(cardEl, "main", false);
 
-  // fields read by the templates' QWeb expressions (`record.<field>.value`), not by <field> tags
+  // fields read by the templates' QWeb expressions (`record.<field>.value`), not by <field> tags;
+  // a field only tested in `t-if` isn't read (checked against Odoo's own client: CRM pipeline)
   const refs = new Set<string>();
   const scan = (el: XmlElement) => {
     for (const [k, v] of Object.entries(el.attrs))
-      if (k.startsWith("t-")) for (const m of v.matchAll(/\brecord\.([A-Za-z_]\w*)/g)) refs.add(m[1]!);
+      if (k.startsWith("t-") && k !== "t-if" && k !== "t-elif")
+        for (const m of v.matchAll(/\brecord\.([A-Za-z_]\w*)/g)) refs.add(m[1]!);
     elements(el).forEach(scan);
   };
   for (const el of elements(root)) if (el.tag === "templates" || el.tag === "card") scan(el);
