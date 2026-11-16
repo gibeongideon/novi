@@ -236,6 +236,7 @@ export function FormPage({
         onButton={press}
         onSave={() => void save()}
         showErrors={showErrors}
+        onError={(e) => void runner.guard(() => Promise.reject(e))}
         chatter={record.id ? <ChatterSlot model={record.config.model} id={record.id} /> : undefined}
       />
 

@@ -506,7 +506,7 @@ This is the complete, tickable list of everything that needs to be built. Each p
 - [~] P2.13.5 date, datetime (tz-aware), daterange *(date and datetime with the platform pickers, done with P2.10)*
 - [~] P2.13.6 many2one (search, create & edit, open record, `options` no_create/no_open) *(search in the field's domain and avatar variants done; create/open next)*
 - [~] P2.13.7 many2many_tags (remove, add by search; also tax tags, avatar tags), many2many_checkboxes *(tags done; tag colours and checkboxes next)*
-- [ ] P2.13.8 one2many / many2many inline list (editable sub-list, dialog form)
+- [~] P2.13.8 one2many / many2many inline list (editable sub-list, dialog form) *(done: `editable` lists edited in place through the field widgets, add/remove lines, a row opens the line's form in a dialog otherwise, Odoo's column chooser inside `<column>`s; proven by a quotation created in the browser and priced by Odoo. Next: sections/notes controls (`<control>`), many2many "add existing" dialog)*
 - [~] P2.13.9 html (rich text editor), binary (upload/download), image (preview, crop) *(image shown from Odoo; upload next)*
 - [ ] P2.13.10 statusbar, handle, progressbar, color, statinfo, reference
 - [~] P2.13.11 Fallback widget per field type for unknown `widget=` (logged for the scanner) *(read mode done: every type renders from metadata through the one formatter; edit mode with P2.13)*

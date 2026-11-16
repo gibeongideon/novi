@@ -128,3 +128,47 @@ describe("form view (P2.10)", () => {
     expect(onButton).toHaveBeenCalledWith(expect.objectContaining({ name: "action_view_lines" }));
   });
 });
+
+describe("x2many lines (P2.13.8)", () => {
+  const LINES_ARCH = `<form><sheet><field name="line_ids">
+    <list editable="bottom"><field name="name"/><field name="qty" optional="hide"/></list>
+  </field></sheet></form>`;
+  const lineModels = {
+    "x.order": { fields: { line_ids: { type: "one2many", string: "Lines", relation: "x.line" } } },
+    "x.line": {
+      fields: {
+        name: { type: "char", string: "Label", required: true },
+        qty: { type: "float", string: "Qty" },
+      },
+    },
+  } as never as ModelsInfo;
+
+  function lines() {
+    const schema = parseView({ arch: LINES_ARCH, model: "x.order", models: lineModels }) as FormSchema;
+    const rpc = vi.fn(async () => ({ value: {} })) as unknown as Rpc;
+    const record = new OdooRecord(
+      rpc,
+      { model: "x.order", models: lineModels, schema, spec: buildSpec(schema) },
+      { id: 1, line_ids: [{ id: 5, name: "First", qty: 1 }] },
+    );
+    render(
+      <EngineProvider transport={transport} db="t">
+        <I18nProvider>
+          <FormView record={record} onButton={() => undefined} />
+        </I18nProvider>
+      </EngineProvider>,
+    );
+    return record;
+  }
+
+  it("edits lines in place, adds and removes them, hides optional columns", async () => {
+    const record = lines();
+    expect((screen.getByRole("textbox", { name: "Label" }) as HTMLInputElement).value).toBe("First");
+    expect(screen.queryByRole("textbox", { name: "Qty" })).toBeNull(); // optional="hide"
+    await userEvent.click(screen.getByRole("button", { name: "Add a line" }));
+    expect(await screen.findAllByRole("textbox", { name: "Label" })).toHaveLength(2);
+    await userEvent.click(screen.getAllByRole("button", { name: "Remove line" })[0]!);
+    expect(screen.getAllByRole("textbox", { name: "Label" })).toHaveLength(1);
+    expect(record.list("line_ids").commands()).toEqual(expect.arrayContaining([[2, 5]]));
+  });
+});

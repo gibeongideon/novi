@@ -16,6 +16,8 @@ export interface Modifiers {
   required?: Modifier;
   /** List columns: hide the whole column (evaluated with the parent/context, not the row). */
   columnInvisible?: Modifier;
+  /** Shown on small screens only, or large ones only (Odoo's responsive duplicates). */
+  screen?: "small" | "large";
 }
 
 /** `decoration-danger="expr"` → `{ danger: "expr" }` (bf, it, danger, info, muted, primary, success, warning). */

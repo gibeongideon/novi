@@ -20,10 +20,31 @@ import type {
   MarkupNode,
   SettingsNode,
 } from "@novi/odoo-meta";
-import { Avatar, Badge, Button, cn, type Step, Stepper, Tabs, useT } from "@novi/ui";
-import { createContext, Fragment, type ReactNode, useContext } from "react";
+import {
+  Avatar,
+  Badge,
+  Button,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+  type Step,
+  Stepper,
+  Tabs,
+  useT,
+} from "@novi/ui";
+import { Plus, Trash2 } from "lucide-react";
+import { createContext, Fragment, type ReactNode, useContext, useState } from "react";
 
-import { leadField, ReadCell, visibleColumns } from "./ListView.js";
+import {
+  type Column,
+  leadField,
+  OptionalColumnsMenu,
+  ReadCell,
+  useOptionalColumns,
+  visibleColumns,
+} from "./ListView.js";
 
 const NUMERIC = new Set(["integer", "float", "monetary"]);
 
@@ -37,6 +58,10 @@ export interface FormViewProps {
   showErrors?: boolean;
   /** Shown beside the sheet when the view has a chatter (P2.10.8). */
   chatter?: ReactNode;
+  /** The form to show when it isn't the record's own view (an x2many line's form, P2.13.8). */
+  schema?: FormSchema;
+  /** An action of the view failed (adding a line…): the screen shows its error dialog. */
+  onError?(error: unknown): void;
 }
 
 interface Ctx {
@@ -45,17 +70,25 @@ interface Ctx {
   showErrors: boolean;
   onButton(button: ButtonNode): void;
   onSave?(): void;
+  onError?(error: unknown): void;
 }
 const FormCtx = createContext<Ctx | null>(null);
 const useForm = () => useContext(FormCtx)!;
 
-export function FormView({ record, onButton, onSave, showErrors = false, chatter }: FormViewProps) {
+export function FormView({
+  record,
+  onButton,
+  onSave,
+  showErrors = false,
+  chatter,
+  schema = record.config.schema as FormSchema,
+  onError,
+}: FormViewProps) {
   useModel(record);
-  const schema = record.config.schema as FormSchema;
   const invalid = new Set(showErrors ? record.invalidFields() : []);
   const hasChatter = !!chatter && schema.children.some((n) => n.type === "chatter");
   return (
-    <FormCtx.Provider value={{ record, invalid, showErrors, onButton, onSave }}>
+    <FormCtx.Provider value={{ record, invalid, showErrors, onButton, onSave, onError }}>
       <div className={cn("grid gap-4", hasChatter && "xl:grid-cols-[minmax(0,1fr)_20rem]")}>
         <div className="grid min-w-0 content-start gap-4">
           <Nodes nodes={schema.children} />
@@ -77,6 +110,17 @@ function Nodes({ nodes }: { nodes: readonly FormNode[] }) {
 }
 
 function Node({ node }: { node: FormNode }): ReactNode {
+  if (node.type !== "text" && node.screen)
+    // one of Odoo's responsive copies: shown only at its screen size, without changing layout
+    return (
+      <div className={node.screen === "small" ? "contents md:hidden" : "hidden md:contents"}>
+        <NodeContent node={node} />
+      </div>
+    );
+  return <NodeContent node={node} />;
+}
+
+function NodeContent({ node }: { node: FormNode }): ReactNode {
   const { record } = useForm();
   if (node.type === "text") return node.text;
   if (record.isInvisible(node)) return null;
@@ -296,8 +340,19 @@ function FieldLabel({ node }: { node: { for?: string; string?: string } }) {
   );
 }
 
-function FieldSlot({ node, labelled = false }: { node: FieldNode; labelled?: boolean }) {
-  const { record, invalid } = useForm();
+function FieldSlot({
+  node,
+  labelled = false,
+  line,
+}: {
+  node: FieldNode;
+  labelled?: boolean;
+  /** An x2many line being edited in place (its own record), instead of the form's record. */
+  line?: OdooRecord;
+}) {
+  const form = useForm();
+  const record = line ?? form.record;
+  const invalid = line ? new Set(form.showErrors ? line.invalidFields() : []) : form.invalid;
   const t = useT();
   if (record.isInvisible(node)) return null;
   const meta = record.fields[node.name];
@@ -344,17 +399,26 @@ function FieldSlot({ node, labelled = false }: { node: FieldNode; labelled?: boo
 }
 
 /**
- * One2many / many2many lines, read-only for now (editing lines in place is P2.13.8): the inline
- * list view's columns, each value through its field widget.
+ * One2many / many2many lines (P2.13.8) with the inline list view's columns. An `editable` list is
+ * edited in place, row by row, through the same field widgets; otherwise a row opens the line's
+ * own form in a dialog, as Odoo does. Lines are saved with the record.
  */
 function Lines({ node }: { node: FieldNode }) {
-  const { record } = useForm();
+  const { record, onError } = useForm();
   const t = useT();
+  const [opened, setOpened] = useState<OdooRecord | null>(null);
+  const [checkLine, setCheckLine] = useState(false);
   const list = record.list(node.name);
   const sub = node.views?.list as ListSchema | undefined;
+  const lineForm = node.views?.form as FormSchema | undefined;
   const parentCtx = record.evalContext();
-  const columns = sub ? visibleColumns(sub, { ...parentCtx, parent: parentCtx as never }, new Set()) : [];
+  const chooser = useOptionalColumns(sub, `${record.config.model}.${node.name}`);
+  const columns = sub ? visibleColumns(sub, { ...parentCtx, parent: parentCtx as never }, chooser.shown) : [];
   const label = node.string ?? record.fields[node.name]?.string;
+  const readonly = record.isReadonly(node);
+  const inline = !!sub?.editable || !lineForm;
+  const canCreate = !readonly && sub?.access.create !== false && node.canCreate !== false;
+  const canDelete = !readonly && sub?.access.delete !== false;
   if (!columns.length) {
     const names = list.records.map((r) => String(r.values.display_name ?? "")).filter(Boolean);
     return names.length ? (
@@ -365,6 +429,19 @@ function Lines({ node }: { node: FieldNode }) {
       </div>
     ) : null;
   }
+  const add = async () => {
+    try {
+      const line = await list.addWithDefaults();
+      if (!inline) setOpened(line);
+    } catch (e) {
+      onError?.(e);
+    }
+  };
+  const closeLine = () => {
+    if (opened?.invalidFields().length) return setCheckLine(true); // Odoo keeps the dialog open
+    setCheckLine(false);
+    setOpened(null);
+  };
   return (
     <div className="grid gap-2">
       {label && !node.nolabel ? <h3 className="text-sm font-semibold">{label}</h3> : null}
@@ -388,28 +465,65 @@ function Lines({ node }: { node: FieldNode }) {
                   </th>
                 );
               })}
+              <th scope="col" className="w-10 px-1">
+                {sub ? <OptionalColumnsMenu fields={sub.fields} columns={chooser} /> : null}
+              </th>
             </tr>
           </thead>
           <tbody>
             {list.records.map((line) => {
               const ctx = line.evalContext();
+              const editing = inline && !readonly;
               return (
-                <tr key={line.id ?? line.virtualId} className="border-t border-border">
+                <tr
+                  key={line.id ?? line.virtualId}
+                  className={cn(
+                    "border-t border-border",
+                    !inline && "cursor-pointer hover:bg-surface-sunken",
+                  )}
+                  onClick={!inline ? () => setOpened(line) : undefined}
+                >
                   {columns.map((c, i) => {
                     const f = leadField(c);
                     const numeric = !!f && NUMERIC.has(sub!.fields[f.name]?.type ?? "");
                     return (
-                      <td key={i} className={cn("px-3 py-2 align-top", numeric && "text-end tabular-nums")}>
-                        <ReadCell record={line} node={c} fields={sub!.fields} context={ctx} />
+                      <td
+                        key={i}
+                        className={cn(
+                          "px-3 py-2 align-top",
+                          numeric && "text-end tabular-nums",
+                          editing && "min-w-28 px-1 py-1",
+                        )}
+                      >
+                        {editing ? (
+                          <LineCell line={line} node={c} fields={sub!.fields} context={ctx} />
+                        ) : (
+                          <ReadCell record={line} node={c} fields={sub!.fields} context={ctx} />
+                        )}
                       </td>
                     );
                   })}
+                  <td className="px-1 py-1 align-top">
+                    {canDelete ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("removeLine")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          list.remove(line);
+                        }}
+                      >
+                        <Trash2 aria-hidden />
+                      </Button>
+                    ) : null}
+                  </td>
                 </tr>
               );
             })}
             {!list.records.length ? (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-4 text-center text-text-muted">
+                <td colSpan={columns.length + 1} className="px-3 py-4 text-center text-text-muted">
                   {t("noRecords")}
                 </td>
               </tr>
@@ -417,8 +531,72 @@ function Lines({ node }: { node: FieldNode }) {
           </tbody>
         </table>
       </div>
+      {canCreate ? (
+        <div>
+          <Button variant="ghost" size="sm" onClick={() => void add()}>
+            <Plus aria-hidden />
+            {t("addLine")}
+          </Button>
+        </div>
+      ) : null}
+      {opened && lineForm ? (
+        <Dialog open onOpenChange={(open) => !open && closeLine()}>
+          <DialogContent size="xl">
+            <DialogTitle>{label}</DialogTitle>
+            <FormView
+              record={opened}
+              schema={lineForm}
+              onButton={() => undefined}
+              showErrors={checkLine}
+              onError={onError}
+            />
+            <DialogFooter>
+              {canDelete ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    list.remove(opened);
+                    setOpened(null);
+                  }}
+                >
+                  {t("removeLine")}
+                </Button>
+              ) : null}
+              <Button variant="primary" onClick={closeLine}>
+                {t("done")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   );
+}
+
+/** One cell of a line edited in place: its fields through their widgets, Odoo's `<column>` stacked. */
+function LineCell({
+  line,
+  node,
+  fields,
+  context,
+}: {
+  line: OdooRecord;
+  node: Column;
+  fields: ListSchema["fields"];
+  context: Record<string, unknown>;
+}): ReactNode {
+  if (node.type === "button") return <ReadCell record={line} node={node} fields={fields} context={context} />;
+  if (node.type === "column")
+    return (
+      <div className="grid gap-1">
+        {node.children.map((child, i) =>
+          child.type === "field" ? (
+            <LineCell key={i} line={line} node={child} fields={fields} context={context} />
+          ) : null,
+        )}
+      </div>
+    );
+  return <FieldSlot node={node} line={line} />;
 }
 
 /** A button of the view; with stat fields inside, a smart-button chip (count + label). */

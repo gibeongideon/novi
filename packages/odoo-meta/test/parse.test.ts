@@ -128,6 +128,22 @@ describe("form", () => {
   });
 });
 
+describe("responsive copies (Bootstrap display classes)", () => {
+  it("keeps which copy is for small or large screens, and drops the never-shown", () => {
+    const s = parse(`<form><sheet>
+      <div><field name="state" class="tax_mode_badge d-md-none"/></div>
+      <div><field name="state" class="d-none d-md-block"/></div>
+      <field name="name" class="d-none"/>
+      <field name="date" class="d-none" invisible="not date"/>
+    </sheet></form>`) as FormSchema;
+    const sheet = s.children[0] as { children: { children?: { screen?: string }[]; invisible?: unknown }[] };
+    expect(sheet.children[0]!.children![0]!.screen).toBe("small");
+    expect(sheet.children[1]!.children![0]!.screen).toBe("large");
+    expect(sheet.children[2]!.invisible).toBe(true);
+    expect(sheet.children[3]!.invisible).toBe("not date"); // the arch's own rule wins
+  });
+});
+
 describe("list", () => {
   it("reads columns, decorations, optional columns, header buttons and group rows", () => {
     const s =

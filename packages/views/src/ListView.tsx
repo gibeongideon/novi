@@ -82,7 +82,15 @@ export function visibleColumns(
   shown: Set<string>,
 ): Column[] {
   const type = (name: string) => schema.fields[name]?.type ?? "char";
-  return schema.columns.filter((c): c is Column => {
+  // a `<column>` keeps only the fields shown: not hidden for the column, optional ones as chosen
+  const inColumn = (child: ColumnNode["children"][number]) =>
+    child.type !== "widget" &&
+    !holds(child.columnInvisible, evalContext) &&
+    !(child.type === "field" && child.optional && !shown.has(child.name));
+  const columns = schema.columns.map((c) =>
+    c.type === "column" ? { ...c, children: c.children.filter(inColumn) } : c,
+  );
+  return columns.filter((c): c is Column => {
     if (c.type === "widget" || holds(c.columnInvisible, evalContext)) return false;
     if (c.type === "button") return true;
     const f = leadField(c);
@@ -128,13 +136,7 @@ export function ReadCell({
     );
   }
   if (node.type === "column") {
-    // the fields Odoo shows in this column: not hidden for the column, not optional-hidden
-    const kids = node.children.filter(
-      (child) =>
-        child.type !== "widget" &&
-        !holds(child.columnInvisible, context) &&
-        !(child.type === "field" && child.optional === "hide"),
-    );
+    const kids = node.children.filter((child) => child.type !== "widget"); // chosen by visibleColumns
     return (
       <div className="grid gap-0.5">
         {kids.map((child, i) => (
@@ -169,34 +171,34 @@ export function ReadCell({
   );
 }
 
-function readShown(key: string | undefined, schema: ListSchema): Set<string> {
-  const defaults = schema.columns
-    .filter((c) => c.type === "field" && c.optional === "show")
-    .map((c) => (c as FieldNode).name);
-  if (!key) return new Set(defaults);
-  try {
-    const saved = localStorage.getItem(`novi.list.optional.${key}`);
-    return new Set(saved ? (JSON.parse(saved) as string[]) : defaults);
-  } catch {
-    return new Set(defaults);
-  }
+/** Optional fields of a list: its columns' and those inside `<column>`s (Odoo's column chooser). */
+function optionalFields(schema: ListSchema): FieldNode[] {
+  const all = schema.columns.flatMap((c) =>
+    c.type === "column" ? c.children : c.type === "field" ? [c] : [],
+  );
+  const seen = new Set<string>();
+  return all.filter(
+    (c): c is FieldNode => c.type === "field" && !!c.optional && !seen.has(c.name) && !!seen.add(c.name),
+  );
 }
 
-export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, onButton }: ListViewProps) {
-  const t = useT();
-  useModel(list);
-  const [shown, setShown] = useState(() => readShown(storageKey, schema));
-  const [dragged, setDragged] = useState<number | null>(null);
-
-  const meta = (name: string) => schema.fields[name] ?? { type: "char" };
-  const optional = schema.columns.filter((c): c is FieldNode => c.type === "field" && !!c.optional);
-  const columns = visibleColumns(schema, evalContext, shown);
-  const handle = schema.columns.find((c): c is FieldNode => c.type === "field" && c.widget === "handle");
-  const flat = list instanceof RecordList ? list : undefined;
-  const canDrag = !!handle && !!flat;
-  const [sortField, sortDir] = (flat?.order ?? "").split(",")[0]!.trim().split(/\s+/);
-
-  const toggleOptional = (name: string, on: boolean) => {
+/**
+ * The optional columns the user chose (P2.9; lines P2.13.8): Odoo's `optional="show|hide"`
+ * defaults, remembered per view in this browser as Odoo does.
+ */
+export function useOptionalColumns(schema: ListSchema | undefined, storageKey?: string) {
+  const optional = schema ? optionalFields(schema) : [];
+  const [shown, setShown] = useState<Set<string>>(() => {
+    const defaults = optional.filter((c) => c.optional === "show").map((c) => c.name);
+    if (!storageKey) return new Set(defaults);
+    try {
+      const saved = localStorage.getItem(`novi.list.optional.${storageKey}`);
+      return new Set(saved ? (JSON.parse(saved) as string[]) : defaults);
+    } catch {
+      return new Set(defaults);
+    }
+  });
+  const toggle = (name: string, on: boolean) => {
     const next = new Set(shown);
     if (on) next.add(name);
     else next.delete(name);
@@ -207,6 +209,55 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
       // per-browser convenience only
     }
   };
+  return { optional, shown, toggle };
+}
+
+/** The column chooser: one checkbox per optional field. */
+export function OptionalColumnsMenu({
+  fields,
+  columns,
+}: {
+  fields: ListSchema["fields"];
+  columns: ReturnType<typeof useOptionalColumns>;
+}) {
+  const t = useT();
+  if (!columns.optional.length) return null;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="sm" aria-label={t("optionalColumns")}>
+          <Columns3 aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {columns.optional.map((c) => (
+          <DropdownMenuCheckboxItem
+            key={c.name}
+            checked={columns.shown.has(c.name)}
+            onCheckedChange={(on) => columns.toggle(c.name, on === true)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {c.string ?? fields[c.name]?.string ?? c.name}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, onButton }: ListViewProps) {
+  const t = useT();
+  useModel(list);
+  const chooser = useOptionalColumns(schema, storageKey);
+  const { shown, optional } = chooser;
+  const [dragged, setDragged] = useState<number | null>(null);
+
+  const meta = (name: string) => schema.fields[name] ?? { type: "char" };
+  const columns = visibleColumns(schema, evalContext, shown);
+  const handle = schema.columns.find((c): c is FieldNode => c.type === "field" && c.widget === "handle");
+  const flat = list instanceof RecordList ? list : undefined;
+  const canDrag = !!handle && !!flat;
+  const [sortField, sortDir] = (flat?.order ?? "").split(",")[0]!.trim().split(/\s+/);
 
   /** A total formatted like the column's values (through the same field widget). */
   const total = (c: FieldNode, value: number | undefined) => {
@@ -404,25 +455,7 @@ export function ListView({ schema, list, evalContext = {}, storageKey, onOpen, o
             })}
             {optional.length ? (
               <th scope="col" className="w-8 px-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" aria-label={t("optionalColumns")}>
-                      <Columns3 aria-hidden />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {optional.map((c) => (
-                      <DropdownMenuCheckboxItem
-                        key={c.name}
-                        checked={shown.has(c.name)}
-                        onCheckedChange={(on) => toggleOptional(c.name, on === true)}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        {c.string ?? meta(c.name).string ?? c.name}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <OptionalColumnsMenu fields={schema.fields} columns={chooser} />
               </th>
             ) : null}
           </tr>

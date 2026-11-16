@@ -59,12 +59,18 @@ function clean<T extends object>(o: T): T {
 }
 
 function modifiers(a: Record<string, string>): Modifiers {
+  const cls = (a.class ?? "").split(/\s+/);
+  const showsAt = cls.some((k) => /^d-(sm|md|lg|xl)-(?!none)/.test(k));
+  const hidesAt = cls.some((k) => /^d-(sm|md|lg|xl)-none$/.test(k));
+  const never = cls.includes("d-none") && !showsAt; // Bootstrap's "always hidden"
   return clean({
-    invisible: modifier(a.invisible),
+    invisible: never && a.invisible === undefined ? true : modifier(a.invisible),
     readonly: modifier(a.readonly),
     required: modifier(a.required),
     columnInvisible: modifier(a.column_invisible),
-  });
+    // Odoo's responsive duplicates (`d-md-none` / `d-none d-md-block`): which copy for which screen
+    screen: cls.includes("d-none") && showsAt ? "large" : hidesAt ? "small" : undefined,
+  } as Modifiers);
 }
 
 function decorations(a: Record<string, string>): Decorations | undefined {
