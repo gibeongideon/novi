@@ -487,13 +487,13 @@ This is the complete, tickable list of everything that needs to be built. Each p
 **Done when:** the CRM pipeline works generically (before the bespoke version in P4).
 
 ### P2.12 Search
-- [ ] P2.12.1 Search bar with facets (field search, filters, group-bys)
-- [ ] P2.12.2 Filter groups (OR within a group, AND across groups), date filters (period options)
+- [x] P2.12.1 Search bar with facets (field search with record suggestions for relations, filters, group-bys, favourite)
+- [x] P2.12.2 Filter groups (OR within a group, AND across groups), date filters (period options: months, quarters, years)
 - [ ] P2.12.3 Custom filter builder (domain editor)
-- [ ] P2.12.4 Custom group-by
-- [ ] P2.12.5 Favourites: load/save/delete via `ir.filters`, default favourite, shared
+- [x] P2.12.4 Custom group-by (any stored, groupable field; dates by month as Odoo)
+- [x] P2.12.5 Favourites: load/save/delete via `ir.filters` (`get_filters` through `get_views`, `create_filter`), default favourite applied, shared or private
 - [ ] P2.12.6 Search panel (left sidebar categories/filters)
-- [ ] P2.12.7 Search state in the URL
+- [x] P2.12.7 Search state in the URL (`?q=`): shareable, survives reload and back
 - [x] P2.12.8 Search defaults from the action context (`search_default_*`: filters OR'd within a group and AND'd across, field defaults, group-bys) applied to the list, as Odoo's client does *(done with P2.9 for data parity)*
 
 **Done when:** searching, grouping and favourites behave the same as in Odoo for 10 actions.

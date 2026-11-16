@@ -1,7 +1,16 @@
-import { RecordList, useAction, useActionManager, useListView } from "@novi/engine";
+import {
+  EMPTY_SEARCH,
+  RecordList,
+  searchQuery,
+  type SearchState,
+  useAction,
+  useActionManager,
+  useFavorites,
+  useListView,
+} from "@novi/engine";
 import type { ListSchema } from "@novi/odoo-meta";
 import { Badge, Button, Pager, Skeleton, useT } from "@novi/ui";
-import { KanbanView, ListView } from "@novi/views";
+import { KanbanView, ListView, SearchBar } from "@novi/views";
 import { ExternalLink, LayoutGrid, List, Plus } from "lucide-react";
 
 /** View types NOVI renders itself (P2.9 list, P2.11 kanban); others stay in Odoo for now. */
@@ -9,10 +18,23 @@ const NATIVE_VIEWS = ["list", "kanban"] as const;
 type NativeView = (typeof NATIVE_VIEWS)[number];
 const VIEW_ICON = { list: List, kanban: LayoutGrid } as const;
 const VIEW_LABEL = { list: "viewList", kanban: "viewKanban" } as const;
+
+/** `?q=` → the search state; anything unreadable means "the action's defaults". */
+function parseSearch(raw: string | null): SearchState | undefined {
+  if (!raw) return undefined;
+  try {
+    const v = JSON.parse(raw) as SearchState;
+    return Array.isArray(v.filters) && Array.isArray(v.groupBy) && Array.isArray(v.fields) ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+import { useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { ActionMenus } from "./ActionMenus";
 import { type Crumb, PageTitle } from "./PageTitle";
+import { SaveSearchDialog } from "./SaveSearchDialog";
 import { useActionRunner } from "./useActionRunner";
 
 /** Odoo's help HTML as plain paragraphs (never injected as HTML). */
@@ -47,7 +69,16 @@ export function ActionPage({ actionId, trail }: { actionId: number | undefined; 
     .filter((type): type is NativeView => (NATIVE_VIEWS as readonly string[]).includes(type));
   const requested = params.get("view") as NativeView | null;
   const viewType = requested && offered.includes(requested) ? requested : (offered[0] ?? "list");
-  const view = useListView(action.data ? actionId : undefined, viewType);
+  // the user's search lives in the URL (P2.12.7): shareable, survives reload and back
+  const searchState = parseSearch(params.get("q"));
+  const view = useListView(action.data ? actionId : undefined, viewType, searchState);
+  const favorites = useFavorites();
+  const [saving, setSaving] = useState(false);
+  const setSearch = (next: SearchState) =>
+    setParams((p) => {
+      p.set("q", JSON.stringify(next));
+      return p;
+    });
   const am = useActionManager();
   const data = view.data;
   const list = data?.list;
@@ -170,6 +201,42 @@ export function ActionPage({ actionId, trail }: { actionId: number | undefined; 
           {openInOdoo}
         </span>
       </div>
+      {data?.search ? (
+        <SearchBar
+          search={data.search}
+          state={data.state}
+          onChange={setSearch}
+          fields={data.list.config.models[data.action.model]?.fields ?? {}}
+          favorites={data.favorites}
+          onSaveFavorite={() => setSaving(true)}
+          onDeleteFavorite={(id) =>
+            void runner.guard(async () => {
+              await favorites.remove(id);
+              if (data.state.favorite === id) setSearch({ ...data.state, favorite: undefined });
+              else await view.refetch();
+            })
+          }
+        />
+      ) : null}
+      {saving && data ? (
+        <SaveSearchDialog
+          onClose={() => setSaving(false)}
+          onSave={(draft) =>
+            void runner.guard(async () => {
+              const q = searchQuery(data.search, data.state, data.evalContext, data.favorites);
+              const id = await favorites.save({
+                ...draft,
+                model: data.action.model,
+                actionId: data.action.id,
+                domain: q.domain,
+                groupBy: q.groupBy,
+              });
+              setSaving(false);
+              setSearch({ ...EMPTY_SEARCH, favorite: id }); // Odoo applies the new favourite alone
+            })
+          }
+        />
+      ) : null}
 
       {view.isPending ? (
         <div className="grid gap-2">

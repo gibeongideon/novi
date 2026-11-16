@@ -8,5 +8,6 @@ export * from "./listView.js";
 export * from "./menus.js";
 export * from "./model/index.js";
 export * from "./recordSearch.js";
+export * from "./search.js";
 export * from "./session.js";
 export * from "./signup.js";

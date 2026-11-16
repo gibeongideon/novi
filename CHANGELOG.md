@@ -7,6 +7,7 @@ Format: `- [TaskID] Short description (author)` under a dated heading. Group ent
 ## Unreleased
 
 ### 2026-11-16
+- [P2.12] Search: type to search any field Odoo offers (pick a customer, salesperson… from the suggestions), turn filters on and off (with periods for dates: this month, Q1, last year…), group by any field, and save searches as favourites (yours or shared, optionally the default) — the same favourites Odoo's screens show. The search stays in the address, so it survives a reload and can be shared. Fixed: grouping a list by a date or by a column with computed totals failed.
 - [P2.11] Kanban view: screens Odoo opens as cards (CRM pipeline, projects, contacts…) now show NOVI's own cards and columns: counts, coloured progress bars and totals per column, priority stars you can click, tags and people's pictures; fold a column, drag a card to another column, add a card from a column's +, load more cards. Switch between cards and list with the buttons at the top. Same records and columns as Odoo's own screens (checked against Odoo's client).
 
 ### 2026-11-14

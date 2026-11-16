@@ -6,6 +6,7 @@
 import { SessionExpiredError, type SessionInfo } from "@novi/odoo-client";
 import type { EvalContext } from "@novi/odoo-expr";
 import {
+  keepPreviousData,
   MutationCache,
   QueryCache,
   QueryClient,
@@ -38,6 +39,7 @@ import { type ListConfig, RecordList } from "./model/lists.js";
 import type { Observable, Rpc } from "./model/observable.js";
 import { OdooRecord, type OnchangeWarning, type RecordConfig } from "./model/record.js";
 import { modelLabels, type RecordGroup, SEARCHABLE_MODELS, searchRecords } from "./recordSearch.js";
+import { type FavoriteDraft, saveFavorite, type SearchState } from "./search.js";
 
 /** What the hooks need from a transport (JsonRpcTransport satisfies it). */
 export interface SessionTransport {
@@ -424,7 +426,12 @@ export function useActionManager(): ActionManager {
  * Odoo's client loads it (view + search views, toolbar, search defaults, order, paging,
  * kanban columns). `null` when the action has no such view.
  */
-export function useListView(actionId: number | undefined, viewType: "list" | "kanban" = "list") {
+export function useListView(
+  actionId: number | undefined,
+  viewType: "list" | "kanban" = "list",
+  /** The user's search (P2.12), from the URL; the action's defaults when absent. */
+  search?: SearchState,
+) {
   const { transport } = useEngine();
   const am = useActionManager();
   const session = useQuery({
@@ -433,17 +440,20 @@ export function useListView(actionId: number | undefined, viewType: "list" | "ka
     staleTime: Infinity,
   });
   const query = useQuery({
-    queryKey: ["list-view", actionId, viewType],
+    queryKey: ["list-view", actionId, viewType, JSON.stringify(search ?? null)],
     enabled: actionId !== undefined && !!session.data,
     queryFn: async (): Promise<ListViewData | KanbanViewData | null> => {
       const d = await am.resolve(actionId!);
       if (d.kind !== "window") return null;
       const rpc: Rpc = (model, method, call) => transport.call(model, method, call);
       const base = baseEvalContext(session.data ?? null);
-      return viewType === "kanban" ? loadKanbanView(rpc, d.action, base) : loadListView(rpc, d.action, base);
+      return viewType === "kanban"
+        ? loadKanbanView(rpc, d.action, base, search)
+        : loadListView(rpc, d.action, base, search);
     },
     staleTime: 0,
     gcTime: 0, // the list is a live model: never served stale
+    placeholderData: keepPreviousData, // a new search keeps the screen while it loads
   });
   useModel(query.data?.list);
   return query;
@@ -513,6 +523,27 @@ export function useRelatedRecords(model: string | undefined, domain: unknown[], 
       ).records,
     staleTime: 60_000,
   });
+}
+
+/** Saved searches (P2.12.5): save the current search, or delete one (Odoo's `ir.filters`). */
+export function useFavorites() {
+  const { transport } = useEngine();
+  const session = useQuery({
+    queryKey: ["session"],
+    queryFn: () => transport.getSessionInfo(),
+    staleTime: Infinity,
+  });
+  return useMemo(
+    () => ({
+      save: (draft: Omit<FavoriteDraft, "uid">) =>
+        saveFavorite((m, method, a) => transport.call(m, method, a), {
+          ...draft,
+          uid: session.data?.uid ?? 0,
+        }),
+      remove: (id: number) => transport.call("ir.filters", "unlink", { ids: [id], kwargs: {} }),
+    }),
+    [transport, session.data],
+  );
 }
 
 const noSubscribe = () => () => undefined;

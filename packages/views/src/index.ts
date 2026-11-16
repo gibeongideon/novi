@@ -3,6 +3,7 @@ export { FormView, type FormViewProps } from "./FormView.js";
 export { KanbanView, type KanbanViewProps } from "./KanbanView.js";
 export { ListView, type ListViewProps } from "./ListView.js";
 export * from "./overrides.js";
+export { SearchBar, type SearchBarProps } from "./SearchBar.js";
 
 /**
  * Odoo widgets the views render themselves (not field widgets): status bar and smart-button

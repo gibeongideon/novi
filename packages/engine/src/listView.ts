@@ -20,6 +20,7 @@ import {
 import type { WindowAction } from "./actions.js";
 import { GroupedList, type ListConfig, RecordList } from "./model/lists.js";
 import type { Rpc } from "./model/observable.js";
+import { defaultState, EMPTY_SEARCH, type Favorite, searchQuery, type SearchState } from "./search.js";
 
 /** An entry of the "Action" / "Print" menus (`get_views` toolbar). */
 export interface ToolbarItem {
@@ -36,42 +37,16 @@ export interface RecordsViewData<S extends ListSchema | KanbanSchema> {
   list: RecordList | GroupedList;
   /** User + action context and uid: what list-level expressions are evaluated with. */
   evalContext: EvalContext;
+  /** The search applied (P2.12): the user's, or the action's defaults. */
+  state: SearchState;
+  /** The user's saved searches for this action (`ir.filters`). */
+  favorites: Favorite[];
 }
 export type ListViewData = RecordsViewData<ListSchema>;
 export type KanbanViewData = RecordsViewData<KanbanSchema>;
 
 export const LIST_LIMIT = 80;
 export const COUNT_LIMIT = 10001;
-
-/** The domain and group-bys the search view's defaults turn on (`search_default_<name>`). */
-export function defaultSearch(
-  search: SearchSchema | undefined,
-  context: OdooContext,
-  evalContext: EvalContext,
-): { domain: PyValue[]; groupBy: string[] } {
-  if (!search) return { domain: [], groupBy: [] };
-  const on = (name?: string) => (name ? context[`search_default_${name}`] : undefined);
-  const ctx = { ...evalContext, context: context as never };
-  const parts: Domain[] = [];
-  for (const group of search.filterGroups) {
-    const active = group.filter((f) => on(f.name) && f.domain && !f.date);
-    if (active.length) parts.push(Domain.or(active.map((f) => Domain.parse(f.domain!, ctx))));
-  }
-  for (const field of search.searchFields) {
-    const value = on(field.name);
-    if (value === undefined || value === false) continue;
-    if (field.filterDomain) parts.push(Domain.parse(field.filterDomain, { ...ctx, self: value as PyValue }));
-    else {
-      const op = field.operator ?? (typeof value === "number" ? "=" : "ilike");
-      parts.push(Domain.from([[field.name, op, value as PyValue]]));
-    }
-  }
-  const groupBy = search.groupBys
-    .filter((g) => on(g.name))
-    .sort((a, b) => Number(on(a.name)) - Number(on(b.name)))
-    .map((g) => g.fieldName);
-  return { domain: parts.length ? Domain.and(parts).toList() : [], groupBy };
-}
 
 /** What an action's expressions are evaluated with: the base, the active record(s), its context. */
 export function actionEvalContext(context: OdooContext, base: EvalContext): EvalContext {
@@ -111,8 +86,9 @@ export function loadListView(
   rpc: Rpc,
   action: WindowAction,
   base: EvalContext,
+  state?: SearchState,
 ): Promise<ListViewData | null> {
-  return loadRecordsView(rpc, action, base, "list") as Promise<ListViewData | null>;
+  return loadRecordsView(rpc, action, base, "list", state) as Promise<ListViewData | null>;
 }
 
 /**
@@ -124,8 +100,9 @@ export function loadKanbanView(
   rpc: Rpc,
   action: WindowAction,
   base: EvalContext,
+  state?: SearchState,
 ): Promise<KanbanViewData | null> {
-  return loadRecordsView(rpc, action, base, "kanban") as Promise<KanbanViewData | null>;
+  return loadRecordsView(rpc, action, base, "kanban", state) as Promise<KanbanViewData | null>;
 }
 
 async function loadRecordsView(
@@ -133,11 +110,12 @@ async function loadRecordsView(
   action: WindowAction,
   base: EvalContext,
   viewType: "list" | "kanban",
+  requested?: SearchState,
 ): Promise<RecordsViewData<ListSchema | KanbanSchema> | null> {
   const view = action.views.find(([, type]) => type === viewType);
   if (!view) return null;
   const views = await rpc<{
-    views: Record<string, { arch: string; toolbar?: ListViewData["toolbar"] }>;
+    views: Record<string, { arch: string; toolbar?: ListViewData["toolbar"]; filters?: Favorite[] }>;
     models: ModelsInfo;
   }>(action.model, "get_views", {
     kwargs: {
@@ -145,7 +123,7 @@ async function loadRecordsView(
         [view[0], viewType],
         [action.searchViewId, "search"],
       ],
-      options: { action_id: action.id ?? false, toolbar: true, load_filters: false },
+      options: { action_id: action.id ?? false, toolbar: true, load_filters: true },
       context: action.context,
     },
   });
@@ -162,21 +140,34 @@ async function loadRecordsView(
       }) as SearchSchema)
     : undefined;
   const evalContext = actionEvalContext(action.context, base);
-  const defaults = defaultSearch(search, action.context, evalContext);
-  const context = readContext(action.context);
+  const favorites = views.views.search?.filters ?? [];
+  // the user's search (from the URL), else the action's defaults, else the default favourite
+  const hasDefaults = Object.keys(action.context).some((k) => k.startsWith("search_default_"));
+  const fallback = favorites.find((f) => f.is_default);
+  const state =
+    requested ??
+    (!hasDefaults && fallback
+      ? { ...EMPTY_SEARCH, favorite: fallback.id }
+      : defaultState(search, action.context));
+  const query = searchQuery(search, state, evalContext, favorites);
+  const context = { ...readContext(action.context), ...query.context };
   const config: ListConfig = {
     model: action.model,
     models: views.models,
     spec: buildSpec(schema, { evalContext }),
     schema,
-    domain: noFilter(Domain.and([action.domain, defaults.domain])),
+    domain: noFilter(Domain.and([action.domain, query.domain])),
     context,
     evalContext,
     order: schema.defaultOrder ? normalizeOrder(schema.defaultOrder) : undefined,
     limit: action.limit ?? ("limit" in schema ? schema.limit : undefined) ?? LIST_LIMIT,
     countLimit: COUNT_LIMIT,
   };
-  let groupBy = [...contextGroupBy(action.context), ...defaults.groupBy];
+  // the user's search decides the grouping; without one, the action's context may group too
+  const modelFields = views.models[action.model]?.fields ?? {};
+  let groupBy = (requested ? [...query.groupBy] : [...contextGroupBy(action.context), ...query.groupBy]).map(
+    (g) => withGranularity(g, modelFields),
+  );
   let list: RecordList | GroupedList;
   if (schema.viewType === "kanban") {
     // a kanban is grouped by its default unless the search groups it; one level of columns
@@ -195,8 +186,11 @@ async function loadRecordsView(
         })
       : new RecordList(rpc, config);
   } else {
+    // only stored fields can be totalled by Odoo's database (as Odoo's client does)
     const aggregates = schema.columns.flatMap((c) =>
-      c.type === "field" && (c.sum || c.avg) ? [`${c.name}:${c.sum ? "sum" : "avg"}`] : [],
+      c.type === "field" && (c.sum || c.avg) && modelFields[c.name]?.store !== false
+        ? [`${c.name}:${c.sum ? "sum" : "avg"}`]
+        : [],
     );
     list = groupBy.length
       ? new GroupedList(rpc, { ...config, groupBy, aggregates })
@@ -211,7 +205,16 @@ async function loadRecordsView(
     toolbar: { action: toolbar?.action ?? [], print: toolbar?.print ?? [] },
     list,
     evalContext,
+    state,
+    favorites,
   };
+}
+
+/** Grouping by a date needs a granularity; Odoo's client uses the month by default. */
+export function withGranularity(groupBy: string, fields: Record<string, { type: string }>): string {
+  const [name] = groupBy.split(":");
+  const type = fields[name!]?.type;
+  return !groupBy.includes(":") && (type === "date" || type === "datetime") ? `${groupBy}:month` : groupBy;
 }
 
 /**
